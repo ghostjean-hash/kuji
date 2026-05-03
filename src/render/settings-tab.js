@@ -48,6 +48,31 @@ export function renderSettingsTab(state, dispatch) {
   boxSection.appendChild(resetBtn);
   el.appendChild(boxSection);
 
+  // M2.1: 통 선택 토글 (구매 패널과 양방향 동기화)
+  const pickSection = document.createElement("section");
+  pickSection.className = "settings-section";
+  pickSection.innerHTML = "<h2>통 선택</h2>";
+  const pickRow = document.createElement("label");
+  pickRow.className = "settings-skip-row";
+  const pickInput = document.createElement("input");
+  pickInput.type = "checkbox";
+  pickInput.className = "settings-skip-checkbox";
+  pickInput.checked = !!state.settingsSkipPick;
+  pickInput.addEventListener("change", () => {
+    dispatch({ type: "set_skip_pick", value: pickInput.checked });
+  });
+  const pickLabel = document.createElement("span");
+  pickLabel.className = "settings-skip-label";
+  pickLabel.textContent = "통에서 선택 건너뛰기 (바로 뜯기)";
+  pickRow.appendChild(pickInput);
+  pickRow.appendChild(pickLabel);
+  pickSection.appendChild(pickRow);
+  const pickHelp = document.createElement("p");
+  pickHelp.className = "settings-help";
+  pickHelp.textContent = "체크 시 구매 후 통 격자 단계 없이 바로 페이지플립 카드로 진입합니다. 결정론은 시드와 박스 회차로 보장되며, 슬롯 선택 순서는 결과 공개 순서에만 영향을 줍니다.";
+  pickSection.appendChild(pickHelp);
+  el.appendChild(pickSection);
+
   // 라인업 정보
   const infoSection = document.createElement("section");
   infoSection.className = "settings-section";

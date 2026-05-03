@@ -18,7 +18,9 @@ export function validateBuyCount(count, deckRemaining) {
 }
 
 // 인벤토리에 미개봉 복권 N매 추가 (불변).
-// Ticket = { id, purchasedAt }
+// M2 + M2.1 B-α: Ticket = { id, purchasedAt, lockedResult }
+//   lockedResult = null = raw (등급 미결정. 통 선택 격자에 들어갈 매수).
+//                  DrawResult 객체 = 통 선택 "확인" 시점 결정 (5.14.4.4).
 export function addUnopenedTickets(unopenedTickets, count, now) {
   const baseId = (now >>> 0).toString(16);
   const newTickets = [];
@@ -26,6 +28,7 @@ export function addUnopenedTickets(unopenedTickets, count, now) {
     newTickets.push({
       id: `${baseId}-${i}`,
       purchasedAt: now,
+      lockedResult: null,  // M2.1 B-α: 신규 ticket은 raw
     });
   }
   return [...unopenedTickets, ...newTickets];

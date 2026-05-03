@@ -1,5 +1,6 @@
 import { suite, test, assertEq } from "../core.js";
 import { appendHistory, tierCounts } from "../../src/core/history.js";
+// M2.1 B-α: findUnrevealed / revealHistory 폐기 (history는 reveal 시점에만 append).
 
 suite("history", () => {
   test("appendHistory 누적 (불변)", () => {
@@ -35,5 +36,18 @@ suite("history", () => {
     const c = tierCounts([]);
     assertEq(c["A"], 0);
     assertEq(c["Last One"], 0);
+  });
+
+  // M2.1 B-α 안전장치: revealed === false 항목 카운트 제외 (구 데이터 호환)
+  test("tierCounts: revealed: false 항목은 카운트 제외 (B-α 안전장치)", () => {
+    const h = [
+      { tier: "A", typeIndex: 0, isLastOne: false, revealed: true },
+      { tier: "G", typeIndex: 1, isLastOne: false, revealed: false },  // 미reveal = 제외
+      { tier: "B", typeIndex: 0, isLastOne: false },  // revealed 미정의 = 포함
+    ];
+    const c = tierCounts(h);
+    assertEq(c["A"], 1);
+    assertEq(c["G"], 0);
+    assertEq(c["B"], 1);
   });
 });

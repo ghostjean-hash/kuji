@@ -24,3 +24,6 @@ npm-debug.log*
 
 # 클로드 코드 사용자 로컬 설정
 .claude/settings.local.json
+
+# 라인업 참고 자료 (라이선스 0 정책 - CLAUDE.md 4.6 / 5.13.1. 추후 SVG 자체 제작 참고용 로컬 보관)
+the_chronicle_of_goku_img/

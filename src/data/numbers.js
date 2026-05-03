@@ -5,7 +5,7 @@
 export const STORAGE_KEY_PREFIX = "kuji_";
 export const DEFAULT_SEED_FALLBACK_BITS = 32;
 export const BOX_ROUND_INITIAL = 1;
-export const SCHEMA_VERSION = 2;  // M2: kuji_unopened_tickets 추가
+export const SCHEMA_VERSION = 3;  // M2.1: kuji_settings_skip_pick + meta.pickHintSeen + history revealed/pickIndex 필드
 
 // 02_data 1.2 PRNG
 export const PRNG_NAME = "Mulberry32";
@@ -91,9 +91,10 @@ export const HISTORY_RECENT_LIMIT = 50;
 export const PERCENT_DISPLAY_DECIMALS = 2;
 export const PERCENT_BASE = 100;
 
-// 02_data 1.6 구매 옵션 (M2)
+// 02_data 1.6 구매 옵션 (M2 + M2.1)
 export const BUY_QUICK_OPTIONS = [1, 3, 5, 10];
 export const BUY_FREE_INPUT_MIN = 1;
+export const BUY_SKIP_PICK_DEFAULT = false;  // M2.1: 통 선택 단계 skip 기본값 (false = 통 선택 ON)
 
 // 02_data 1.7 상품 이미지 자산 매핑 (M2). assets.js 참조용 플래그만 numbers에.
 export const PRODUCT_ASSETS_MAIN_PLACEHOLDER = true;  // M2 1차: 종별 자산이 메인을 재사용
@@ -131,6 +132,18 @@ export const TAB_ICON_IDS = {
 export const FONT_FAMILY_BODY_KO = '"Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 export const FONT_FAMILY_BODY_JA = '"Noto Serif JP", "Yu Mincho", serif';
 export const FONT_FAMILY_TIER_DISPLAY = '"Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+
+// 02_data 1.12 통 선택 (Pick from Bin) - M2.1 신설
+export const PICK_GRID_COLS_DEFAULT = 10;  // 격자 기본 열 수. rows = ceil(BOX_SIZE / cols)
+export const PICK_GRID_COLS_MIN = 4;  // 모바일 좁은 화면 fallback 최소 열 수
+export const PICK_SLOT_MIN_TAP_PX = 24;  // 슬롯 최소 터치 타깃
+export const PICK_SLOT_GAP_PX = 4;  // 슬롯 간 간격
+export const PICK_SLOT_HOVER_LIFT_PX = 4;  // 호버 시 슬롯 부상
+export const PICK_SLOT_HOVER_GLOW_PX = 12;  // 호버 글로우 반경
+export const PICK_SLOT_CLICK_TO_CARD_MS = 400;  // 슬롯 클릭 → 페이지플립 카드 전환
+export const PICK_SLOT_EMPTY_FADE_MS = 200;  // 뽑힌 슬롯 회색화 전환
+export const PICK_FIRST_HINT_DURATION_MS = 4000;  // 첫 진입 안내 toast 표시 시간 (1회)
+export const PICK_FIRST_HINT_TEXT_KO = "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다.";
 
 // 02_data 1.4.2.1 매수 합계 검증식 (01_spec 7.5 부팅 정합 강제)
 const TIER_COUNT_SUM = TIERS.reduce((acc, t) => acc + t.count, 0);

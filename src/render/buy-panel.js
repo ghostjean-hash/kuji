@@ -78,6 +78,23 @@ export function renderBuyPanel(state, dispatch) {
   errorEl.className = "buy-error";
   el.appendChild(errorEl);
 
+  // M2.1: 통에서 선택 건너뛰기 체크박스 (구매 패널 + 설정 탭 양방향 동기화)
+  const skipRow = document.createElement("label");
+  skipRow.className = "buy-skip-row";
+  const skipInput = document.createElement("input");
+  skipInput.type = "checkbox";
+  skipInput.className = "buy-skip-checkbox";
+  skipInput.checked = !!state.settingsSkipPick;
+  skipInput.addEventListener("change", () => {
+    dispatch({ type: "set_skip_pick", value: skipInput.checked });
+  });
+  const skipLabel = document.createElement("span");
+  skipLabel.className = "buy-skip-label";
+  skipLabel.textContent = "통에서 선택 건너뛰기 (바로 뜯기)";
+  skipRow.appendChild(skipInput);
+  skipRow.appendChild(skipLabel);
+  el.appendChild(skipRow);
+
   function refreshUI() {
     const v = validateBuyCount(selectedCount, deckRemaining);
     summary.innerHTML = `<span class="label">${selectedCount}매 × ${LINEUP_PRICE_JPY}엔</span><span class="price">${(selectedCount * LINEUP_PRICE_JPY).toLocaleString()}엔</span>`;

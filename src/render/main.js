@@ -71,6 +71,7 @@ function persist() {
     dcResults: state.dcResults,
     meta: state.meta,
     unopenedTickets: state.unopenedTickets,
+    settingsSkipPick: state.settingsSkipPick,
   });
 }
 
@@ -109,50 +110,195 @@ function dispatch(action) {
       rerender();
       break;
     }
-    case "peel": {
-      // M2: 뜯기 = drawOne 호출 + 인벤토리에서 제거 + 확인 대기 상태
+    case "auto_pick_select": {
+      // M2.1 B-α 보강 (5.14.4.8): 잔여 일반 슬롯 첫 N개를 자동 selected.
+      // 메모리 토글만. PRNG / drawOne 호출 0. 결정론 영향 0.
       if (state.boxState.deck.length === 0) return;
+      if (state.pendingPeelResult) return;
+      if (state.settingsSkipPick) return;
+      const rawCount = state.unopenedTickets.filter(
+        (t) => t && (t.lockedResult === null || t.lockedResult === undefined)
+      ).length;
+      if (rawCount === 0) return;
+      // drawn 격자 위치 도출 (history reveal + locked ticket)
+      const boxId = state.boxState.id;
+      const drawnFromHistory = (state.history || [])
+        .filter((e) => e && e.boxId === boxId && e.gridIndex !== null && e.gridIndex !== undefined)
+        .map((e) => e.gridIndex);
+      const drawnFromLocked = state.unopenedTickets
+        .filter((t) => t && t.lockedResult && t.lockedResult.gridIndex !== null && t.lockedResult.gridIndex !== undefined)
+        .map((t) => t.lockedResult.gridIndex);
+      const drawnSet = new Set([...drawnFromHistory, ...drawnFromLocked]);
+      // 잔여 일반 슬롯 (Last One 제외, gridIndex 0 ~ BOX_SIZE - 2) 오름차순 첫 N개
+      const NORMAL_SLOT_COUNT = LINEUP.boxSize - 1;
+      const auto = [];
+      for (let i = 0; i < NORMAL_SLOT_COUNT && auto.length < rawCount; i++) {
+        if (!drawnSet.has(i)) auto.push(i);
+      }
+      if (auto.length < rawCount) return;  // 잔여 부족 (정상 흐름 발생 불가)
+      state.selectedGridIndices = auto;
+      rerender();
+      break;
+    }
+    case "toggle_pick_select": {
+      // M2.1 B-α: 통 격자 슬롯 선택 토글 (메모리 전용. drawOne 호출 X. history 미커밋).
+      // 01_spec 5.14.4.2 / 03_architecture 4.6.
+      if (state.boxState.deck.length === 0) return;
+      if (state.pendingPeelResult) return;
+      if (state.settingsSkipPick) return;
+      const gi = action.gridIndex;
+      const sel = Array.isArray(state.selectedGridIndices) ? [...state.selectedGridIndices] : [];
+      const idx = sel.indexOf(gi);
+      if (idx >= 0) {
+        sel.splice(idx, 1);
+      } else {
+        // raw 매수보다 많이 선택 못함
+        const rawCount = state.unopenedTickets.filter((t) => t && (t.lockedResult === null || t.lockedResult === undefined)).length;
+        if (sel.length >= rawCount) return;
+        sel.push(gi);
+      }
+      state.selectedGridIndices = sel;
+      // selectedGridIndices는 메모리 전용. 영속 X.
+      rerender();
+      break;
+    }
+    case "confirm_pick": {
+      // M2.1 B-α: 사용자가 N매 선택 후 확인 → drawOne N회 splice + ticket lockedResult 부여.
+      // 01_spec 5.14.4.4 / 03_architecture 4.6.
+      if (state.boxState.deck.length === 0) return;
+      if (state.pendingPeelResult) return;
+      if (state.settingsSkipPick) return;
+      const sel = state.selectedGridIndices || [];
+      const rawTicketIndices = [];
+      state.unopenedTickets.forEach((t, i) => {
+        if (t && (t.lockedResult === null || t.lockedResult === undefined)) rawTicketIndices.push(i);
+      });
+      if (sel.length !== rawTicketIndices.length || sel.length === 0) return;
+
+      // 격자 위치 → 잔여 deck 인덱스 변환 (매 호출마다 splice 반영)
+      // 현재 박스의 이미 뽑힌 격자 위치 (history reveal 완료 + lockedResult 보유 ticket)
+      const boxId = state.boxState.id;
+      const drawnFromHistory = (state.history || [])
+        .filter((e) => e && e.boxId === boxId && e.gridIndex !== null && e.gridIndex !== undefined)
+        .map((e) => e.gridIndex);
+      const drawnFromLocked = state.unopenedTickets
+        .filter((t) => t && t.lockedResult && t.lockedResult.gridIndex !== null && t.lockedResult.gridIndex !== undefined)
+        .map((t) => t.lockedResult.gridIndex);
+      const consumedSet = new Set([...drawnFromHistory, ...drawnFromLocked]);
+
+      // selectedGridIndices 순회 (사용자 선택 순서)
+      const newTickets = [...state.unopenedTickets];
+      for (let k = 0; k < sel.length; k++) {
+        const gi = sel[k];
+        // 잔여 일반 격자 정렬 (consumedSet에 없는 것 + sel[0..k-1] 제외)
+        // 잔여 deck 인덱스 j = gi가 잔여 정렬에서 몇 번째
+        let j = 0;
+        for (let pos = 0; pos < gi; pos++) {
+          if (!consumedSet.has(pos)) j++;
+        }
+        const drawIndex = state.boxState.drawnCount;
+        const drawRng = createRng(fnv1a(`${state.seed}|${state.boxRound}|${drawIndex}`));
+        const result = drawOne(state.boxState, drawRng, LINEUP, j);
+        const ticketIdx = rawTicketIndices[k];
+        const enriched = {
+          ...result,
+          gridIndex: gi,
+          drawIndex,
+        };
+        newTickets[ticketIdx] = { ...newTickets[ticketIdx], lockedResult: enriched };
+        consumedSet.add(gi);
+        // Last One 동시 지급 시 Last One 슬롯도 consumed로 표시 (시각 회색은 reveal 시점 - 5.14.4.5)
+      }
+      state.unopenedTickets = newTickets;
+      state.selectedGridIndices = [];
+      persist();
+      rerender();
+      break;
+    }
+    case "peel": {
+      // M2 + B-α: 뜯기 = 페이지플립 카드 reveal 트리거.
+      //   (a) 첫 ticket.lockedResult 보유 (skip OFF 흐름) = drawOne 재호출 X. lockedResult를 pendingPeelResult로.
+      //   (b) skip ON 흐름 = drawOne(splice(0)) 즉시 호출. history append (revealed: true).
+      if (state.boxState.deck.length === 0 && !(state.unopenedTickets[0] && state.unopenedTickets[0].lockedResult)) return;
       if (state.unopenedTickets.length === 0) return;
       if (state.pendingPeelResult) return;
 
-      const drawIndex = state.boxState.drawnCount;
-      const drawRng = createRng(fnv1a(`${state.seed}|${state.boxRound}|${drawIndex}`));
-      const result = drawOne(state.boxState, drawRng, LINEUP);
-      const time = Date.now();
-      const entry = {
-        time,
-        boxId: state.boxState.id,
-        drawIndex,
-        tier: result.tier,
-        typeIndex: result.typeIndex,
-        nameJa: result.nameJa,
-        nameKo: result.nameKo,
-        sizeLabel: result.sizeLabel,
-        isLastOne: result.isLastOne,
-      };
+      const firstTicket = state.unopenedTickets[0];
+      let result;
+      let entry;
+      let requiresReceive;
+      let drawIndex;
+      let time;
 
-      // 주요 보상(A~F: count === 1, tier !== "Last One")은 사용자 "받기" 절차 후 history 등록.
-      // 비주요(G~J) / Last One은 즉시 history 등록.
-      const tierMeta = LINEUP.tiers.find((t) => t.tier === result.tier);
-      const requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
-
-      if (!requiresReceive) {
-        state.history = appendHistory(state.history, entry);
+      if (firstTicket && firstTicket.lockedResult) {
+        // (a) B-α 흐름: ticket.lockedResult 사용
+        result = firstTicket.lockedResult;
+        time = Date.now();
+        drawIndex = result.drawIndex !== undefined ? result.drawIndex : state.boxState.drawnCount - 1;
+        entry = {
+          time,
+          boxId: state.boxState.id,
+          drawIndex,
+          tier: result.tier,
+          typeIndex: result.typeIndex,
+          nameJa: result.nameJa,
+          nameKo: result.nameKo,
+          sizeLabel: result.sizeLabel,
+          isLastOne: result.isLastOne,
+          pickIndex: result.pickIndex,
+          gridIndex: result.gridIndex,
+          revealed: true,
+        };
+        const tierMeta = LINEUP.tiers.find((t) => t.tier === result.tier);
+        requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
+        if (!requiresReceive) {
+          state.history = appendHistory(state.history, entry);
+        }
+        state.dcTickets = addTicket(state.dcTickets, {
+          boxId: state.boxState.id,
+          drawIndex,
+          time,
+        });
+        // 첫 ticket 제거
+        state.unopenedTickets = state.unopenedTickets.slice(1);
+      } else {
+        // (b) skip ON: drawOne 즉시 호출
+        drawIndex = state.boxState.drawnCount;
+        const drawRng = createRng(fnv1a(`${state.seed}|${state.boxRound}|${drawIndex}`));
+        result = drawOne(state.boxState, drawRng, LINEUP);
+        time = Date.now();
+        entry = {
+          time,
+          boxId: state.boxState.id,
+          drawIndex,
+          tier: result.tier,
+          typeIndex: result.typeIndex,
+          nameJa: result.nameJa,
+          nameKo: result.nameKo,
+          sizeLabel: result.sizeLabel,
+          isLastOne: result.isLastOne,
+          pickIndex: result.pickIndex,
+          gridIndex: null,
+          revealed: true,
+        };
+        const tierMeta = LINEUP.tiers.find((t) => t.tier === result.tier);
+        requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
+        if (!requiresReceive) {
+          state.history = appendHistory(state.history, entry);
+        }
+        state.dcTickets = addTicket(state.dcTickets, {
+          boxId: state.boxState.id,
+          drawIndex,
+          time,
+        });
+        state.unopenedTickets = removeTicket(state.unopenedTickets, action.ticketId);
       }
-      state.dcTickets = addTicket(state.dcTickets, {
-        boxId: state.boxState.id,
-        drawIndex,
-        time,
-      });
-      state.unopenedTickets = removeTicket(state.unopenedTickets, action.ticketId);
       persist();
 
       if (action.applyResult) {
         try { action.applyResult(result); } catch (e) {}
       }
 
-      // 마지막 1매(isLastOne) 시: 일반 등급 + Last One 동시 획득.
-      // lastDrawnTier는 항상 실제 마지막 카드 등급. Last One row 글로우는 pendingPeelResult.isLastOne으로 별도 판단.
       state.lastDrawnTier = result.tier;
       state.pendingPeelResult = {
         ...result,
@@ -182,8 +328,8 @@ function dispatch(action) {
       break;
     }
     case "peel_confirm": {
-      // 사용자 명시 확인 → 결과 카드 닫고 다음 카드 / 구매 씬
-      // 단 받기 미완료 (requiresReceive && !receivedConfirmed)면 동작 안 함 (가드)
+      // 사용자 명시 확인 → 결과 카드 닫고 다음 카드 / 구매 씬 / 통 선택 격자.
+      // M2.1 B-α: history는 reveal 시점에 이미 append됨 (peel 분기). 여기서는 pendingPeelResult만 초기화.
       if (state.pendingPeelResult
         && state.pendingPeelResult.requiresReceive
         && !state.pendingPeelResult.receivedConfirmed) {
@@ -191,6 +337,45 @@ function dispatch(action) {
       }
       state.pendingPeelResult = null;
       state.lastDrawnTier = null;
+      persist();
+      rerender();
+      break;
+    }
+    case "pick_hint_seen": {
+      // M2.1: 통 선택 첫 진입 안내 toast 닫힘 → meta.pickHintSeen 영속.
+      if (state.meta && state.meta.pickHintSeen === true) return;
+      state.meta = { ...state.meta, pickHintSeen: true };
+      persist();
+      // 재렌더 생략: toast가 자체 dismiss 모션 중. 다음 렌더 사이클에서 자연 반영.
+      break;
+    }
+    case "set_skip_pick": {
+      // M2.1 B-α: 통 선택 skip 토글 (구매 패널 + 설정 탭 양방향 동기화).
+      const v = !!action.value;
+      if (state.settingsSkipPick === v) return;
+      state.settingsSkipPick = v;
+      // OFF → ON 전환 + raw 인벤토리 ≥ 1: 격자 표시 폐기 + drawOne N회 = splice(0) 일괄 호출.
+      // 01_spec 5.14.6.5.
+      if (v) {
+        const rawIndices = [];
+        state.unopenedTickets.forEach((t, i) => {
+          if (t && (t.lockedResult === null || t.lockedResult === undefined)) rawIndices.push(i);
+        });
+        if (rawIndices.length > 0) {
+          const newTickets = [...state.unopenedTickets];
+          for (let k = 0; k < rawIndices.length; k++) {
+            if (state.boxState.deck.length === 0) break;
+            const drawIndex = state.boxState.drawnCount;
+            const drawRng = createRng(fnv1a(`${state.seed}|${state.boxRound}|${drawIndex}`));
+            const result = drawOne(state.boxState, drawRng, LINEUP);  // splice(0)
+            const enriched = { ...result, gridIndex: null, drawIndex };
+            newTickets[rawIndices[k]] = { ...newTickets[rawIndices[k]], lockedResult: enriched };
+          }
+          state.unopenedTickets = newTickets;
+          state.selectedGridIndices = [];
+        }
+      }
+      persist();
       rerender();
       break;
     }
@@ -211,6 +396,8 @@ function dispatch(action) {
         state.boxRound += 1;
         state.boxState = initBox(state.seed, state.boxRound, LINEUP);
         state.unopenedTickets = [];
+        state.selectedGridIndices = [];  // M2.1 B-α
+        state.pendingPeelResult = null;
         persist();
         rerender();
       };
@@ -233,6 +420,8 @@ function dispatch(action) {
         state.boxRound = BOX_ROUND_INITIAL;
         state.boxState = initBox(state.seed, state.boxRound, LINEUP);
         state.unopenedTickets = [];
+        state.selectedGridIndices = [];  // M2.1 B-α
+        state.pendingPeelResult = null;
         persist();
         rerender();
       };
@@ -287,13 +476,17 @@ function bootstrapState(loaded) {
     galleryExpanded: false,
     lastBuyCount: null,
     lastDrawnTier: null,
-    pendingPeelResult: null,  // 뜯기 후 확인 대기 결과 (메모리 only, 영속 X)
+    pendingPeelResult: null,  // 뜯기 후 확인 대기 결과 (메모리 only)
+    selectedGridIndices: [],  // M2.1 B-α: 통 격자 사용자 선택 (메모리 only, 영속 X)
   };
   if (s.seed === null || s.seed === undefined) {
     s.seed = generateDefaultSeed();
   }
   if (!Array.isArray(s.unopenedTickets)) s.unopenedTickets = [];
+  if (typeof s.settingsSkipPick !== "boolean") s.settingsSkipPick = false;
   ensureBoxState(s);
+  // B-α 새로고침 복원: ticket.lockedResult 보유 시 자동으로 b2 분기 진입 (draw-tab 분기 자동 도출).
+  // 별도 처리 불요 (03_architecture 4.7).
   return s;
 }
 

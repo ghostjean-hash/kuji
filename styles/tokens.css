@@ -25,6 +25,15 @@
   --gauge-bg: #E8DECF;
   --gauge-fill: #C9A961;
 
+  /* 02_data 2.2 통 선택 슬롯 (M2.1 + B-α) */
+  --pick-slot-bg: #F3EDE0;
+  --pick-slot-border: #C9A961;
+  --pick-slot-hover-glow: rgba(201, 169, 97, 0.6);
+  --pick-slot-empty-bg: #E8DECF;
+  --pick-slot-empty-border: #9C8B78;
+  --pick-slot-selected-bg: #FFE9C7;     /* M2.1 B-α */
+  --pick-slot-selected-border: #C8102E; /* M2.1 B-α */
+
   /* 02_data 2.1 등급 색 */
   --tier-a: #D4AF37;
   --tier-b: #C0C0C0;
@@ -85,6 +94,14 @@
   --motion-gauge-ms: 300ms;
   --motion-pop-ms: 400ms;
   --result-pop-peak: 1.1;
+
+  /* 통 선택 모션 (02_data 1.12, M2.1) */
+  --motion-pick-slot-to-card-ms: 400ms;
+  --motion-pick-slot-empty-fade-ms: 200ms;
+  --pick-slot-hover-lift: 4px;
+  --pick-slot-hover-glow-radius: 12px;
+  --pick-slot-min-tap: 24px;
+  --pick-slot-gap: 4px;
 }
 
 @font-face {

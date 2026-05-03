@@ -40,3 +40,12 @@ export const COLOR_TICKET_INNER_BG = "#FAF7F2";
 export const COLOR_TICKET_DIM_RGBA = "rgba(0, 0, 0, 0.5)";
 export const COLOR_GAUGE_BG = "#E8DECF";
 export const COLOR_GAUGE_FILL = "#C9A961";
+
+// 02_data 2.2 통 선택 슬롯 (M2.1 + B-α 재정정)
+export const COLOR_PICK_SLOT_BG = "#F3EDE0";  // 잔여 미선택 슬롯 배경 (보조 패널 톤)
+export const COLOR_PICK_SLOT_BORDER = "#C9A961";  // 잔여 미선택 슬롯 테두리 (골드)
+export const COLOR_PICK_SLOT_HOVER_GLOW = "rgba(201, 169, 97, 0.6)";  // 호버 글로우 (골드 알파)
+export const COLOR_PICK_SLOT_EMPTY_BG = "#E8DECF";  // 뽑힌 슬롯 배경 (옅은 종이)
+export const COLOR_PICK_SLOT_EMPTY_BORDER = "#9C8B78";  // 뽑힌 슬롯 테두리 (약한 잉크)
+export const COLOR_PICK_SLOT_SELECTED_BG = "#FFE9C7";  // M2.1 B-α: 선택됨 슬롯 배경 (밝은 골드 톤)
+export const COLOR_PICK_SLOT_SELECTED_BORDER = "#C8102E";  // M2.1 B-α: 선택됨 슬롯 테두리 (브랜드 빨강 강조)

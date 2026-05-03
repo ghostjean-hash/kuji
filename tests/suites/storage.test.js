@@ -15,6 +15,9 @@ suite("storage", () => {
     assertEq(Array.isArray(s.dcResults), true);
     assertEq(typeof s.meta, "object");
     assertEq(typeof s.storageMode, "string");
+    // M2.1: 신규 키 정합
+    assertEq(typeof s.settingsSkipPick, "boolean");
+    assertEq(typeof s.meta.pickHintSeen, "boolean");
   });
   test("saveState + loadState 라운드트립 (seed/boxRound)", () => {
     clearAll();

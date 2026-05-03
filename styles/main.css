@@ -1036,3 +1036,275 @@ html, body {
 .settings-section ul { list-style: disc; padding-left: var(--space-lg); font-size: var(--font-size-sm); }
 .settings-section ul a { color: var(--frame-red); text-decoration: none; }
 .settings-section ul a:hover { text-decoration: underline; }
+
+/* ===== M2.1: 통 선택 (Pick from Bin) ===== */
+
+/* 통 패널 컨테이너 */
+.pick-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin-top: var(--space-md);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.pick-panel-title {
+  margin: 0 0 var(--space-xs) 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+.pick-panel-sub {
+  margin: 0 0 var(--space-md) 0;
+  font-size: var(--font-size-sm);
+  color: var(--ink-muted);
+}
+
+/* 격자 */
+.pick-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--pick-cols, 10), 1fr);
+  gap: var(--pick-slot-gap);
+  width: 100%;
+}
+
+/* 슬롯 공통 */
+.pick-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  min-width: var(--pick-slot-min-tap);
+  min-height: var(--pick-slot-min-tap);
+  padding: 0;
+  background: var(--pick-slot-bg);
+  border: 1px solid var(--pick-slot-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    transform var(--motion-pick-slot-empty-fade-ms) ease,
+    box-shadow var(--motion-pick-slot-empty-fade-ms) ease,
+    background var(--motion-pick-slot-empty-fade-ms) ease,
+    border-color var(--motion-pick-slot-empty-fade-ms) ease,
+    opacity var(--motion-pick-slot-empty-fade-ms) ease;
+  font-family: inherit;
+  color: var(--ink-primary);
+}
+.pick-slot-dot {
+  display: block;
+  width: 30%;
+  height: 30%;
+  background: var(--frame-red);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+.pick-slot-label {
+  font-family: var(--font-tier-display);
+  font-weight: 800;
+  font-size: var(--font-size-xs);
+  color: var(--frame-red);
+  letter-spacing: -0.02em;
+}
+
+/* 잔여 일반 슬롯 (활성) */
+.pick-slot-normal-available:hover,
+.pick-slot-normal-available:focus-visible {
+  transform: translateY(calc(-1 * var(--pick-slot-hover-lift)));
+  box-shadow: 0 var(--pick-slot-hover-lift) var(--pick-slot-hover-glow-radius) var(--pick-slot-hover-glow);
+  outline: none;
+}
+.pick-slot-normal-available:active {
+  transform: translateY(0);
+  box-shadow: 0 0 var(--pick-slot-hover-glow-radius) var(--pick-slot-hover-glow);
+}
+
+/* 뽑힌 일반 슬롯 (비활성, 회색) */
+.pick-slot-normal-drawn {
+  background: var(--pick-slot-empty-bg);
+  border-color: var(--pick-slot-empty-border);
+  cursor: default;
+  opacity: 0.55;
+}
+.pick-slot-normal-drawn .pick-slot-dot {
+  background: var(--ink-muted);
+  opacity: 0.4;
+}
+
+/* Last One 슬롯 (대기, 골드 강조) */
+.pick-slot-last-one-pending {
+  background: var(--pick-slot-bg);
+  border: 2px solid var(--gold-edge);
+  box-shadow: 0 0 8px rgba(201, 169, 97, 0.4);
+  cursor: not-allowed;
+}
+.pick-slot-last-one-pending .pick-slot-label {
+  color: var(--gold-edge);
+}
+
+/* Last One 슬롯 (자동 지급 완료, 회색) */
+.pick-slot-last-one-drawn {
+  background: var(--pick-slot-empty-bg);
+  border: 2px solid var(--pick-slot-empty-border);
+  cursor: default;
+  opacity: 0.55;
+}
+.pick-slot-last-one-drawn .pick-slot-label {
+  color: var(--ink-muted);
+}
+
+/* B-α: 선택됨 슬롯 (브랜드 빨강 강조 + 체크 + 펄스) */
+.pick-slot-normal-selected {
+  background: var(--pick-slot-selected-bg);
+  border: 2px solid var(--pick-slot-selected-border);
+  box-shadow: 0 0 12px rgba(200, 16, 46, 0.45);
+  transform: translateY(-2px);
+  animation: pickSlotSelectedPulse 1.6s ease-in-out infinite;
+}
+.pick-slot-normal-selected .pick-slot-dot {
+  background: var(--pick-slot-selected-border);
+  opacity: 0.9;
+}
+.pick-slot-check {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--pick-slot-selected-border);
+  line-height: 1;
+}
+@keyframes pickSlotSelectedPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(200, 16, 46, 0.45); }
+  50% { box-shadow: 0 0 18px rgba(200, 16, 46, 0.7); }
+}
+
+/* B-α: 확인 + 자동 선택 버튼 행 */
+.pick-confirm-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+.pick-confirm-button {
+  padding: var(--space-md) var(--space-xl);
+  background: var(--frame-red);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--motion-pick-slot-empty-fade-ms) ease, transform var(--motion-pick-slot-empty-fade-ms) ease;
+}
+.pick-confirm-button:hover:not(:disabled) {
+  background: var(--frame-red-dark);
+  transform: translateY(-1px);
+}
+.pick-confirm-button:disabled {
+  background: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* B-α 보강 5.14.4.8: 자동 선택 버튼 */
+.pick-auto-button {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
+  color: var(--frame-red);
+  border: 1.5px solid var(--frame-red);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--motion-pick-slot-empty-fade-ms) ease, color var(--motion-pick-slot-empty-fade-ms) ease, transform var(--motion-pick-slot-empty-fade-ms) ease;
+}
+.pick-auto-button:hover:not(:disabled) {
+  background: var(--frame-red);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+.pick-auto-button:disabled {
+  border-color: var(--ink-muted);
+  color: var(--ink-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 첫 진입 안내 toast */
+.pick-hint-toast {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-md);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  max-width: calc(100% - 2 * var(--space-lg));
+  padding: var(--space-sm) var(--space-md);
+  background: var(--ink-primary);
+  color: var(--bg-paper);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  font-size: var(--font-size-sm);
+  z-index: 20;
+  animation: pickHintFadeIn var(--motion-modal-ms) ease;
+}
+.pick-hint-toast.is-dismissing {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+  transition: opacity var(--motion-modal-ms) ease, transform var(--motion-modal-ms) ease;
+}
+.pick-hint-text {
+  margin: 0;
+  flex: 1;
+  line-height: 1.4;
+}
+.pick-hint-close {
+  background: transparent;
+  color: var(--gold-edge);
+  border: 1px solid var(--gold-edge);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pick-hint-close:hover {
+  background: var(--gold-edge);
+  color: var(--ink-primary);
+}
+@keyframes pickHintFadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* skip 토글 (구매 패널 + 설정 탭 공통 톤) */
+.buy-skip-row, .settings-skip-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  cursor: pointer;
+  user-select: none;
+}
+.buy-skip-checkbox, .settings-skip-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold-edge);
+  cursor: pointer;
+}
+.buy-skip-label, .settings-skip-label {
+  font-size: var(--font-size-sm);
+  color: var(--ink-secondary);
+}
+.settings-help {
+  font-size: var(--font-size-xs);
+  color: var(--ink-muted);
+  margin: var(--space-sm) 0 0 0;
+  line-height: 1.5;
+}

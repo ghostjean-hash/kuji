@@ -5,10 +5,12 @@ import "./suites/random.test.js";
 import "./suites/hash.test.js";
 import "./suites/box.test.js";
 import "./suites/draw.test.js";
+import "./suites/draw_pick.test.js";  // M2.1
 import "./suites/last_one.test.js";
 import "./suites/double_chance.test.js";
 import "./suites/history.test.js";
 import "./suites/storage.test.js";
+import "./suites/storage_v3.test.js";  // M2.1
 import "./suites/buy.test.js";
 
 const rootEl = document.getElementById("root");
