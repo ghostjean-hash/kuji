@@ -1,0 +1,337 @@
+{
+  "generated_at": "2026-05-02",
+  "knowledge_horizon_note": "WebSearch / WebFetch 기반, 2026-05-02 시점 진행 중 또는 발매 직전 1주일 이내 라인업 우선. 박스 매수 / 등급별 매수가 공식 비공개인 항목은 일반적 통계 기반 추정값을 표기하고 estimated:true로 마킹.",
+  "popularity_evidence_method": "발매 빈도 + IP 메이저성 + SNS 화제성 + 매장 채널 폭 정성 종합. 시장 점유율 정량 데이터는 비공개. 1~5위 순위는 추정 포함.",
+  "systems": [
+    {
+      "system_id": "ichiban_kuji",
+      "name_ja": "一番くじ",
+      "name_ko": "이찌방쿠지",
+      "operator": "BANDAI SPIRITS / BANPRESTO",
+      "popularity_rank": 1,
+      "popularity_evidence": "월 5~10건 발매. ONE PIECE / DRAGONBALL / 鬼滅の刃 / ポケモン 등 메이저 IP 거의 독점. 편의점 전국 유통. 공식 X 팔로워 50만+. 본 조사 시점 5월에만 たまごっち / ワンピース / ドラゴンボール / HUNTER×HUNTER / アイカツ / ポケモン 30주년 등 다수 발매 진행.",
+      "mechanics": {
+        "price_jpy_typical": [790, 800, 850],
+        "tax_included": true,
+        "box_size_typical": [60, 70, 80, 90],
+        "box_size_note": "IP별 차이. ONE PIECE / DRAGONBALL / 소년만화 IP는 80매가 표준. ディズニー 계열은 60~66매. ポケモン은 90매.",
+        "tiers_typical": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "Last One"],
+        "without_replacement": true,
+        "last_one_bonus": true,
+        "last_one_rule": "박스의 마지막 1매를 뽑은 사람에게 ラストワン賞 1개를 추가 지급",
+        "double_chance": true,
+        "double_chance_rule": "쿠지권 번호 응모. 일반적으로 50~100명 추첨. 발매~약 3개월 후까지",
+        "outlet_types": ["convenience_store", "bookstore", "specialty", "official_shop", "online"],
+        "digital_channel": "一番くじONLINE (online.1kuji.com)",
+        "purchase_unit_options": ["single"],
+        "guaranteed_top_tier": false
+      },
+      "current_top_lineup": {
+        "lineup_id": "ichiban_onepiece_luffy_2026_05",
+        "title_ja": "一番くじ ワンピース MONKEY.D.LUFFY－冒険の記憶と未来への航路－",
+        "title_ko": "이찌방쿠지 원피스 MONKEY.D.LUFFY - 모험의 기억과 미래로의 항로",
+        "ip": "ONE PIECE (ワンピース)",
+        "release_date_store": "2026-05-02",
+        "release_date_online": "2026-05-07T17:00:00+09:00",
+        "campaign_end_date": "2026-08-31",
+        "outlet": ["Lawson", "bookstore", "hobby_shop", "Mugiwara_Store", "ONE_PIECE_official_shop", "ichibankuji_online"],
+        "price_jpy": 790,
+        "tax_included": true,
+        "box_size": 80,
+        "box_size_estimated": true,
+        "tiers": [
+          {"tier": "A", "name_ja": "モンキー・D・ルフィ 魂豪示像", "name_ko": "몽키 D 루피 영혼호시상", "type_count": 1, "count_per_box": 1, "count_estimated": true},
+          {"tier": "B", "name_ja": "モンキー・D・ルフィ MASTERLISE", "name_ko": "몽키 D 루피 MASTERLISE", "type_count": 2, "count_per_box": 2, "count_estimated": true},
+          {"tier": "C", "name_ja": "モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment", "name_ko": "몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment", "type_count": 1, "count_per_box": 2, "count_estimated": true},
+          {"tier": "D", "name_ja": "モンキー・D・ルフィ ギア5 ONDIMENSION", "name_ko": "몽키 D 루피 기어5 ONDIMENSION", "type_count": 1, "count_per_box": 3, "count_estimated": true},
+          {"tier": "E", "name_ja": "はこにわーるど", "name_ko": "하코니와루도 (디오라마 박스)", "type_count": 2, "count_per_box": 4, "count_estimated": true},
+          {"tier": "F", "name_ja": "モンキー・D・ルフィ ミニフィギュア", "name_ko": "몽키 D 루피 미니 피규어", "type_count": 3, "count_per_box": 6, "count_estimated": true},
+          {"tier": "G", "name_ja": "タオル", "name_ko": "타올", "type_count": 8, "count_per_box": 12, "count_estimated": true},
+          {"tier": "H", "name_ja": "アクリルマグネット", "name_ko": "아크릴 마그넷", "type_count": 14, "count_per_box": 16, "count_estimated": true},
+          {"tier": "I", "name_ja": "デスクアソート", "name_ko": "데스크 아소트", "type_count": 10, "count_per_box": 33, "count_estimated": true},
+          {"tier": "Last One", "name_ja": "モンキー・D・ルフィ MASTERLISE PLUS", "name_ko": "몽키 D 루피 MASTERLISE PLUS", "type_count": 1, "count_per_box": 1, "count_per_box_note": "박스 마지막 1매 뽑은 사람에게 동시 지급. 박스 80매에 별도 카운트되지 않음"}
+        ],
+        "double_chance_prize": {
+          "name_ja": "TO BE CONTINUED THE GIGANT NAME",
+          "name_ko": "TO BE CONTINUED 거대 네임 피규어",
+          "size_cm": 35,
+          "winners_total": 100
+        },
+        "sources": [
+          "https://1kuji.com/products/onep101",
+          "https://one-piece.com/news/77238/index.html",
+          "https://hobby.dengeki.com/news/2980302/",
+          "https://www.inside-games.jp/article/2026/05/02/180800.html"
+        ]
+      },
+      "secondary_lineup": {
+        "lineup_id": "ichiban_dragonball_chronicle_2026_05",
+        "title_ja": "一番くじ ドラゴンボール THE CHRONICLE OF GOKU",
+        "title_ko": "이찌방쿠지 드래곤볼 THE CHRONICLE OF GOKU",
+        "ip": "DRAGONBALL (ドラゴンボール)",
+        "release_date_store": "2026-05-08",
+        "campaign_end_date": "2026-08-31",
+        "outlet": ["Seven_Eleven", "Ito_Yokado", "Yume_Town"],
+        "price_jpy": 790,
+        "tax_included": true,
+        "box_size": 80,
+        "box_size_estimated": true,
+        "tiers": [
+          {"tier": "A", "name_ja": "孫悟空 MASTERLISE", "name_ko": "손오공 MASTERLISE", "type_count": 1, "size_cm": 11, "count_per_box": 1, "count_estimated": true},
+          {"tier": "B", "name_ja": "ブルマ MASTERLISE", "name_ko": "부르마 MASTERLISE", "type_count": 1, "size_cm": 21, "count_per_box": 1, "count_estimated": true},
+          {"tier": "C", "name_ja": "超サイヤ人孫悟空 MASTERLISE", "name_ko": "초사이어인 손오공 MASTERLISE", "type_count": 1, "size_cm": 25, "count_per_box": 1, "count_estimated": true},
+          {"tier": "D", "name_ja": "超サイヤ人2孫悟空 MASTERLISE", "name_ko": "초사이어인2 손오공 MASTERLISE", "type_count": 1, "size_cm": 25, "count_per_box": 1, "count_estimated": true},
+          {"tier": "E", "name_ja": "魔人ベジータ MASTERLISE", "name_ko": "마인 베지타 MASTERLISE", "type_count": 1, "size_cm": 24, "count_per_box": 1, "count_estimated": true},
+          {"tier": "F", "name_ja": "孫悟空 身勝手の極意 MASTERLISE", "name_ko": "손오공 자림무도 MASTERLISE", "type_count": 1, "size_cm": 25, "count_per_box": 1, "count_estimated": true},
+          {"tier": "G", "name_ja": "引っ掛けアクリルスタンド", "name_ko": "걸이형 아크릴 스탠드", "type_count": 8, "size_cm": 7.5, "count_per_box": 8, "count_estimated": true},
+          {"tier": "H", "name_ja": "ラバーチャーム", "name_ko": "러버 참", "type_count": 8, "size_cm": 6.5, "count_per_box": 8, "count_estimated": true},
+          {"tier": "I", "name_ja": "クリアポスター (A3)", "name_ko": "클리어 포스터 (A3)", "type_count": 10, "size_cm": "A3", "count_per_box": 24, "count_estimated": true},
+          {"tier": "J", "name_ja": "ジャガードミニタオル", "name_ko": "자카드 미니 타올", "type_count": 10, "size_cm": 25, "count_per_box": 33, "count_estimated": true},
+          {"tier": "Last One", "name_ja": "大猿悟空 SOFVICS", "name_ko": "거대 원숭이 손오공 SOFVICS", "type_count": 1, "size_cm": 26, "count_per_box": 1, "count_per_box_note": "박스 마지막 1매 보너스"}
+        ],
+        "double_chance_prize": {
+          "name_ja": "大猿悟空 SOFVICS",
+          "name_ko": "거대 원숭이 손오공 SOFVICS",
+          "winners_total": 50,
+          "note": "ラストワン賞과 동일 상품"
+        },
+        "sources": [
+          "https://1kuji.com/products/db_goku",
+          "https://hobby.dengeki.com/news/2977500/",
+          "https://www.inside-games.jp/article/2026/04/28/180618.html",
+          "https://magmix.jp/post/349310"
+        ]
+      }
+    },
+    {
+      "system_id": "sega_lucky",
+      "name_ja": "セガ ラッキーくじ",
+      "name_ko": "SEGA 럭키 쿠지",
+      "operator": "株式会社セガ (SEGA)",
+      "popularity_rank": 2,
+      "popularity_evidence": "온라인 동시 4~6건 진행. 呪術廻戦 / 名探偵コナン / ラブライブ! / 東京リベンジャーズ / 幽☆遊☆白書 / 忍たま乱太郎 등 애니 IP 폭넓음. 게임센터 채널도 보유. 본 조사 시점 セガ ラッキーくじオンライン 메인 노출은 呪術廻戦 5주년.",
+      "mechanics": {
+        "price_jpy_typical": [500, 770, 800],
+        "tax_included": true,
+        "shipping_jpy_first_only": 660,
+        "box_size_typical": [60, 70, 80],
+        "box_size_note": "비공개. 매장 박스는 60~80매 추정. 온라인은 박스 단위 미공개, 잔여 카운터 운영.",
+        "tiers_typical": ["A", "B", "C", "D", "E", "F", "G", "H", "Last Lucky"],
+        "without_replacement": true,
+        "last_one_bonus": true,
+        "last_one_rule": "ラストラッキー賞 - 박스 또는 잔여 마지막 1매를 뽑은 사람에게 추가 지급",
+        "double_chance": true,
+        "double_chance_rule": "Wラッキー賞 (W럭키 賞) - 응모 형식, 라인업별 상이",
+        "outlet_types": ["amusement_facility", "convenience_store", "specialty", "online"],
+        "digital_channel": "セガ ラッキーくじオンライン (segaluckykujionline.net)",
+        "purchase_unit_options": ["single", "10_set", "30_set"],
+        "guaranteed_top_tier": false
+      },
+      "current_top_lineup": {
+        "lineup_id": "sega_jujutsu_5th_2026_04",
+        "title_ja": "セガ ラッキーくじオンライン アニメ『呪術廻戦』5周年",
+        "title_ko": "SEGA 럭키 쿠지 온라인 - 애니메이션 「주술회전」 5주년",
+        "ip": "呪術廻戦 (주술회전)",
+        "release_date_online": "2026-04-24T11:00:00+09:00",
+        "campaign_end_date": "2026-05-31T23:59:00+09:00",
+        "outlet": ["sega_lucky_kuji_online"],
+        "price_jpy": 800,
+        "tax_included": true,
+        "shipping_jpy_first_only": 660,
+        "box_size": null,
+        "box_size_note": "온라인 잔여 카운터 형식. 박스 단위 미공개",
+        "tiers": [
+          {"tier": "A", "name_ja": "マグカップ", "name_ko": "머그컵", "type_count": null, "count_per_box": null},
+          {"tier": "B", "name_ja": "カードファイル", "name_ko": "카드 파일", "type_count": null, "count_per_box": null},
+          {"tier": "C", "name_ja": "ぬいぐるみマスコット", "name_ko": "누이구루미 마스코트 (인형)", "type_count": null, "count_per_box": null},
+          {"tier": "D", "name_ja": "アクリルチャーム", "name_ko": "아크릴 참", "type_count": null, "count_per_box": null},
+          {"tier": "E", "name_ja": "カードセット", "name_ko": "카드 세트", "type_count": null, "count_per_box": null},
+          {"tier": "F", "name_ja": "ステッカーセット", "name_ko": "스티커 세트", "type_count": null, "count_per_box": null},
+          {"tier": "Last Lucky", "name_ja": "ラストラッキー賞 (상세 미공개)", "name_ko": "라스트럭키賞", "type_count": null, "count_per_box": null, "data_status": "missing_official_detail"}
+        ],
+        "double_chance_prize": {
+          "name_ja": "Wラッキー賞 (상세 미공개)",
+          "data_status": "missing_official_detail"
+        },
+        "data_quality_note": "WebFetch 추출 시점에 동적 콘텐츠로 인해 ラストラッキー賞 / Wラッキー賞 / 등급별 매수 미확보. 시뮬레이터 적용 전 공식 페이지 재방문 필요.",
+        "sources": [
+          "https://www.sega.jp/topics/detail/260424_7/",
+          "https://segaplaza.jp/lp/jujutsukaisen_5th_kuji/",
+          "https://premium.gamepedia.jp/hobby/archives/145275",
+          "https://news.livedoor.com/article/detail/31110160/"
+        ]
+      }
+    },
+    {
+      "system_id": "happy_kuji",
+      "name_ja": "Happyくじ",
+      "name_ko": "Happy 쿠지",
+      "operator": "サニーサイドアップ 등 라이선스 합작",
+      "popularity_rank": 3,
+      "popularity_evidence": "분기 페이스. PIXAR / Disney / Sanrio 라인이 강함. 세븐 일레븐 전국 유통. PIXAR 2026는 PIXAR 쿠지 시리즈 제3탄으로 임팩트 큼.",
+      "mechanics": {
+        "price_jpy_typical": [700, 800, 870],
+        "tax_included": true,
+        "box_size_typical": [60, 70, 80],
+        "box_size_note": "비공개. PIXAR 라인은 70매 추정.",
+        "tiers_typical": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "Last"],
+        "without_replacement": true,
+        "last_one_bonus": true,
+        "last_one_rule": "ラスト賞 - 박스 마지막 1매를 뽑은 사람에게 추가 지급",
+        "double_chance": true,
+        "double_chance_rule": "ハッピーチャレンジ 캠페인 - 라인업별 상이",
+        "outlet_types": ["convenience_store", "supermarket"],
+        "digital_channel": null,
+        "purchase_unit_options": ["single"],
+        "guaranteed_top_tier": false
+      },
+      "current_top_lineup": {
+        "lineup_id": "happy_pixar_2026",
+        "title_ja": "Happyくじ / PIXAR 2026",
+        "title_ko": "Happy 쿠지 / 픽사 2026",
+        "ip": "PIXAR (디즈니/픽사 다수 작품)",
+        "release_date_store": "2026-04-17",
+        "campaign_end_date": "2026-05-31T23:59:00+09:00",
+        "outlet": ["Seven_Eleven", "Ito_Yokado", "Yume_Town"],
+        "price_jpy": 800.80,
+        "tax_included": true,
+        "box_size": 70,
+        "box_size_estimated": true,
+        "tiers": [
+          {"tier": "A", "name_ja": "スペシャルシーンフィギュア『リメンバー・ミー』", "name_ko": "스페셜 신 피규어 「코코」", "type_count": 1, "count_per_box": null, "count_estimated_low": 1},
+          {"tier": "B", "name_ja": "Tシャツ", "name_ko": "티셔츠", "type_count": 1, "count_per_box": null},
+          {"tier": "C", "name_ja": "シーンフィギュア『トイ・ストーリー3』", "name_ko": "신 피규어 「토이스토리 3」", "type_count": 1, "count_per_box": null},
+          {"tier": "D", "name_ja": "シーンフィギュア『ウォーリー』", "name_ko": "신 피규어 「월-E」", "type_count": 1, "count_per_box": null},
+          {"tier": "E", "name_ja": "シーンフィギュア『マイ・エレメント』", "name_ko": "신 피규어 「엘리멘탈」", "type_count": 1, "count_per_box": null},
+          {"tier": "F", "name_ja": "フェイスマグネット", "name_ko": "페이스 마그넷", "type_count": 4, "count_per_box": null},
+          {"tier": "G", "name_ja": "フィギュアカードホルダー", "name_ko": "피규어 카드홀더", "type_count": 4, "count_per_box": null},
+          {"tier": "H", "name_ja": "キャンバスボード", "name_ko": "캔버스 보드", "type_count": 3, "count_per_box": null},
+          {"tier": "I", "name_ja": "ポストカードブック", "name_ko": "포스트카드 북", "type_count": 5, "count_per_box": null},
+          {"tier": "J", "name_ja": "キーチェーンコレクション", "name_ko": "키체인 컬렉션", "type_count": 8, "count_per_box": null},
+          {"tier": "K", "name_ja": "フラットポーチ", "name_ko": "플랫 파우치", "type_count": 7, "count_per_box": null},
+          {"tier": "L", "name_ja": "ピクサーカードコレクション", "name_ko": "픽사 카드 컬렉션", "type_count": 9, "count_per_box": null},
+          {"tier": "Last", "name_ja": "『モンスターズ・インク』ポスターフィギュア", "name_ko": "「몬스터 주식회사」 입체 포스터 피규어", "type_count": 1, "count_per_box": 1, "count_per_box_note": "박스 마지막 1매 보너스"}
+        ],
+        "double_chance_prize": null,
+        "data_quality_note": "공식 페이지에 등급별 매수 미공개. 시뮬레이터는 박스 70매 가정 + ラスト 1매 보너스 룰로 시작 필요. ハッピーチャレンジ 캠페인 추가 추첨 룰은 별도 확인 필요.",
+        "sources": [
+          "https://www.h-kuji.com/goods/pixar2026/",
+          "https://prtimes.jp/main/html/rd/p/000000064.000108253.html",
+          "https://hobby.dengeki.com/news/2967207/",
+          "https://www.cinemacafe.net/article/2026/04/16/108686.html",
+          "https://game.watch.impress.co.jp/docs/news/2099548.html"
+        ]
+      }
+    },
+    {
+      "system_id": "kotobukiya_kuji",
+      "name_ja": "コトブキヤくじ",
+      "name_ko": "코토부키야 쿠지",
+      "operator": "株式会社 壽屋 (KOTOBUKIYA)",
+      "popularity_rank": 4,
+      "popularity_evidence": "온라인 한정이지만 30연 S賞 확정 메커닉이 차별점. アイドルマスター 시리즈와 코토부키야 자체 IP (創彩少女庭園, メガミデバイス) 코어 팬덤 강함. 월 2~4건 발매.",
+      "mechanics": {
+        "price_jpy_typical": [850, 880],
+        "tax_included": true,
+        "shipping_jpy_first_only": 660,
+        "box_size_typical": [100],
+        "box_size_note": "확률표가 100분율로 공개되는 라인업 다수. 100매 박스로 가정 가능.",
+        "tiers_typical": ["S", "A", "B", "C", "D"],
+        "without_replacement": true,
+        "last_one_bonus": false,
+        "double_chance": false,
+        "outlet_types": ["online"],
+        "digital_channel": "コトブキヤくじ (kuji.kotobukiya.co.jp)",
+        "purchase_unit_options": ["single", "10_set", "30_set"],
+        "guaranteed_top_tier": true,
+        "guaranteed_rule": "30연 세트 구매 시 S賞 1개 확정. 나머지 29매는 통상 추첨"
+      },
+      "current_top_lineup": {
+        "lineup_id": "kotobukiya_xenoglossia_2026_04",
+        "title_ja": "コトブキヤくじ アイドルマスター XENOGLOSSIA",
+        "title_ko": "코토부키야 쿠지 - 아이돌마스터 XENOGLOSSIA",
+        "ip": "アイドルマスター XENOGLOSSIA",
+        "release_date_online": "2026-04-17T10:00:00+09:00",
+        "campaign_end_date": "2026-05-17T23:59:00+09:00",
+        "delivery_estimate": "2026-08",
+        "outlet": ["kotobukiya_kuji_online"],
+        "price_jpy": 850,
+        "tax_included": true,
+        "shipping_jpy_first_only": 660,
+        "box_size": 100,
+        "tiers": [
+          {"tier": "S", "name_ja": "描き下ろし BIGアクリルスタンド", "name_ko": "신규 작화 BIG 아크릴 스탠드", "type_count": 2, "selectable": true, "size_cm_max": 25, "count_per_box": 2},
+          {"tier": "A", "name_ja": "A3クリアポスター", "name_ko": "A3 클리어 포스터", "type_count": 2, "selectable": true, "size_mm": "297x420", "count_per_box": 6},
+          {"tier": "B", "name_ja": "アクリルスタンド", "name_ko": "아크릴 스탠드", "type_count": 11, "selectable": false, "size_cm": 12, "count_per_box": 18},
+          {"tier": "C", "name_ja": "思い出場面写アクリルチャーム", "name_ko": "추억 장면 아크릴 참", "type_count": 8, "selectable": false, "size_mm": "80x60", "count_per_box": 24},
+          {"tier": "D", "name_ja": "缶バッジ", "name_ko": "캔 배지", "type_count": 15, "selectable": false, "size_mm": "Φ57", "count_per_box": 50}
+        ],
+        "double_chance_prize": null,
+        "guaranteed_30set_prize": {
+          "tier": "S",
+          "name_ja": "描き下ろし BIGアクリルスタンド",
+          "rule": "30연 구매 시 S賞 1개 확정. 나머지 29매는 통상 추첨"
+        },
+        "sources": [
+          "https://kuji.kotobukiya.co.jp/lp/xenoglossia/",
+          "https://www.4gamer.net/games/492/G049203/20260415019/",
+          "https://www.famitsu.com/article/202604/71972",
+          "https://hobby.dengeki.com/news/2977120/",
+          "https://www.sunrise-inc.co.jp/work/news.php?id=23517"
+        ]
+      }
+    },
+    {
+      "system_id": "furyu_kuji",
+      "name_ja": "フリューくじ",
+      "name_ko": "후류 쿠지",
+      "former_name_ja": "みんなのくじ",
+      "former_name_ko": "모두의 쿠지",
+      "operator": "フリュー株式会社",
+      "popularity_rank": 5,
+      "popularity_evidence": "월 1~3건 발매. 初音ミク / 忍たま乱太郎 / 刀剣乱舞ONLINE 등 여성 / 코어 팬 IP. 2025-03부터 「みんなのくじ」 → 「フリューくじ」로 명칭 변경. キャラ広場 자체 채널 보유.",
+      "mechanics": {
+        "price_jpy_typical": [690, 750, 800],
+        "tax_included": true,
+        "box_size_typical": null,
+        "box_size_note": "라인업별 상이. 비공개가 일반적.",
+        "tiers_typical": ["A", "B", "C", "D", "E", "F", "G", "Last"],
+        "without_replacement": true,
+        "last_one_bonus": true,
+        "last_one_rule": "라인업별 명칭 차이. 일반적으로 「ラスト賞」으로 통일",
+        "double_chance": true,
+        "double_chance_rule": "Wチャンス 등 캠페인 명. 라인업별 상이",
+        "outlet_types": ["convenience_store", "specialty"],
+        "digital_channel": "キャラ広場 (charahiroba.com/minkuji)",
+        "purchase_unit_options": ["single"],
+        "guaranteed_top_tier": false
+      },
+      "current_top_lineup": {
+        "lineup_id": "furyu_hatsune_miku_citrus_2026_03",
+        "title_ja": "フリューくじ 初音ミク Citrus MIKU",
+        "title_ko": "후류 쿠지 - 하츠네 미쿠 Citrus MIKU",
+        "ip": "初音ミク (하츠네 미쿠 / 보컬로이드)",
+        "release_date_store": "2026-03-07",
+        "campaign_end_date": null,
+        "outlet": ["convenience_store", "kyarahiroba"],
+        "price_jpy": 800,
+        "tax_included": true,
+        "box_size": null,
+        "tiers": [],
+        "data_quality_note": "본 조사 시점 (2026-05-02) フリューくじ의 가장 핫한 진행 중 라인업의 등급별 풀라인업 정보가 공식 사이트에서 충실히 공개되지 않음. 사용자 검토 후 SSOT 작성 시 별도 데이터 확보 필요. 후보로 「フリューくじ 初音ミク Citrus MIKU」(2026-03-07 발매), 「フリューくじ 忍たま乱太郎 ふんわり桜もちぴこの段」(2026-03-14), 「フリューくじ 刀剣乱舞ONLINE 御伴散歩 ～ぽちくじ～」(2026-01-24).",
+        "sources": [
+          "https://charahiroba.com/minkuji/lineup/",
+          "https://prtimes.jp/main/html/rd/p/000002077.000005167.html",
+          "https://x.com/furyu_kuji"
+        ]
+      }
+    }
+  ],
+  "global_notes": [
+    "2026-05-02 시점 一番くじ 카테고리에서 가장 임팩트 큰 발매는 ワンピース MONKEY.D.LUFFY (당일 발매)와 ドラゴンボール THE CHRONICLE OF GOKU (5/8 발매 직전)이며, 둘 다 등급 풀공개 상태.",
+    "コトブキヤくじ는 30연 S賞 확정 메커닉이 시뮬레이터 차별 포인트로 가장 적합. 100매 박스 + S/A/B/C/D 5등급 분포가 깔끔하게 공개됨.",
+    "SEGA 럭키 쿠지 온라인은 공식 페이지가 동적 콘텐츠라 WebFetch 추출 한계가 있음. ラストラッキー / Wラッキー賞 디테일은 사용자 검토 시점에 공식 페이지 재방문으로 보강 필요.",
+    "フリューくじ는 2026-05-02 시점 가장 핫한 진행 중 라인업의 등급 풀공개가 약함. 시뮬레이터 시작 라인업으로는 우선순위 후순위로 권장.",
+    "박스 매수 / 등급별 매수가 「공식 비공개」인 항목이 다수. 시뮬레이터 SSOT (docs/02_data.md)는 추정값을 표기하고 estimated:true 플래그를 유지해 신뢰도를 명시 필요."
+  ]
+}

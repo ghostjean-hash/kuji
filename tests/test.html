@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Kuji Tests</title>
+<style>
+  body { font-family: "Consolas", "Menlo", monospace; padding: 16px; background: #0f172a; color: #e2e8f0; }
+  h1 { font-size: 18px; }
+  .suite { margin: 16px 0; padding: 8px; background: #1e293b; border-radius: 6px; }
+  .suite h2 { font-size: 14px; margin: 0 0 8px 0; color: #94a3b8; }
+  .test { padding: 4px 0; font-size: 13px; }
+  .test.pass { color: #10b981; }
+  .test.fail { color: #ef4444; white-space: pre-wrap; }
+  .summary { margin-top: 24px; padding: 12px; background: #334155; font-weight: bold; border-radius: 6px; }
+  .summary.ok { color: #10b981; }
+  .summary.bad { color: #ef4444; }
+</style>
+</head>
+<body>
+<h1>Kuji Tests</h1>
+<div id="root"></div>
+<script type="module" src="./runner.js"></script>
+</body>
+</html>

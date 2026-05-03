@@ -1,0 +1,26 @@
+# 잘못 생성된 빈 폴더 (자비스 절대경로 처리 사고)
+D:claude_codekujiresearch/
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / 빌드 산출물 (현재 프로젝트는 빌드 X지만 안전상)
+node_modules/
+dist/
+build/
+
+# 로그
+*.log
+npm-debug.log*
+
+# 클로드 코드 사용자 로컬 설정
+.claude/settings.local.json

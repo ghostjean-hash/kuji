@@ -1,0 +1,94 @@
+:root {
+  /* 02_data 2.2 UI 색 (M2 Light 테마) */
+  --bg-paper: #FAF7F2;
+  --bg-card: #FFFFFF;
+  --bg-elevated: #F3EDE0;
+  --ink-primary: #1F1A14;
+  --ink-secondary: #4A3F30;
+  --ink-muted: #9C8B78;
+  --border-subtle: #E8DECF;
+  --frame-red: #C8102E;
+  --frame-red-dark: #A30D24;
+  --gold-edge: #C9A961;
+  --gold-edge-soft: #E5D5A8;
+
+  --result-normal: #1F1A14;
+  --result-last-one: #C8102E;
+  --result-dc-win: #2A8C5F;
+  --result-dc-miss: #9C8B78;
+  --badge-estimated: #C9A961;
+  --tier-fallback: #9C8B78;
+
+  --ticket-outer-bg: #C8102E;
+  --ticket-inner-bg: #FAF7F2;
+  --ticket-dim: rgba(0, 0, 0, 0.5);
+  --gauge-bg: #E8DECF;
+  --gauge-fill: #C9A961;
+
+  /* 02_data 2.1 등급 색 */
+  --tier-a: #D4AF37;
+  --tier-b: #C0C0C0;
+  --tier-c: #CD7F32;
+  --tier-d: #E8B4D8;
+  --tier-e: #A78BFA;
+  --tier-f: #60A5FA;
+  --tier-g: #34D399;
+  --tier-h: #FDE047;
+  --tier-i: #F97316;
+  --tier-j: #94A3B8;
+  --tier-last-one: #C8102E;
+
+  /* 간격 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+
+  /* 폰트 (02_data 1.11) */
+  --font-body-ko: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body-ja: "Noto Serif JP", "Yu Mincho", serif;
+  --font-tier-display: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "D2Coding", monospace;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 32px;
+  --font-size-tier-display: 64px;
+
+  /* 모서리 */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  /* 레이아웃 */
+  --tab-bar-height: 64px;
+  --max-content-width: 540px;
+
+  /* 카드 비율 (02_data 1.9) */
+  --card-aspect: 5.5 / 4;
+
+  /* 그림자 */
+  --shadow-card: 0 2px 8px rgba(31, 26, 20, 0.06);
+  --shadow-elevated: 0 4px 16px rgba(31, 26, 20, 0.10);
+  --shadow-modal: 0 12px 40px rgba(31, 26, 20, 0.20);
+  --shadow-gold-glow: 0 0 24px rgba(201, 169, 97, 0.6);
+  --shadow-red-glow: 0 0 16px rgba(200, 16, 46, 0.4);
+
+  /* 모션 (02_data 1.9) */
+  --motion-peel-ms: 700ms;
+  --motion-modal-ms: 200ms;
+  --motion-gauge-ms: 300ms;
+  --motion-pop-ms: 400ms;
+  --result-pop-peak: 1.1;
+}
+
+@font-face {
+  font-display: swap;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+JP:wght@400;700&family=Inter:wght@600;800;900&display=swap');
