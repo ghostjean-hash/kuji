@@ -158,6 +158,44 @@
 
 A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last One의 파일 키는 `Z` (`PRODUCT_IMAGE_FILE_KEYS["Last One"] = "Z"`). G~J는 SVG 임시 자산 유지 (M3 이후 사진 교체 후보). assets.js는 `<img class="product-photo" loading="lazy" decoding="async">` 문자열을 반환. CSS는 `.last-one-image / .product-image-wrap / .hero-image`에서 `svg, img` 동치 셀렉터로 처리.
 
+### 1.7.2. github 호환 placeholder 자산 사양 (M2.1 4.13.12 신설)
+
+`the_chronicle_of_goku_img/`는 BANDAI SPIRITS 공식 자산 폴더로 `.gitignore` 유지 (라이선스 0 정책). github에서 이미지가 broken되는 문제를 해결하기 위해 별도 라이선스 클린 placeholder 폴더 `the_chronicle_of_goku_placeholder/`를 도입한다.
+
+**폴더 정책**
+
+- `the_chronicle_of_goku_img/` - 로컬 전용. 사용자 BANDAI 공식 자산 보관. `.gitignore` 유지.
+- `the_chronicle_of_goku_placeholder/` - git 추적. 라이선스 클린 추상화 raster 7장 배치. 사용자 외부 AI 도구 (Midjourney / DALL-E / Stable Diffusion / Firefly 등) 생성 후 배치.
+
+**파일 스펙**
+
+| 항목 | 값 |
+|---|---|
+| 포맷 | webp |
+| 사이즈 | 512x512 (1:1) |
+| 파일명 | `A.webp` ~ `F.webp` + `Z.webp` (Last One은 Z) |
+| 스타일 | 단순 anime 일러스트, clean lineart, flat shading, 1:1 정사각 |
+| 회피 | 텍스트/한자/영문자, 시그니처 IP 마크 (M 이마 / 거북이 한자 등), 캐릭터 고유명 |
+| 일관성 | 7장 동일 모델/시드/스타일 권장 |
+
+**프롬프트 (영문, AI 도구 호환성)**
+
+| 키 | 등급 | 프롬프트 |
+|---|---|---|
+| A | A상 | `simple anime-style portrait of a martial artist in orange gi uniform with white belt, short black spiky hair, calm pose, plain warm beige background, clean lineart, flat shading, 1:1 square` |
+| B | B상 | `simple anime-style portrait of a young woman scientist with short blue bob hair and yellow headband, light blue jumpsuit, smiling, plain pastel background, clean lineart, flat shading, 1:1 square` |
+| C | C상 | `simple anime-style portrait of a martial artist in orange gi with golden spiky hair, faint yellow energy aura, plain warm background, clean lineart, flat shading, 1:1 square` |
+| D | D상 | `simple anime-style portrait of a martial artist in orange gi with golden spiky hair, blue lightning sparks around figure, intense expression, plain dark background, clean lineart, flat shading, 1:1 square` |
+| E | E상 | `simple anime-style portrait of a stern warrior in dark navy battle armor with white gloves and boots, short black spiky hair (no forehead mark), plain purple background, clean lineart, flat shading, 1:1 square` |
+| F | F상 | `simple anime-style portrait of a calm martial artist in orange gi with silver-white spiky hair, soft blue meditation aura, eyes closed, plain pale blue background, clean lineart, flat shading, 1:1 square` |
+| Z | Last One | `simple anime-style illustration of a giant brown ape figure under a full moon, night sky background, stylized non-realistic, clean lineart, flat shading, 1:1 square` |
+
+**적용 단계**
+
+1. 사용자가 7장 외부 생성 후 `the_chronicle_of_goku_placeholder/{A~F,Z}.webp`에 배치.
+2. assets.js의 `PRODUCT_IMAGE_BASE_PATH`를 `"the_chronicle_of_goku_placeholder"`로 수정.
+3. 시각 검증 + commit + push.
+
 ## 1.8. 뜯기 애니메이션 상수 (M2 신설)
 
 | 키 | 값 | 의미 |

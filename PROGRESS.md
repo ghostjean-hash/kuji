@@ -188,6 +188,8 @@ UI / UX 사용자 명시 정정 다수. 8단계 정식 검증 대신 사용자 �
 4.13.10. **B-α 보강 - 자동 선택 버튼 (사용자 명시 승인, 권장 default 진행)**: 5.14.4.8 신설 (잔여 일반 슬롯 격자 인덱스 오름차순 첫 N개 selected 일괄 설정. PRNG 호출 0, 결정론 영향 0). pick-panel "자동 선택 N매" 버튼 (확인 버튼 옆) + main.js dispatch.auto_pick_select + 03_architecture 3.14 갱신 + main.css .pick-auto-button 신설. 4 phase, 약 60줄.
 4.13.11. **자산 사진 교체 (사용자 명시 지시)**: A~F + Last One의 SVG 임시 자산을 `the_chronicle_of_goku_img/{A~F,Z}.webp`로 교체. assets.js에 `PRODUCT_IMAGE_BASE_PATH` / `PRODUCT_IMAGE_FILE_KEYS` (Last One → "Z") / `PRODUCT_IMAGE_ALT` 상수 + `buildProductPhoto` 헬퍼 신설. main.css의 `.last-one-image svg` / `.product-image-wrap svg`에 `img` 동치 셀렉터 + `object-fit` 추가. `.hero-image > svg, > img` 사이즈 룰 신설. 02_data 1.7.1 자산 형식 절 신설. G~J는 SVG 임시 유지 (M3 후보).
 
+4.13.12. **github 호환 placeholder 사양 수립 (사용자 명시 지시 + 권장 진행)**: 4.13.11 webp 자산이 `.gitignore`로 git 추적 0 (라이선스 0 정책). github에서 broken 상태. 옵션 비교 (가. 라이선스 위험 감수 / 나. 라이선스 클린 raster / 다. 도구 설치 후 강행) 후 **나-2 (추상화된 라이선스 클린 placeholder)** 채택. 사양은 `docs/02_data.md` 1.7.2 절에 정식 등재 (폴더 정책 / 파일 스펙 / 7장 영문 프롬프트). **다음 단계는 사용자 외부 작업 (Midjourney / DALL-E / Stable Diffusion / Firefly 등으로 7장 webp 생성)**. 사용자 배치 완료 후 자비스가 코드 경로 수정 (`PRODUCT_IMAGE_BASE_PATH` → `"the_chronicle_of_goku_placeholder"`) + commit + push로 마무리.
+
 # 5. 운영 결정 (default)
 
 5.1. 작업 단위: 혼합 (스프린트 + 기능 단위).
