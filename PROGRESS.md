@@ -186,6 +186,7 @@ UI / UX 사용자 명시 정정 다수. 8단계 정식 검증 대신 사용자 �
 4.13.8. **T18/T19 사용자 핸드오프 대기**: 브라우저에서 동작 검증 필요.
 4.13.9. **T19 1차 결함 정정 (사용자 캡처 보고)**: `core/buy.js` `addUnopenedTickets`가 신규 ticket에 `lockedResult` 미부여 → undefined → rawCount 0 표시 결함. `lockedResult: null` 명시 + 모든 raw 체크를 `null OR undefined` 양쪽 매칭으로 방어 정정 (4 파일). 학습: T17 grep을 시그니처 호출처만 검사하고 신규 객체 생성 시점의 필드 정합 검증 누락. 단계 6 검증 룰에 "신규 객체 생성 위치별 필드 정합 grep" 추가 권고.
 4.13.10. **B-α 보강 - 자동 선택 버튼 (사용자 명시 승인, 권장 default 진행)**: 5.14.4.8 신설 (잔여 일반 슬롯 격자 인덱스 오름차순 첫 N개 selected 일괄 설정. PRNG 호출 0, 결정론 영향 0). pick-panel "자동 선택 N매" 버튼 (확인 버튼 옆) + main.js dispatch.auto_pick_select + 03_architecture 3.14 갱신 + main.css .pick-auto-button 신설. 4 phase, 약 60줄.
+4.13.11. **자산 사진 교체 (사용자 명시 지시)**: A~F + Last One의 SVG 임시 자산을 `the_chronicle_of_goku_img/{A~F,Z}.webp`로 교체. assets.js에 `PRODUCT_IMAGE_BASE_PATH` / `PRODUCT_IMAGE_FILE_KEYS` (Last One → "Z") / `PRODUCT_IMAGE_ALT` 상수 + `buildProductPhoto` 헬퍼 신설. main.css의 `.last-one-image svg` / `.product-image-wrap svg`에 `img` 동치 셀렉터 + `object-fit` 추가. `.hero-image > svg, > img` 사이즈 룰 신설. 02_data 1.7.1 자산 형식 절 신설. G~J는 SVG 임시 유지 (M3 후보).
 
 # 5. 운영 결정 (default)
 

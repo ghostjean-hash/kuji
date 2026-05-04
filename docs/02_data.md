@@ -154,6 +154,10 @@
 
 `PRODUCT_ASSETS_MAIN_PLACEHOLDER` (= true) 플래그 = M2 1차에서 종별 자산이 메인을 재사용함.
 
+### 1.7.1. 자산 형식 (M2.1 보강)
+
+A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last One의 파일 키는 `Z` (`PRODUCT_IMAGE_FILE_KEYS["Last One"] = "Z"`). G~J는 SVG 임시 자산 유지 (M3 이후 사진 교체 후보). assets.js는 `<img class="product-photo" loading="lazy" decoding="async">` 문자열을 반환. CSS는 `.last-one-image / .product-image-wrap / .hero-image`에서 `svg, img` 동치 셀렉터로 처리.
+
 ## 1.8. 뜯기 애니메이션 상수 (M2 신설)
 
 | 키 | 값 | 의미 |
