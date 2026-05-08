@@ -55,13 +55,11 @@ export function renderPeelCard({ ticket, onReveal, onConfirm, revealedResult, is
     const tierClass = result.tier === "Last One" ? " is-last-one" : "";
     const sizeLabel = result.sizeLabel ? `<div class="product-size">${result.sizeLabel}</div>` : "";
     const disabledAttr = isConfirmDisabled ? "disabled" : "";
-    const hint = isConfirmDisabled ? `<div class="peel-confirm-hint">상단 상품에서 "받기"를 먼저 눌러주세요</div>` : "";
     innerFace.innerHTML = `
       <div class="tier-display${tierClass}">${result.tier}${result.tier === "Last One" ? "" : "賞"}</div>
       <div class="product-label">${result.nameKo}</div>
       <div class="product-label-ja">${result.nameJa}</div>
       ${sizeLabel}
-      ${hint}
       <button class="peel-confirm-button" type="button" ${disabledAttr}>확인</button>
     `;
     const confirmBtn = innerFace.querySelector(".peel-confirm-button");

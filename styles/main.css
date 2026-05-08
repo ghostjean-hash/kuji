@@ -58,10 +58,11 @@ html, body {
   cursor: pointer;
 }
 
-/* ===== 탭 본문 ===== */
+/* ===== 탭 본문 =====
+   인터섹션 갭은 --draw-tab gap 단일 소스. 제목 갭은 그 1.5배. 하단 마진도 1.5배로 정합. */
 .tab-content {
   flex: 1;
-  padding: var(--space-sm) 0;
+  padding: 12px 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
@@ -109,13 +110,13 @@ html, body {
 /* ===== 영역 2: 메인 캐러셀 (A~F) ===== */
 .hero-carousel {
   width: 100%;
-  padding: 16px 0;
+  padding: 0;
   overflow: visible;
 }
 .hero-carousel-track {
   display: flex;
   gap: var(--space-sm);
-  padding: 16px var(--space-lg);
+  padding: 0 var(--space-lg);
   overflow-x: auto;
   overflow-y: visible;
   scroll-snap-type: x mandatory;
@@ -131,7 +132,7 @@ html, body {
   flex: 0 0 32%;
   scroll-snap-align: center;
   background: var(--bg-card);
-  border: 1.5px solid var(--border-subtle);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 6px;
   box-shadow: var(--shadow-card);
@@ -141,12 +142,14 @@ html, body {
   position: relative;
   overflow: hidden;
   transition: border-color 200ms ease, transform 200ms ease;
-  min-height: 100px;
+  /* fixed height — dim/active/just-drawn 모든 상태에서 동일 세로 (캐러셀 collapse 방지) */
+  height: var(--hero-card-h, 160px);
+  min-height: var(--hero-card-h, 160px);
 }
 .hero-card.is-drawn {
   flex: 0 0 auto;
   width: 48px;
-  min-height: auto;
+  /* min-height는 기본값(100px) 유지 — 모든 카드 dim 시에도 캐러셀 세로 collapse 방지 */
   padding: 4px;
   background: #D6CFC2;
   opacity: 0.55;
@@ -154,6 +157,10 @@ html, body {
   border-color: #B8AE9E;
   position: relative;
   transition: width 250ms ease, padding 250ms ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 .hero-card.is-drawn::after {
   content: "";
@@ -167,11 +174,12 @@ html, body {
 .hero-card.is-drawn .hero-info { display: none; }
 .hero-card.is-drawn .hero-tier-badge { margin: 0; }
 
-/* is-just-drawn은 정상 크기 + 자식 표시 (당첨 강조 시) */
+/* is-just-drawn은 정상 크기 + 자식 표시 (당첨 강조 시) — 모든 효과를 카드 내부로 한정 */
 .hero-card.is-just-drawn {
   flex: 0 0 32% !important;
   width: auto !important;
-  min-height: 100px !important;
+  height: var(--hero-card-h, 160px) !important;
+  min-height: var(--hero-card-h, 160px) !important;
   padding: 6px !important;
 }
 .hero-card.is-just-drawn .hero-image,
@@ -182,67 +190,55 @@ html, body {
   background: var(--bg-card) !important;
   border-color: var(--gold-edge) !important;
   border-width: 3px;
-  animation: justDrawnGlow 1.0s ease-in-out infinite;
-  z-index: 10;
+  z-index: 5;
   position: relative;
-  overflow: visible !important;
-}
-/* A~F 당첨 외부 광선 (회전하는 conic-gradient halo) */
-.hero-card.is-just-drawn::after {
-  display: block !important;
-  content: "" !important;
-  position: absolute;
-  inset: -12px;
-  background: conic-gradient(
-    from 0deg,
-    rgba(201, 169, 97, 0.85),
-    rgba(255, 220, 100, 0.7),
-    rgba(200, 16, 46, 0.7),
-    rgba(255, 255, 255, 0.5),
-    rgba(201, 169, 97, 0.85)
-  ) !important;
-  border-radius: var(--radius-md);
-  z-index: -1;
-  filter: blur(14px);
-  animation: heroHaloRotate 2.4s linear infinite;
-  pointer-events: none;
-}
-@keyframes heroHaloRotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  animation: justDrawnGlow 1.4s ease-in-out infinite;
 }
 .hero-card.is-just-drawn .hero-name { color: var(--ink-primary) !important; }
 .hero-card.is-just-drawn .hero-meta { color: var(--ink-muted) !important; }
+/* 코너 당첨 배지 — 카드 내부 우상단 */
 .hero-card.is-just-drawn::before {
-  content: "★ 축 당첨 ★";
+  content: "★ 당첨";
   position: absolute;
-  top: -18px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 4px;
+  right: 4px;
   background: linear-gradient(135deg, var(--frame-red), #8B0820);
   color: #FFFFFF;
   font-family: var(--font-tier-display);
   font-weight: 900;
-  font-size: 15px;
-  letter-spacing: 0.1em;
-  padding: 6px 18px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
   border-radius: 999px;
-  border: 2px solid var(--gold-edge);
-  box-shadow: 0 4px 20px rgba(200, 16, 46, 0.6), 0 0 32px rgba(201, 169, 97, 0.8);
+  border: 1px solid var(--gold-edge);
+  box-shadow: 0 1px 4px rgba(31, 26, 20, 0.25);
   z-index: 12;
   white-space: nowrap;
-  animation: badgeBounce 0.6s cubic-bezier(0.34, 1.6, 0.64, 1), badgePulse 1.2s ease-in-out 0.6s infinite;
+  animation: badgePopIn 0.4s cubic-bezier(0.34, 1.6, 0.64, 1);
 }
+/* 보더 펄스 + 인셋 글로우 (카드 밖으로 나가지 않음) */
 @keyframes justDrawnGlow {
   0%, 100% {
-    box-shadow: 0 0 24px var(--gold-edge), 0 0 12px var(--frame-red);
-    transform: scale(1.06);
+    border-color: var(--gold-edge);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 220, 100, 0.35),
+      inset 0 0 12px rgba(255, 220, 100, 0.30),
+      0 0 6px rgba(201, 169, 97, 0.45);
   }
   50% {
-    box-shadow: 0 0 80px var(--gold-edge), 0 0 40px var(--frame-red), 0 0 100px rgba(201, 169, 97, 0.6);
-    transform: scale(1.18);
+    border-color: #FFD966;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 220, 100, 0.85),
+      inset 0 0 22px rgba(255, 220, 100, 0.65),
+      0 0 14px rgba(201, 169, 97, 0.85),
+      0 0 6px rgba(200, 16, 46, 0.35);
   }
 }
+@keyframes badgePopIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* last-one-row "LAST ONE!" 배지 전용 (부모 클립 없음 — 위로 튀어나오는 의도된 디자인) */
 @keyframes badgeBounce {
   0% { transform: translateX(-50%) translateY(-30px) scale(0.5); opacity: 0; }
   60% { transform: translateX(-50%) translateY(4px) scale(1.15); opacity: 1; }
@@ -284,7 +280,7 @@ html, body {
 .minor-row {
   display: flex;
   gap: var(--space-xs);
-  padding: 12px var(--space-lg);
+  padding: 0 var(--space-lg);
   overflow-x: auto;
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
@@ -377,18 +373,18 @@ html, body {
   transition: width var(--motion-gauge-ms) ease;
 }
 
-/* ===== 영역 4: Last One row ===== */
+/* ===== 영역 4: Last One row (보더 통일 + 골드 배경 틴트로 강조) ===== */
 .last-one-row {
   display: grid;
   grid-template-columns: 48px 1fr auto;
   align-items: center;
   gap: var(--space-sm);
   margin: 0 var(--space-lg);
-  padding: 8px var(--space-md);
-  background: var(--bg-card);
-  border: 2px solid var(--gold-edge);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--gold-edge-soft);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  box-shadow: 0 2px 12px rgba(201, 169, 97, 0.2);
+  box-shadow: var(--shadow-card);
   transition: all 200ms ease;
 }
 .last-one-row.is-pulsing { animation: lastOneRowPulse 1.6s ease-in-out infinite; }
@@ -513,7 +509,7 @@ html, body {
   background: var(--bg-card);
   overflow: hidden;
 }
-.product-item.is-last-one { border: 2px solid var(--gold-edge); }
+.product-item.is-last-one { background: var(--gold-edge-soft); }
 .product-item.is-pulsing { animation: lastOneRowPulse 1.6s ease-in-out infinite; }
 .product-item.is-just-drawn {
   opacity: 1 !important;
@@ -646,13 +642,16 @@ html, body {
   padding: var(--space-md);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
+  min-height: var(--draw-panel-h);
+  display: flex;
+  flex-direction: column;
 }
 .buy-panel-title { margin: 0 0 var(--space-sm) 0; font-size: var(--font-size-md); font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; }
 .buy-panel-title .deck-remaining { font-size: var(--font-size-sm); font-weight: 400; color: var(--ink-muted); font-family: var(--font-mono); }
 .buy-quick-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-xs); margin-bottom: var(--space-sm); }
 .buy-quick-button {
   padding: 10px;
-  border: 1.5px solid var(--border-subtle);
+  border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   color: var(--ink-primary);
   border-radius: var(--radius-sm);
@@ -706,6 +705,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: var(--space-sm);
+  min-height: var(--draw-panel-h);
 }
 .peel-panel-title { margin: 0; font-size: var(--font-size-md); font-weight: 700; }
 .peel-panel-count { font-family: var(--font-mono); color: var(--ink-muted); font-size: var(--font-size-sm); }
@@ -885,13 +885,6 @@ html, body {
   box-shadow: none;
   opacity: 0.55;
 }
-.peel-face.inner .peel-confirm-hint {
-  margin-top: var(--space-sm);
-  font-size: 10px;
-  color: var(--frame-red);
-  font-weight: 700;
-  text-align: center;
-}
 /* Hero card 받기 버튼 (영역 2) */
 .hero-card.is-pending-receive { z-index: 11; }
 .hero-card-receive-button {
@@ -1043,57 +1036,77 @@ html, body {
 
 /* ===== M2.1: 통 선택 (Pick from Bin) ===== */
 
-/* 통 패널 컨테이너 */
+/* 통 패널 컨테이너 (buy-panel / peel-panel과 외곽 사양 통일) */
 .pick-panel {
+  margin: 0 var(--space-lg);
   background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  margin-top: var(--space-md);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-card);
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: var(--draw-panel-h);
+  max-height: var(--draw-panel-h);
+}
+.pick-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-sm) 0;
 }
 .pick-panel-title {
-  margin: 0 0 var(--space-xs) 0;
-  font-size: var(--font-size-lg);
+  margin: 0;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--ink-primary);
 }
 .pick-panel-sub {
-  margin: 0 0 var(--space-md) 0;
-  font-size: var(--font-size-sm);
+  margin: 0;
+  font-size: var(--font-size-xs);
   color: var(--ink-muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
 }
 
-/* 격자 */
+/* 통(bin) 컨테이너 — 절대 위치 슬롯의 산개 영역 */
 .pick-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--pick-cols, 10), 1fr);
-  gap: var(--pick-slot-gap);
+  position: relative;
   width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-/* 슬롯 공통 */
+/* 슬롯 공통 — 통 메타포: 종이 티켓 + 산개 배치 (--slot-x/y 절대 좌표 + --jitter-rotate 회전) */
 .pick-slot {
-  position: relative;
+  position: absolute;
+  left: var(--slot-x, 50%);
+  top: var(--slot-y, 50%);
+  width: var(--pick-slot-size, 38px);
+  height: var(--pick-slot-size, 38px);
   display: flex;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 1 / 1;
-  min-width: var(--pick-slot-min-tap);
-  min-height: var(--pick-slot-min-tap);
   padding: 0;
-  background: var(--pick-slot-bg);
-  border: 1px solid var(--pick-slot-border);
+  background: var(--pick-slot-bg-grad);
+  border: 1.5px solid var(--pick-slot-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition:
-    transform var(--motion-pick-slot-empty-fade-ms) ease,
     box-shadow var(--motion-pick-slot-empty-fade-ms) ease,
     background var(--motion-pick-slot-empty-fade-ms) ease,
     border-color var(--motion-pick-slot-empty-fade-ms) ease,
     opacity var(--motion-pick-slot-empty-fade-ms) ease;
   font-family: inherit;
   color: var(--ink-primary);
+  transform: translate(-50%, -50%) rotate(var(--jitter-rotate, 0deg));
+  z-index: var(--jitter-z, 1);
+  box-shadow:
+    0 1px 2px rgba(31, 26, 20, 0.10),
+    0 2px 6px rgba(31, 26, 20, 0.08);
 }
 .pick-slot-dot {
   display: block;
@@ -1111,15 +1124,15 @@ html, body {
   letter-spacing: -0.02em;
 }
 
-/* 잔여 일반 슬롯 (활성) */
+/* 잔여 일반 슬롯 (활성) — translate(-50%, -50%) 중앙정렬 + 회전 위에 hover lift 합성 */
 .pick-slot-normal-available:hover,
 .pick-slot-normal-available:focus-visible {
-  transform: translateY(calc(-1 * var(--pick-slot-hover-lift)));
+  transform: translate(-50%, -50%) rotate(var(--jitter-rotate, 0deg)) translateY(calc(-1 * var(--pick-slot-hover-lift)));
   box-shadow: 0 var(--pick-slot-hover-lift) var(--pick-slot-hover-glow-radius) var(--pick-slot-hover-glow);
   outline: none;
 }
 .pick-slot-normal-available:active {
-  transform: translateY(0);
+  transform: translate(-50%, -50%) rotate(var(--jitter-rotate, 0deg));
   box-shadow: 0 0 var(--pick-slot-hover-glow-radius) var(--pick-slot-hover-glow);
 }
 
@@ -1157,12 +1170,12 @@ html, body {
   color: var(--ink-muted);
 }
 
-/* B-α: 선택됨 슬롯 (브랜드 빨강 강조 + 체크 + 펄스) */
+/* B-α: 선택됨 슬롯 (브랜드 빨강 강조 + 체크 + 펄스) — 절대 위치 기준 회전 + 선택 lift 합성 */
 .pick-slot-normal-selected {
   background: var(--pick-slot-selected-bg);
   border: 2px solid var(--pick-slot-selected-border);
   box-shadow: 0 0 12px rgba(200, 16, 46, 0.45);
-  transform: translateY(-2px);
+  transform: translate(-50%, -50%) rotate(var(--jitter-rotate, 0deg)) translateY(-2px);
   animation: pickSlotSelectedPulse 1.6s ease-in-out infinite;
 }
 .pick-slot-normal-selected .pick-slot-dot {
@@ -1183,46 +1196,25 @@ html, body {
   50% { box-shadow: 0 0 18px rgba(200, 16, 46, 0.7); }
 }
 
-/* B-α: 확인 + 자동 선택 버튼 행 */
+/* 자동 선택 버튼 행 (확인 버튼 제거 후 컴팩트화) */
 .pick-confirm-row {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: var(--space-sm);
-  margin-top: var(--space-md);
+  margin-top: var(--space-sm);
   flex-wrap: wrap;
-}
-.pick-confirm-button {
-  padding: var(--space-md) var(--space-xl);
-  background: var(--frame-red);
-  color: #FFFFFF;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: var(--font-size-md);
-  font-weight: 700;
-  cursor: pointer;
-  transition: background var(--motion-pick-slot-empty-fade-ms) ease, transform var(--motion-pick-slot-empty-fade-ms) ease;
-}
-.pick-confirm-button:hover:not(:disabled) {
-  background: var(--frame-red-dark);
-  transform: translateY(-1px);
-}
-.pick-confirm-button:disabled {
-  background: var(--ink-muted);
-  cursor: not-allowed;
-  opacity: 0.7;
 }
 
 /* B-α 보강 5.14.4.8: 자동 선택 버튼 */
 .pick-auto-button {
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-xs) var(--space-md);
   background: var(--bg-card);
   color: var(--frame-red);
   border: 1.5px solid var(--frame-red);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-family: inherit;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 700;
   cursor: pointer;
   transition: background var(--motion-pick-slot-empty-fade-ms) ease, color var(--motion-pick-slot-empty-fade-ms) ease, transform var(--motion-pick-slot-empty-fade-ms) ease;
@@ -1237,54 +1229,6 @@ html, body {
   color: var(--ink-muted);
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-/* 첫 진입 안내 toast */
-.pick-hint-toast {
-  position: absolute;
-  left: 50%;
-  bottom: var(--space-md);
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  max-width: calc(100% - 2 * var(--space-lg));
-  padding: var(--space-sm) var(--space-md);
-  background: var(--ink-primary);
-  color: var(--bg-paper);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-elevated);
-  font-size: var(--font-size-sm);
-  z-index: 20;
-  animation: pickHintFadeIn var(--motion-modal-ms) ease;
-}
-.pick-hint-toast.is-dismissing {
-  opacity: 0;
-  transform: translateX(-50%) translateY(8px);
-  transition: opacity var(--motion-modal-ms) ease, transform var(--motion-modal-ms) ease;
-}
-.pick-hint-text {
-  margin: 0;
-  flex: 1;
-  line-height: 1.4;
-}
-.pick-hint-close {
-  background: transparent;
-  color: var(--gold-edge);
-  border: 1px solid var(--gold-edge);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-  font-family: inherit;
-}
-.pick-hint-close:hover {
-  background: var(--gold-edge);
-  color: var(--ink-primary);
-}
-@keyframes pickHintFadeIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* skip 토글 (구매 패널 + 설정 탭 공통 톤) */

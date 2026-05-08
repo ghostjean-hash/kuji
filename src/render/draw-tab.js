@@ -24,11 +24,6 @@ export function renderDrawTab(state, dispatch) {
   // 4. Last One row
   el.appendChild(renderLastOneRow(state, dispatch));
 
-  // 5. 상품 갤러리 (펼침 시에만 그림. 접힘 토글은 7번 minor-meta-row에 통합)
-  if (state.galleryExpanded) {
-    el.appendChild(renderProductGallery(state, dispatch));
-  }
-
   // 6. 구매 / 통 선택 / 뜯기 / 박스 종료 분기 (B-α: a/b1/b2/b3/c)
   // 분기 우선순위: c (deck 0 + 인벤토리 0) > b3 (reveal 진행 중) > b2 (skip ON 또는 첫 ticket lockedResult 보유) > b1 (skip OFF + raw) > a (구매)
   const hasInventory = state.unopenedTickets.length > 0;
@@ -78,6 +73,11 @@ export function renderDrawTab(state, dispatch) {
     galleryToggle.addEventListener("click", () => dispatch({ type: "toggle_gallery" }));
   }
   el.appendChild(meta);
+
+  // 8. 상품 갤러리 (자세히 펼침 시 minor-meta-row 아래에 노출)
+  if (state.galleryExpanded) {
+    el.appendChild(renderProductGallery(state, dispatch));
+  }
 
   return el;
 }

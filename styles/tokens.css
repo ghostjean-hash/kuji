@@ -25,11 +25,12 @@
   --gauge-bg: #E8DECF;
   --gauge-fill: #C9A961;
 
-  /* 02_data 2.2 통 선택 슬롯 (M2.1 + B-α) */
-  --pick-slot-bg: #F3EDE0;
-  --pick-slot-border: #C9A961;
+  /* 02_data 2.2 통 선택 슬롯 (M2.1 + B-α) — 종이 티켓 느낌 강화 */
+  --pick-slot-bg: #FFFFFF;
+  --pick-slot-bg-grad: linear-gradient(135deg, #FFFFFF 0%, #FBF6EC 100%);
+  --pick-slot-border: #B89B5A;
   --pick-slot-hover-glow: rgba(201, 169, 97, 0.6);
-  --pick-slot-empty-bg: #E8DECF;
+  --pick-slot-empty-bg: #DCD3C2;
   --pick-slot-empty-border: #9C8B78;
   --pick-slot-selected-bg: #FFE9C7;     /* M2.1 B-α */
   --pick-slot-selected-border: #C8102E; /* M2.1 B-α */
@@ -78,6 +79,9 @@
   --tab-bar-height: 64px;
   --max-content-width: 540px;
 
+  /* 추첨 탭 영역 6 패널 (buy/peel/pick) 공통 세로 높이 — peel-panel 카드 스택 기준 */
+  --draw-panel-h: 320px;
+
   /* 카드 비율 (02_data 1.9) */
   --card-aspect: 5.5 / 4;
 
@@ -101,7 +105,8 @@
   --pick-slot-hover-lift: 4px;
   --pick-slot-hover-glow-radius: 12px;
   --pick-slot-min-tap: 24px;
-  --pick-slot-gap: 4px;
+  --pick-slot-gap: -4px;  /* (구) 격자 갭 — 절대 위치 전환 후 미사용 */
+  --pick-slot-size: 38px;  /* 절대 위치 슬롯 고정 사이즈 */
 }
 
 @font-face {

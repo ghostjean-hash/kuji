@@ -6,11 +6,41 @@ import {
   LINEUP,
   PICK_GRID_COLS_DEFAULT,
 } from "../data/numbers.js";
+import { fnv1a } from "../core/hash.js";
 import { renderPickSlot, PICK_SLOT_KINDS } from "./pick-slot.js";
-import { renderPickHintToast } from "./pick-hint-toast.js";
 
 const LAST_ONE_GRID_INDEX = BOX_SIZE - 1;
 const NORMAL_SLOT_COUNT = BOX_SIZE - 1;
+
+// 통 메타포: 격자 배치 순서를 박스별 결정론적으로 셔플 + 슬롯별 미세 회전·오프셋.
+// 박스가 바뀌면 자연스럽게 다시 섞이지만, 같은 박스 내에서는 일관된 위치 유지.
+function deterministicShuffle(seedKey, n) {
+  const order = [];
+  for (let i = 0; i < n; i++) order.push(i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = fnv1a(`${seedKey}|shuf|${i}`) % (i + 1);
+    const tmp = order[i];
+    order[i] = order[j];
+    order[j] = tmp;
+  }
+  return order;
+}
+
+// 슬롯별 회전(±36°) + z-index 0~15. 시드+gi 해시 기반.
+function slotJitter(seedKey, gi) {
+  const h = fnv1a(`${seedKey}|jit|${gi}`);
+  const angle = (((h & 0xFFFF) / 0xFFFF) - 0.5) * 72;        // -36° ~ +36°
+  const z = (h >>> 8) & 0x0F;                                  // 0 ~ 15 z-index
+  return { angle, z };
+}
+
+// 슬롯 절대 위치 (% 좌표). 시드+gi 해시 기반. 5%~95% 범위로 가장자리 잘림 최소화.
+function slotPosition(seedKey, gi) {
+  const h = fnv1a(`${seedKey}|pos|${gi}`);
+  const xPct = ((h & 0xFFFF) / 0xFFFF) * 90 + 5;
+  const yPct = (((h >>> 16) & 0xFFFF) / 0xFFFF) * 90 + 5;
+  return { xPct, yPct };
+}
 
 export function renderPickPanel(state, dispatch) {
   const cols = (LINEUP && LINEUP.gridCols) || PICK_GRID_COLS_DEFAULT;
@@ -22,19 +52,30 @@ export function renderPickPanel(state, dispatch) {
   // 현재 박스의 history 항목 (reveal 완료) → 뽑힌 격자 위치
   const boxId = state.boxState.id;
   const boxHistory = (state.history || []).filter((e) => e && e.boxId === boxId);
-  const drawnGridIndices = boxHistory
-    .filter((e) => e.gridIndex !== null && e.gridIndex !== undefined)
-    .map((e) => e.gridIndex);
   const lastOneFromHistory = boxHistory.some((e) => e.isLastOne);
 
   // 인벤토리 lockedResult 보유 ticket의 격자 위치 (확인 후 reveal 전)
   const lockedTickets = (state.unopenedTickets || []).filter(
     (t) => t && t.lockedResult && t.lockedResult.gridIndex !== null && t.lockedResult.gridIndex !== undefined
   );
-  const lockedGridIndices = lockedTickets.map((t) => t.lockedResult.gridIndex);
   const lastOneFromLocked = lockedTickets.some((t) => t.lockedResult && t.lockedResult.isLastOne);
 
-  const drawnSet = new Set([...drawnGridIndices, ...lockedGridIndices]);
+  // drawnSet: 추적된 gridIndex(history+locked) + skip 모드 등 미추적 뽑기는 placeholder로 채워
+  // deck 잔여와 정합. main.js performPickConfirm와 동일 규칙 (단일 진실원).
+  const tracked = new Set();
+  for (const e of boxHistory) {
+    if (e.gridIndex !== null && e.gridIndex !== undefined) tracked.add(e.gridIndex);
+  }
+  for (const t of lockedTickets) {
+    tracked.add(t.lockedResult.gridIndex);
+  }
+  const expected = NORMAL_SLOT_COUNT - state.boxState.deck.length;
+  if (tracked.size < expected) {
+    for (let i = 0; i < NORMAL_SLOT_COUNT && tracked.size < expected; i++) {
+      if (!tracked.has(i)) tracked.add(i);
+    }
+  }
+  const drawnSet = tracked;
   const lastOneAttached = lastOneFromHistory || lastOneFromLocked;
 
   // 사용자 선택 메모리 (B-α)
@@ -44,16 +85,21 @@ export function renderPickPanel(state, dispatch) {
   const rawCount = (state.unopenedTickets || []).filter((t) => t && (t.lockedResult === null || t.lockedResult === undefined)).length;
   const selectedCount = selectedSet.size;
 
-  // 헤더
+  // 헤더 (한 줄: 제목 좌 / 진행 우 — 그리드 공간 최대화)
+  const header = document.createElement("div");
+  header.className = "pick-panel-header";
+
   const title = document.createElement("h2");
   title.className = "pick-panel-title";
-  title.textContent = "통에서 N매 모두 골라주세요";
-  el.appendChild(title);
+  title.textContent = `통에서 ${rawCount}매 모두 골라주세요`;
+  header.appendChild(title);
 
-  const sub = document.createElement("p");
+  const sub = document.createElement("span");
   sub.className = "pick-panel-sub";
-  sub.textContent = `선택 ${selectedCount} / ${rawCount} · 박스 잔여 ${state.boxState.deck.length}매`;
-  el.appendChild(sub);
+  sub.textContent = `${selectedCount} / ${rawCount} · 잔여 ${state.boxState.deck.length}`;
+  header.appendChild(sub);
+
+  el.appendChild(header);
 
   // 격자
   const grid = document.createElement("div");
@@ -62,28 +108,37 @@ export function renderPickPanel(state, dispatch) {
   grid.style.setProperty("--pick-rows", String(rows));
   el.appendChild(grid);
 
-  for (let i = 0; i < BOX_SIZE; i++) {
-    let kind;
-    if (i === LAST_ONE_GRID_INDEX) {
-      kind = lastOneAttached ? PICK_SLOT_KINDS.LAST_ONE_DRAWN : PICK_SLOT_KINDS.LAST_ONE_PENDING;
-    } else if (drawnSet.has(i)) {
-      kind = PICK_SLOT_KINDS.NORMAL_DRAWN;
-    } else if (selectedSet.has(i)) {
-      kind = PICK_SLOT_KINDS.NORMAL_SELECTED;
-    } else {
-      kind = PICK_SLOT_KINDS.NORMAL_AVAILABLE;
-    }
+  // 박스별 결정론적 셔플 — 일반 슬롯 0~78의 표시 순서 무작위화.
+  const seedKey = state.boxState.id || `${state.seed}-${state.boxRound}`;
+  const shuffledNormal = deterministicShuffle(seedKey, NORMAL_SLOT_COUNT);
+
+  function appendSlot(gi) {
+    const kind = selectedSet.has(gi) ? PICK_SLOT_KINDS.NORMAL_SELECTED : PICK_SLOT_KINDS.NORMAL_AVAILABLE;
     const slot = renderPickSlot({
       kind,
-      gridIndex: i,
-      onClick: (gi) => {
-        dispatch({ type: "toggle_pick_select", gridIndex: gi });
+      gridIndex: gi,
+      onClick: (g) => {
+        dispatch({ type: "toggle_pick_select", gridIndex: g });
       },
     });
+    const { angle, z } = slotJitter(seedKey, gi);
+    const { xPct, yPct } = slotPosition(seedKey, gi);
+    slot.style.setProperty("--jitter-rotate", `${angle.toFixed(2)}deg`);
+    slot.style.setProperty("--slot-x", `${xPct.toFixed(2)}%`);
+    slot.style.setProperty("--slot-y", `${yPct.toFixed(2)}%`);
+    let zBase = z;
+    if (kind === PICK_SLOT_KINDS.NORMAL_SELECTED) zBase += 30;
+    slot.style.setProperty("--jitter-z", String(zBase));
     grid.appendChild(slot);
   }
 
-  // "자동 선택 N매" + "확인" 버튼 (B-α 보강 5.14.4.8)
+  // 일반 슬롯만 산개 배치. 뽑힌 슬롯은 통에서 제거. Last One은 last-one-row에서 별도 표시되므로 통에선 미노출.
+  for (const gi of shuffledNormal) {
+    if (drawnSet.has(gi)) continue;
+    appendSlot(gi);
+  }
+
+  // "자동 선택 N매" 버튼 (확인 버튼 제거: 사용자가 N매 선택 시 자동 전이)
   const confirmRow = document.createElement("div");
   confirmRow.className = "pick-confirm-row";
 
@@ -103,27 +158,7 @@ export function renderPickPanel(state, dispatch) {
     dispatch({ type: "auto_pick_select" });
   });
   confirmRow.appendChild(autoBtn);
-
-  const confirmBtn = document.createElement("button");
-  confirmBtn.type = "button";
-  confirmBtn.className = "pick-confirm-button";
-  const canConfirm = selectedCount === rawCount && rawCount > 0;
-  confirmBtn.disabled = !canConfirm;
-  confirmBtn.textContent = canConfirm
-    ? `${rawCount}매 확인 (뜯기 단계로)`
-    : `${rawCount}매 모두 골라야 확인 가능`;
-  confirmBtn.addEventListener("click", () => {
-    if (!canConfirm) return;
-    dispatch({ type: "confirm_pick" });
-  });
-  confirmRow.appendChild(confirmBtn);
   el.appendChild(confirmRow);
-
-  // 첫 진입 안내 toast
-  if (state.meta && state.meta.pickHintSeen === false) {
-    const toast = renderPickHintToast(dispatch);
-    el.appendChild(toast);
-  }
 
   return el;
 }

@@ -20,16 +20,29 @@ export function renderBuyPanel(state, dispatch) {
     ? state.lastBuyCount
     : Math.min(BUY_QUICK_OPTIONS[0], deckRemaining);
 
+  // 잔여가 quick 옵션에 정확히 일치하지 않을 때, 첫 번째 ">잔여" 옵션을 잔여 수량 버튼으로 치환.
+  // 예: 잔여 8 → [1,3,5,8(was 10)] / 잔여 4 → [1,3,4(was 5),10(disabled)] / 잔여 2 → [1,2(was 3),5(d),10(d)]
+  const isInQuickOptions = BUY_QUICK_OPTIONS.includes(deckRemaining);
+  let replacedOption = null;
+  if (!isInQuickOptions && deckRemaining >= 1 && deckRemaining < BUY_QUICK_OPTIONS[BUY_QUICK_OPTIONS.length - 1]) {
+    for (const n of BUY_QUICK_OPTIONS) {
+      if (n > deckRemaining) { replacedOption = n; break; }
+    }
+  }
+
   const quickRow = document.createElement("div");
   quickRow.className = "buy-quick-row";
   for (const n of BUY_QUICK_OPTIONS) {
     const btn = document.createElement("button");
-    btn.className = "buy-quick-button" + (selectedCount === n ? " is-selected" : "");
-    btn.textContent = `${n}매`;
-    if (n > deckRemaining) btn.disabled = true;
+    const isReplaced = n === replacedOption;
+    const value = isReplaced ? deckRemaining : n;
+    const disabled = !isReplaced && n > deckRemaining;
+    btn.className = "buy-quick-button" + (selectedCount === value ? " is-selected" : "");
+    btn.textContent = `${value}매`;
+    if (disabled) btn.disabled = true;
     btn.addEventListener("click", () => {
-      selectedCount = n;
-      freeInput.value = String(n);
+      selectedCount = value;
+      freeInput.value = String(value);
       refreshUI();
     });
     quickRow.appendChild(btn);

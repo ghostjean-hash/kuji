@@ -26,8 +26,11 @@ export function renderHeroCarousel(state, dispatch) {
     const drawn = drawnByTier[t.tier];
     const isDrawn = drawn >= 1;
     const isJustDrawn = state.lastDrawnTier === t.tier;
+    // is-just-drawn 활성 동안에는 is-drawn 미부여 (is-drawn::after 어두운 오버레이가 강조 카드 위에 겹쳐 dim되어 보이는 문제 방지).
+    // peel_confirm으로 lastDrawnTier=null 된 다음 사이클에서 자연스럽게 is-drawn(작은 회색)으로 전환됨.
     const card = document.createElement("article");
-    card.className = "hero-card" + (isDrawn ? " is-drawn" : "") + (isJustDrawn ? " is-just-drawn" : "");
+    card.className = "hero-card"
+      + (isJustDrawn ? " is-just-drawn" : (isDrawn ? " is-drawn" : ""));
     card.dataset.tier = t.tier;
     card.style.setProperty("--tier-color", TIER_COLORS[t.tier]);
     card.innerHTML = `
