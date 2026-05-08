@@ -256,6 +256,7 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 | `PICK_SLOT_EMPTY_FADE_MS` | 200 | 뽑힌 슬롯 회색화 전환 시간 |
 | `PICK_FIRST_HINT_DURATION_MS` | 4000 | 첫 진입 안내 toast 표시 시간 (1회만) |
 | `PICK_FIRST_HINT_TEXT_KO` | `"N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다."` | 첫 진입 안내 문구 (B-α 정합. 사행성 표현 0건). N은 호출처에서 동적 치환 (또는 그대로 표시) |
+| `PICK_AUTO_CONFIRM_DELAY_MS` | 200 | **2026-05-08 신설** - 사용자가 N매 선택 완료 후 자동 confirm까지 시각 확인 딜레이 (4.14.5). 너무 짧으면 마지막 선택 슬롯 강조를 놓치고, 너무 길면 답답함. |
 
 `PICK_GRID_ROWS_DEFAULT` 는 정의 키가 아니라 `Math.ceil(BOX_SIZE / PICK_GRID_COLS_DEFAULT)` 도출. `BOX_SIZE` 가 `PICK_GRID_COLS_DEFAULT` 로 나누어떨어지지 않는 라인업은 마지막 행 부분 채움 (M3 ワンピース 라인업 도입 시 검증).
 

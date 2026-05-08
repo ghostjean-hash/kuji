@@ -3,29 +3,25 @@
 # 1. 현재 상태
 
 1.1. **현재 스프린트**: M2.1-pick-from-bin.
-1.2. **현재 단계**: 단계 5 implement 완료 + 사용자 라이브 UX/UI 정정 라운드 다수 완료 → push (`549eea3`). **다음 세션 진입점 = 추가 라이브 정정 사이클 또는 M2.1 마무리 (단계 6/7/8) 결정 + 비-블로커 백로그(6.2.6~6.2.13) 흡수 시점**.
+1.2. **현재 단계**: 단계 5 implement 완료 + 사용자 라이브 UX/UI 정정 라운드 다수 완료 + **비-블로커 정리 라운드 (1.5.4 5건 모두 흡수)**. **다음 세션 진입점 = 사용자 placeholder 자산 외부 작업 완료 후 코드 경로 수정 OR M2.1 마무리 (단계 6/7/8) 결정**.
 1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03.
-1.4. **마지막 갱신**: 2026-05-08 (M2.1 라이브 UX 정정 라운드 + 데이터 손실 버그 수정 + 커밋 `549eea3` push. 새 세션 진입 정리).
+1.4. **마지막 갱신**: 2026-05-08 (비-블로커 정리 라운드 + 통 슬롯 산개 정정 - 4.15/4.16 절 추가).
 
 ## 1.5. 다음 세션 즉시 작업 후보
 
-1.5.1. **추가 라이브 UX 정정 사이클 진행** (사용자 주도):
+1.5.1. **사용자 외부 작업 → 자비스 마무리** (가장 우선):
+- 4.13.12 placeholder 자산 7장 (A~F + Z) 외부 도구 생성 + `the_chronicle_of_goku_placeholder/` 폴더 배치.
+- 사용자 배치 완료 후 자비스가 `assets.js`의 `PRODUCT_IMAGE_BASE_PATH` 경로 수정 + commit + push.
+
+1.5.2. **추가 라이브 UX 정정 사이클 진행** (사용자 주도):
 - http://127.0.0.1:5500/index.html (Live Server)
 - 사용자가 시각/동작 결함 발견 시 즉시 보고 → 자비스 인라인 정정.
-- 통 선택, 캐러셀, 패널, 토큰 등 어느 영역이든 가능.
 
-1.5.2. **M2.1 마무리 정식 흐름 진입 결정** (사용자 결정):
+1.5.3. **M2.1 마무리 정식 흐름 진입 결정** (사용자 결정):
 - 단계 6 (subagent 격리 검증) → 단계 7 (QA 보고서) → 단계 8 (improve + M3 plan).
 - 또는 M2 패턴 답습: 라이브 컨펌으로 갈음 + PROGRESS 학습 흡수 후 M3 진입.
 
-1.5.3. **백로그 6.2.6~6.2.13 흡수**: 이번 세션의 라이브 정정에서 도출된 신규 학습 (단계 6 검증 룰에 추가 권고).
-
-1.5.4. **비-블로커 정리 백로그** (이번 PR `549eea3` 코드 리뷰에서 식별):
-- `pendingPeelResult.entry` dead 필드 제거 (main.js:376).
-- `200`ms 자동 confirm 딜레이 → named const (`PICK_AUTO_CONFIRM_DELAY_MS`) 추출.
-- `requiresReceive` 변수 주석 새 흐름에 맞게 갱신 (history append 게이트 역할 종료).
-- pick-panel.js의 LAST_ONE 관련 dead branch / 미사용 const 정리.
-- `buildConsumedGridSet` + `performPickConfirm` j 검증 단위 테스트 추가 (회귀 위험 영역).
+1.5.4. ~~**비-블로커 정리 백로그**~~ **2026-05-08 종료 (4.15 절)**. dead 필드 / 매직 넘버 / 주석 / dead branch / 단위 테스트 5건 모두 흡수.
 
 1.5.5. **M3 후보** (단계 8에서 정식 plan 작성 예정):
 - 一番くじ ワンピース MONKEY.D.LUFFY 라인업 추가 (이찌방쿠지 표준 메커닉).
@@ -36,9 +32,9 @@
 
 ## 1.6. 다음 세션 권장 첫 메시지 (참고)
 
+- 자산 마무리: "placeholder 자산 7장 배치 완료 - 코드 경로 수정 부탁"
 - 추가 정정: "<발견한 시각/동작 결함>" 직접 보고
 - 단계 마무리 모드: "M2.1 단계 6 진입 (subagent 격리 검증)"
-- 백로그 정리 모드: "1.5.4 비-블로커 정리 진행"
 - M3 진입 모드: "M2.1 단계 8 improve로 마무리 후 M3 plan 작성"
 
 # 2. 스프린트 추적
@@ -232,6 +228,45 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 4.14.17. **커밋 + 푸시**: `549eea3` (`feat(kuji): 통 선택 UX 재설계 + 영역 6 통일 + 추첨 history 손실 수정`) — `https://github.com/ghostjean-hash/kuji.git` `main` 정상 push.
 
+## 4.15. 2026-05-08 - M2.1 비-블로커 정리 라운드 (1.5.4 5건 흡수)
+
+라이브 정정 모드의 자연 흡수. 정식 단계 6/7/8 미진입. PR `549eea3` 코드 리뷰에서 식별된 dead 코드 / 매직 넘버 / 주석 갭 / 회귀 위험 영역 단위 테스트.
+
+4.15.1. **`pendingPeelResult.entry` dead 필드 제거**: main.js dispatch.peel에서 pendingPeelResult 객체에 부여하던 `entry` 필드 제거. 4.14.8에서 history append를 peel 시점으로 옮긴 후 receive_confirm/peel_confirm은 entry를 읽지 않음. grep으로 사용처 0 확인 후 제거.
+
+4.15.2. **`PICK_AUTO_CONFIRM_DELAY_MS` 상수 추출**: main.js dispatch.toggle_pick_select에서 `setTimeout(..., 200)` 매직 넘버 → 명명 상수. 02_data 1.12 등재 + numbers.js export. 의미 주석 ("너무 짧으면 마지막 선택 슬롯 강조 놓침 / 너무 길면 답답함"). CLAUDE.md 4.2 매직 넘버 금지 규칙 정합.
+
+4.15.3. **`requiresReceive` 변수 주석 갱신**: 4.14.8 변경으로 history append 게이트 역할이 종료됨을 명시. 현재는 receive 모달 노출 + peel-card 확인 버튼 활성화 게이트 + hero-carousel "받기" 버튼 노출에만 사용되는 UI 플래그라고 양 분기에 주석 추가. 다음 세션이 이 변수의 의미를 오해 안 하도록.
+
+4.15.4. **pick-panel.js dead branch 정리**: (1) `LAST_ONE_GRID_INDEX` const — 4.14.14 산개 배치 + Last One 통 미노출 결정 후 사용처 0. 제거. (2) `lastOneFromHistory` / `lastOneFromLocked` / `lastOneAttached` — 산출만 되고 사용처 0. 제거. (3) `tracked` → `drawnSet` 변수명 즉시 사용으로 통합 (불필요한 1회용 alias 제거). 결과: 11줄 감소.
+
+4.15.5. **`buildConsumedGridSet` 단위 테스트 추가**: `tests/suites/build_consumed_grid_set.test.js` 신설. 9 테스트 케이스 — 초기 상태 / history.gridIndex 단독 / lockedResult.gridIndex 단독 / 병합 / skip 모드 placeholder 충당 (4.14.7 핵심 시나리오) / 충돌 회피 / 다른 박스 무시 / null·undefined 안전 / lockedResult null·undefined ticket 안전. runner.js에 등록. `performPickConfirm` j 검증 부분은 main.js 내부 함수 (export 안 됨)라 직접 테스트 어려움 — 회귀 위험은 buildConsumedGridSet 단위 테스트 + 사용자 라이브 검증으로 갈음.
+
+4.15.6. **변경 요약**: 5 파일 수정 + 1 파일 신설. `src/render/main.js`, `src/render/pick-panel.js`, `src/data/numbers.js`, `docs/02_data.md`, `tests/runner.js` + `tests/suites/build_consumed_grid_set.test.js` 신설. 동작 변경 0 (refactor + dead code 제거 + 테스트 추가만).
+
+## 4.16. 2026-05-08 - 통 슬롯 산개 정정 (Poisson clumping 해소)
+
+4.16.1. **결함 보고 (사용자 캡처)**: 통 선택 격자에 79슬롯이 6개 정도의 클러스터로 군집화. "복권을 펼쳐놓으라고 했는데 왜 모여 있지?" 라이브 정정 모드 진입.
+
+4.16.2. **원인 분석**: 4.14.14에서 도입한 `slotPosition(seedKey, gi)` 가 fnv1a 해시로 5%~95% 범위 무작위 좌표를 생성. 통계적으로 무작위 분포는 **반드시** 군집과 공백이 생김 (Poisson clumping). RNG 품질 문제가 아니라 균등 분포가 아니기 때문. 균등성을 원하면 무작위가 아니라 균등성 제약(격자 / 블루 노이즈 / Poisson disk)이 필요.
+
+4.16.3. **수정안 비교 + 채택**: (가) 더 많은 jitter / (나) **격자 셀 + 셀 내부 jitter** / (다) Poisson disk sampling. **나 채택** - 결정론 + 균등 + 자연스러움 + 구현 복잡도 낮음.
+
+4.16.4. **`slotPosition` 시그니처 변경**: `(seedKey, gi)` → `(seedKey, posInShuffle, cols, rows)`. 셔플된 순서(`posInShuffle`)로 격자 셀에 균등 배정 + 셀 내부 ±50% jitter. 5%~95% 클램프로 가장자리 잘림 방지. 격자 cols×rows = (LINEUP.gridCols 또는 PICK_GRID_COLS_DEFAULT) × Math.ceil(NORMAL_SLOT_COUNT / cols).
+
+4.16.5. **호출처 변경**: `appendSlot(gi)` 내부에서 `giToPos = Map(shuffledNormal[pos] → pos)` 역인덱스 도출 후 `slotPosition(seedKey, giToPos.get(gi), posCols, posRows)` 호출. 같은 박스 내에서는 슬롯이 일관 위치 유지 (특정 gi의 위치가 박스 내내 동일).
+
+4.16.6. **결정론 보존**: 셔플 / 셀 매핑 / jitter 모두 시드 결정론. 박스 새로고침 시 같은 위치. 박스 회차 변경 시 위치 재셔플.
+
+4.16.7. **변경 영역**: `src/render/pick-panel.js` 단일 파일 수정. 동작 / 데이터 / 단위 테스트 영향 0.
+
+4.16.8. **검증 통과 (2026-05-08 grep 정합 점검)**:
+- `PICK_AUTO_CONFIRM_DELAY_MS` 사용처 4건 (numbers + 02_data + main 2곳) 정합.
+- `slotPosition` 시그니처 변경 호출처 1건 동기 갱신.
+- core/ DOM import 0 / render import 0 (CLAUDE.md 4.3 위반 0).
+- `pendingPeelResult.entry` 잔존 0.
+- `buildConsumedGridSet` 호출처 3건 (main 2곳 + 테스트 1) 정합.
+
 # 5. 운영 결정 (default)
 
 5.1. 작업 단위: 혼합 (스프린트 + 기능 단위).
@@ -263,6 +298,10 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 6.2.11. **시드 기반 결정론적 시각 무작위화**: 시드 + 식별자 해시(fnv1a)로 셔플/회전/위치 산출하면 같은 박스 동안 시각 일관성 + 박스마다 새로움. CSS 변수로 주입(`--jitter-rotate`, `--slot-x` 등)하면 hover/active 상태와 합성 가능.
 6.2.12. **데이터 truth value vs 시각 메타포**: skip-mode 뽑기는 deck head pop으로 gridIndex 추적 안 됨. placeholder 충당으로 시각 정합은 맞췄지만, 사용자 멘탈 모델("내가 클릭한 슬롯")과 시각 위치는 분리. 모든 draw 경로에 gridIndex 의무 기록하는 리팩터로만 근본 해결 (M3 후보).
 6.2.13. **사용자 QA 민감도 / 보고 흐름**: 사용자는 작업 완료 후 사전 시각/상태 매트릭스 검수를 강하게 요구. dim/scroll/state 전이 정합 누락이 반복되면 신뢰 큰 손상. 시각 변경 시 `peel → receive_confirm → peel_confirm` 같은 상태 단계마다 일별 검수 후 보고 의무화.
+
+6.2.14. **slotPosition / slotJitter 시각 튜닝 매직 넘버 백로그** (4.16.4 도출): pick-panel.js의 시각 튜닝 값 4종 — `72` (회전 ±36° 범위), `5`/`95` (클램프 범위), `0.5` (셀 내부 jitter ±50% 비율). 모두 02_data 1.12 / numbers.js 미등재. CLAUDE.md 4.2 매직 넘버 금지 룰 위반. **다음 정리 라운드 흡수 후보** (라이브 정정 모드라 본 라운드는 시각 결함 해소만 처리). 권고 상수명: `PICK_SLOT_ROTATE_RANGE_DEG = 72`, `PICK_GRID_CLAMP_MIN_PCT = 5`, `PICK_GRID_CLAMP_MAX_PCT = 95`, `PICK_SLOT_JITTER_RATIO = 0.5`. 비트 마스크(`0xFFFF`, `0x0F`)와 수학 변환(`100`, 비트시프트)은 매직 넘버 룰 예외로 판단.
+
+6.2.15. **무작위 분포 vs 균등 분포 (4.16 학습)**: "산개" UX는 무작위 좌표 ≠ 균등 분포. 무작위는 통계적으로 군집과 공백을 만든다 (Poisson clumping). 균등 산개를 원하면 격자 + jitter / 블루 노이즈 / Poisson disk sampling 같은 균등성 제약 필요. 다음 라인업 (M3 ワンピース)에서 통 시각 모델 재설계 시 이 구분 명시.
 
 ## 6.3. M3 후보 (M2.1 단계 8에서 정식 plan 작성)
 

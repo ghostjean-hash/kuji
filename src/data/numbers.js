@@ -144,6 +144,7 @@ export const PICK_SLOT_CLICK_TO_CARD_MS = 400;  // 슬롯 클릭 → 페이지�
 export const PICK_SLOT_EMPTY_FADE_MS = 200;  // 뽑힌 슬롯 회색화 전환
 export const PICK_FIRST_HINT_DURATION_MS = 4000;  // 첫 진입 안내 toast 표시 시간 (1회)
 export const PICK_FIRST_HINT_TEXT_KO = "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다.";
+export const PICK_AUTO_CONFIRM_DELAY_MS = 200;  // N매 선택 완료 → 자동 confirm 시각 확인 딜레이 (4.14.5)
 
 // 02_data 1.4.2.1 매수 합계 검증식 (01_spec 7.5 부팅 정합 강제)
 const TIER_COUNT_SUM = TIERS.reduce((acc, t) => acc + t.count, 0);

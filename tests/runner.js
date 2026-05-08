@@ -12,6 +12,7 @@ import "./suites/history.test.js";
 import "./suites/storage.test.js";
 import "./suites/storage_v3.test.js";  // M2.1
 import "./suites/buy.test.js";
+import "./suites/build_consumed_grid_set.test.js";  // M2.1 / 4.14.7
 
 const rootEl = document.getElementById("root");
 runAll(rootEl).then(({ passCount, failCount }) => {

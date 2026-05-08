@@ -9,7 +9,8 @@ import {
 import { fnv1a } from "../core/hash.js";
 import { renderPickSlot, PICK_SLOT_KINDS } from "./pick-slot.js";
 
-const LAST_ONE_GRID_INDEX = BOX_SIZE - 1;
+// Last One 슬롯은 통(bin)에 노출 안 됨 (last-one-row에서 별도 표시. 4.14.14 결정).
+// 통에 표시되는 일반 슬롯은 BOX_SIZE - 1매.
 const NORMAL_SLOT_COUNT = BOX_SIZE - 1;
 
 // 통 메타포: 격자 배치 순서를 박스별 결정론적으로 셔플 + 슬롯별 미세 회전·오프셋.
@@ -34,11 +35,23 @@ function slotJitter(seedKey, gi) {
   return { angle, z };
 }
 
-// 슬롯 절대 위치 (% 좌표). 시드+gi 해시 기반. 5%~95% 범위로 가장자리 잘림 최소화.
-function slotPosition(seedKey, gi) {
-  const h = fnv1a(`${seedKey}|pos|${gi}`);
-  const xPct = ((h & 0xFFFF) / 0xFFFF) * 90 + 5;
-  const yPct = (((h >>> 16) & 0xFFFF) / 0xFFFF) * 90 + 5;
+// 슬롯 절대 위치 (% 좌표). 격자 셀 + 셀 내부 jitter.
+// 무작위 분포는 Poisson clumping으로 군집과 공백이 생기므로,
+// 셔플된 순서로 격자 셀에 균등 배정 후 셀 내부에서 ±50% jitter로 자연스러움 부여.
+// 셀 경계를 살짝 넘으며 인접 셀과 섞여 격자 흔적 약화.
+function slotPosition(seedKey, posInShuffle, cols, rows) {
+  const row = Math.floor(posInShuffle / cols);
+  const col = posInShuffle % cols;
+  const cellW = 100 / cols;
+  const cellH = 100 / rows;
+  const centerX = col * cellW + cellW / 2;
+  const centerY = row * cellH + cellH / 2;
+  const h = fnv1a(`${seedKey}|pos|${posInShuffle}`);
+  const jx = (((h & 0xFFFF) / 0xFFFF) - 0.5) * cellW;          // ±50% 셀 폭
+  const jy = (((h >>> 16) & 0xFFFF) / 0xFFFF - 0.5) * cellH;   // ±50% 셀 높이
+  // 셀 경계를 살짝 넘는 게 자연스러우나, 화면 밖으로 나가지 않도록 5%~95% 클램프
+  const xPct = Math.max(5, Math.min(95, centerX + jx));
+  const yPct = Math.max(5, Math.min(95, centerY + jy));
   return { xPct, yPct };
 }
 
@@ -52,31 +65,27 @@ export function renderPickPanel(state, dispatch) {
   // 현재 박스의 history 항목 (reveal 완료) → 뽑힌 격자 위치
   const boxId = state.boxState.id;
   const boxHistory = (state.history || []).filter((e) => e && e.boxId === boxId);
-  const lastOneFromHistory = boxHistory.some((e) => e.isLastOne);
 
   // 인벤토리 lockedResult 보유 ticket의 격자 위치 (확인 후 reveal 전)
   const lockedTickets = (state.unopenedTickets || []).filter(
     (t) => t && t.lockedResult && t.lockedResult.gridIndex !== null && t.lockedResult.gridIndex !== undefined
   );
-  const lastOneFromLocked = lockedTickets.some((t) => t.lockedResult && t.lockedResult.isLastOne);
 
   // drawnSet: 추적된 gridIndex(history+locked) + skip 모드 등 미추적 뽑기는 placeholder로 채워
   // deck 잔여와 정합. main.js performPickConfirm와 동일 규칙 (단일 진실원).
-  const tracked = new Set();
+  const drawnSet = new Set();
   for (const e of boxHistory) {
-    if (e.gridIndex !== null && e.gridIndex !== undefined) tracked.add(e.gridIndex);
+    if (e.gridIndex !== null && e.gridIndex !== undefined) drawnSet.add(e.gridIndex);
   }
   for (const t of lockedTickets) {
-    tracked.add(t.lockedResult.gridIndex);
+    drawnSet.add(t.lockedResult.gridIndex);
   }
   const expected = NORMAL_SLOT_COUNT - state.boxState.deck.length;
-  if (tracked.size < expected) {
-    for (let i = 0; i < NORMAL_SLOT_COUNT && tracked.size < expected; i++) {
-      if (!tracked.has(i)) tracked.add(i);
+  if (drawnSet.size < expected) {
+    for (let i = 0; i < NORMAL_SLOT_COUNT && drawnSet.size < expected; i++) {
+      if (!drawnSet.has(i)) drawnSet.add(i);
     }
   }
-  const drawnSet = tracked;
-  const lastOneAttached = lastOneFromHistory || lastOneFromLocked;
 
   // 사용자 선택 메모리 (B-α)
   const selectedSet = new Set(state.selectedGridIndices || []);
@@ -109,8 +118,17 @@ export function renderPickPanel(state, dispatch) {
   el.appendChild(grid);
 
   // 박스별 결정론적 셔플 — 일반 슬롯 0~78의 표시 순서 무작위화.
+  // 위치는 셔플된 순서(posInShuffle)로 격자 셀에 균등 배정 + 셀 내부 jitter.
+  // 같은 박스 내에서는 슬롯이 일관 위치 유지 (특정 gi의 위치가 박스 내내 동일).
   const seedKey = state.boxState.id || `${state.seed}-${state.boxRound}`;
   const shuffledNormal = deterministicShuffle(seedKey, NORMAL_SLOT_COUNT);
+  // 위치 매핑 격자: 일반 슬롯 N개를 cols×ceil(N/cols)에 배정 (라인업 cols 활용).
+  const posCols = cols;
+  const posRows = Math.ceil(NORMAL_SLOT_COUNT / posCols);
+  const giToPos = new Map();
+  for (let pos = 0; pos < shuffledNormal.length; pos++) {
+    giToPos.set(shuffledNormal[pos], pos);
+  }
 
   function appendSlot(gi) {
     const kind = selectedSet.has(gi) ? PICK_SLOT_KINDS.NORMAL_SELECTED : PICK_SLOT_KINDS.NORMAL_AVAILABLE;
@@ -122,7 +140,7 @@ export function renderPickPanel(state, dispatch) {
       },
     });
     const { angle, z } = slotJitter(seedKey, gi);
-    const { xPct, yPct } = slotPosition(seedKey, gi);
+    const { xPct, yPct } = slotPosition(seedKey, giToPos.get(gi), posCols, posRows);
     slot.style.setProperty("--jitter-rotate", `${angle.toFixed(2)}deg`);
     slot.style.setProperty("--slot-x", `${xPct.toFixed(2)}%`);
     slot.style.setProperty("--slot-y", `${yPct.toFixed(2)}%`);

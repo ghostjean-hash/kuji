@@ -10,6 +10,7 @@ import {
   PEEL_REVEAL_VIEW_MS,
   PEEL_REVEAL_TO_FADE_MS,
   PEEL_DURATION_MS,
+  PICK_AUTO_CONFIRM_DELAY_MS,
 } from "../data/numbers.js";
 import { initBox } from "../core/box.js";
 import { drawOne } from "../core/draw.js";
@@ -270,7 +271,7 @@ function dispatch(action) {
             state.selectedGridIndices = [];
           }
           rerender();
-        }, 200);
+        }, PICK_AUTO_CONFIRM_DELAY_MS);
       }
       break;
     }
@@ -320,8 +321,10 @@ function dispatch(action) {
           revealed: true,
         };
         const tierMeta = LINEUP.tiers.find((t) => t.tier === result.tier);
+        // requiresReceive: 주요 보상(count=1, Last One 제외) 받기 모달 노출 여부 결정용 UI 플래그.
+        //   2026-05-08 이후로 history append 게이트 역할은 종료 (peel 시점 무조건 append).
+        //   peel-card "확인" 버튼 활성화 게이트 + hero-carousel "받기" 버튼 노출 여부에만 사용.
         requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
-        // peel 시점에 무조건 history append (이전: requiresReceive면 receive_confirm까지 미루어 새로고침/팝업 dismiss로 entry 손실 가능했음).
         state.history = appendHistory(state.history, entry);
         state.dcTickets = addTicket(state.dcTickets, {
           boxId: state.boxState.id,
@@ -351,8 +354,8 @@ function dispatch(action) {
           revealed: true,
         };
         const tierMeta = LINEUP.tiers.find((t) => t.tier === result.tier);
+        // requiresReceive: UI 플래그 (위 (a) 분기 주석 참조). skip 모드도 동일 규칙.
         requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
-        // peel 시점에 무조건 history append (skip 모드도 동일 규칙).
         state.history = appendHistory(state.history, entry);
         state.dcTickets = addTicket(state.dcTickets, {
           boxId: state.boxState.id,
@@ -373,7 +376,6 @@ function dispatch(action) {
         ticketId: action.ticketId,
         requiresReceive,
         receivedConfirmed: !requiresReceive,
-        entry,
       };
 
       const targetTier = state.lastDrawnTier;
