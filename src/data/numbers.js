@@ -5,7 +5,7 @@
 export const STORAGE_KEY_PREFIX = "kuji_";
 export const DEFAULT_SEED_FALLBACK_BITS = 32;
 export const BOX_ROUND_INITIAL = 1;
-export const SCHEMA_VERSION = 3;  // M2.1: kuji_settings_skip_pick + meta.pickHintSeen + history revealed/pickIndex 필드
+export const SCHEMA_VERSION = 3;  // M2.1: kuji_settings_skip_pick + history revealed/pickIndex/gridIndex 필드 (meta.pickHintSeen은 2026-05-08 deprecated)
 
 // 02_data 1.2 PRNG
 export const PRNG_NAME = "Mulberry32";
@@ -142,9 +142,16 @@ export const PICK_SLOT_HOVER_LIFT_PX = 4;  // 호버 시 슬롯 부상
 export const PICK_SLOT_HOVER_GLOW_PX = 12;  // 호버 글로우 반경
 export const PICK_SLOT_CLICK_TO_CARD_MS = 400;  // 슬롯 클릭 → 페이지플립 카드 전환
 export const PICK_SLOT_EMPTY_FADE_MS = 200;  // 뽑힌 슬롯 회색화 전환
-export const PICK_FIRST_HINT_DURATION_MS = 4000;  // 첫 진입 안내 toast 표시 시간 (1회)
+// **2026-05-08 deprecated (PROGRESS 4.14.1, 단계 6 4.17)** - 사용자 결정으로 toast 폐기. 호환 위해 잔존.
+export const PICK_FIRST_HINT_DURATION_MS = 4000;
 export const PICK_FIRST_HINT_TEXT_KO = "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다.";
 export const PICK_AUTO_CONFIRM_DELAY_MS = 200;  // N매 선택 완료 → 자동 confirm 시각 확인 딜레이 (4.14.5)
+// 02_data 1.12 - slotPosition / slotJitter 시각 튜닝 상수 (4.16 / 4.17 흡수)
+export const PICK_SLOT_ROTATE_RANGE_DEG = 72;  // 슬롯 회전 폭 (±36°. 72 = 2 × 36)
+export const PICK_GRID_CLAMP_MIN_PCT = 5;  // 격자 좌표 하한 (가장자리 잘림 방지)
+export const PICK_GRID_CLAMP_MAX_PCT = 95;  // 격자 좌표 상한
+export const PICK_SLOT_JITTER_RATIO = 0.5;  // 셀 내부 jitter 비율 (±50% 셀 폭/높이. 4.16 격자 매핑)
+export const PICK_SLOT_SELECTED_Z_BOOST = 30;  // 선택됨 슬롯 z-index 가중 (4.17 단계 6 P1 3.1. 베이스 0~15 위로 + 30 = 30~45 범위)
 
 // 02_data 1.4.2.1 매수 합계 검증식 (01_spec 7.5 부팅 정합 강제)
 const TIER_COUNT_SUM = TIERS.reduce((acc, t) => acc + t.count, 0);

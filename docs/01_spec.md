@@ -239,26 +239,26 @@
 
 ### 5.14.2. 격자 레이아웃
 
-5.14.2.1. 격자 차원: `cols × rows`. `cols = LINEUP.gridCols ?? PICK_GRID_COLS_DEFAULT` (02_data 1.12, 기본 10). `rows = Math.ceil(BOX_SIZE / cols)`. 드래곤볼 80 = 10×8 (일반 슬롯 79 + Last One 슬롯 1).
-5.14.2.2. **슬롯 수 = `BOX_SIZE`**. 내부 구성:
+5.14.2.1. 격자 차원: `cols × rows`. `cols = LINEUP.gridCols ?? PICK_GRID_COLS_DEFAULT` (02_data 1.12, 기본 10). `rows = Math.ceil(NORMAL_SLOT_COUNT / cols)`. **2026-05-08 정정**: 통(bin) 격자에 표시되는 슬롯은 **일반 슬롯만** (Last One 슬롯 비노출, 4.14.14). `NORMAL_SLOT_COUNT = BOX_SIZE - 1 = 79`. 위치는 무작위 좌표가 아닌 격자 셀 + jitter 산개 (4.16).
+5.14.2.2. **통 격자 슬롯 수 = `NORMAL_SLOT_COUNT`** (= `BOX_SIZE - 1`). 내부 구성:
 - **일반 슬롯**: `BOX_SIZE - 1` 개 (드래곤볼 79). 셔플 배열 인덱스 0 ~ `BOX_SIZE - 2` 와 1:1 매핑. 사용자 클릭 가능.
-- **Last One 슬롯**: 1개. 셔플 배열에 포함되지 않음 (5.3.2 / 5.4.4 정합). 사용자 클릭 불가 (5.14.3.5). 마지막 일반 슬롯 "확인" 시 5.4 자동 지급 흐름과 연동 (5.14.4.5).
+- **Last One 슬롯**: ~~격자 마지막 셀 1개~~. **2026-05-08 정정 (4.14.14)**: 통 격자에 노출하지 않음. 별도 영역 `last-one-row` (4번 영역)에 단일 행으로 표시. `last-one-row`는 마지막 일반 슬롯 reveal 시점에 자동 지급 + 글로우 + "LAST ONE!" 배지로 동시 표시 (5.14.4.5 / 5.4 자동 지급 흐름 정합).
 5.14.2.3. 슬롯 최소 터치 타깃 = `PICK_SLOT_MIN_TAP_PX` (= 24px). 화면 폭이 부족하면 `cols`를 `PICK_GRID_COLS_MIN` (= 4) 까지 자동 축소.
 5.14.2.4. 슬롯 간 간격 = `PICK_SLOT_GAP_PX` (= 4px).
-5.14.2.5. **Last One 슬롯 위치**: 격자 마지막 셀 (gridIndex = `BOX_SIZE - 1`). 일반 슬롯 79개를 인덱스 순으로 배치 후 Last One 슬롯이 마지막 위치.
+5.14.2.5. ~~**Last One 슬롯 위치**: 격자 마지막 셀 (gridIndex = `BOX_SIZE - 1`).~~ **2026-05-08 폐기 (4.14.14)** - Last One 슬롯은 통에 노출하지 않으며 `last-one-row`에서 별도 표시. `LAST_ONE_GRID_INDEX = BOX_SIZE - 1` 상수도 dead. `gridIndex = BOX_SIZE - 1` 값은 history 데이터 모델에서 더 이상 사용되지 않음 (Last One은 `isLastOne: true` + `gridIndex: null` 또는 `lastDrawnTier`로 식별).
 
-### 5.14.3. 슬롯 상태 (B-α 5상태 + Last One 2상태)
+### 5.14.3. 슬롯 상태 (B-α 5상태 + ~~Last One 2상태~~ - 2026-05-08 일반 3상태로 축소)
 
 5.14.3.1. **잔여 미선택** (`normal-available`): 활성. 클릭 가능 (선택 토글). 배경 `COLOR_PICK_SLOT_BG` + 테두리 `COLOR_PICK_SLOT_BORDER` (골드).
 5.14.3.2. **잔여 선택됨** (`normal-selected`): 활성. 클릭 가능 (선택 해제 토글). 배경 `COLOR_PICK_SLOT_SELECTED_BG` + 테두리 `COLOR_PICK_SLOT_SELECTED_BORDER` + 체크 마크 또는 펄스 강조.
 5.14.3.3. **뽑힘** (`normal-drawn`): 비활성. 이전 사이클의 lockedResult ticket이 인벤토리에 있거나 reveal 완료된 슬롯. 배경 `COLOR_PICK_SLOT_EMPTY_BG` + 테두리 `COLOR_PICK_SLOT_EMPTY_BORDER` (약한 잉크). 클릭 무시.
 5.14.3.4. 슬롯 시각 모티프: 작은 복권 모양 (브랜드 빨강 점) 또는 골드 점. 선택 시 모티프 + 체크 마크.
-5.14.3.5. **Last One 슬롯 대기** (`last-one-pending`): 비활성. 배경 `COLOR_PICK_SLOT_BG` + 테두리 `COLOR_GOLD_EDGE` 강조. 라벨 = "L1" (등급 표기 정책 5.2.4 영문 단독). 호버 안내 toast "마지막 일반 슬롯 뽑힐 때 자동 지급".
-5.14.3.6. **Last One 슬롯 지급 완료** (`last-one-drawn`): 비활성. 회색.
+5.14.3.5. ~~**Last One 슬롯 대기** (`last-one-pending`)~~ **2026-05-08 폐기 (4.14.14)**. Last One 슬롯이 통에 노출되지 않으므로 본 상태 미사용. `pick-slot.js`의 `LAST_ONE_PENDING` 상수 dead (호환 export로만 잔존, 다음 정리 라운드 제거 후보).
+5.14.3.6. ~~**Last One 슬롯 지급 완료** (`last-one-drawn`)~~ **2026-05-08 폐기 (4.14.14)**. 동일.
 
 ### 5.14.4. 인터랙션 (B-α)
 
-5.14.4.1. **호버**: 일반 슬롯 (미선택)이 `PICK_SLOT_HOVER_LIFT_PX` (= 4px) 부상 + `PICK_SLOT_HOVER_GLOW_PX` (= 12px) 글로우 (색상 `COLOR_PICK_SLOT_HOVER_GLOW`). 데스크톱 마우스 hover, 모바일은 hover 미지원. Last One 슬롯은 호버 시 5.14.3.5 안내 toast.
+5.14.4.1. **호버**: 일반 슬롯 (미선택)이 `PICK_SLOT_HOVER_LIFT_PX` (= 4px) 부상 + `PICK_SLOT_HOVER_GLOW_PX` (= 12px) 글로우 (색상 `COLOR_PICK_SLOT_HOVER_GLOW`). 데스크톱 마우스 hover, 모바일은 hover 미지원. ~~Last One 슬롯은 호버 시 5.14.3.5 안내 toast~~ (2026-05-08 toast 폐기 + Last One 슬롯 통 비노출).
 5.14.4.2. **클릭 / 탭 (잔여 일반 슬롯)**: 선택 / 해제 토글 (메모리 전용. deck splice 없음. drawOne 호출 없음. history 미커밋). 같은 슬롯 재클릭 = 해제. 다른 슬롯 클릭 = 추가 선택.
 5.14.4.3. **선택 카운트 헤더**: 격자 패널 상단에 "선택 K / N" 표시. K = 현재 선택된 슬롯 수, N = 인벤토리 raw ticket 수 (= 사용자가 골라야 할 매수).
 5.14.4.4. **"확인" 버튼**: K === N 시 활성. 클릭 시:
@@ -298,17 +298,17 @@
 5.14.6.5. **OFF → ON 전환 + 인벤토리 ≥ 1 raw (격자 표시 중)**: 사용자가 일부 슬롯 선택 중이라도 격자 즉시 닫힘. **drawOne N회 호출 = `splice(0)` 반복** (= skip ON 흐름. 사용자 선택 폐기) → 인벤토리 raw N매에 lockedResult 일괄 부여 → peel 단계 자동 진입.
 5.14.6.6. **ON → OFF 전환 + 인벤토리 ≥ 1 raw**: 즉시 격자 표시 (b1 분기). 단 인벤토리에 lockedResult 보유 ticket이 있으면 그 ticket 우선 reveal (b2). 모두 reveal 후 raw가 남으면 격자.
 
-### 5.14.7. 첫 진입 안내
+### 5.14.7. 첫 진입 안내 (**2026-05-08 폐기**)
 
-5.14.7.1. `kuji_meta` 에 `pickHintSeen` 플래그 추가. 최초 통 선택 격자 진입 시 1회 toast 표시.
-5.14.7.2. 문구 = `PICK_FIRST_HINT_TEXT_KO` (02_data 1.12). B-α 재정정으로 문구 갱신: "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다." (사행성 표현 0건).
-5.14.7.3. 표시 시간 = `PICK_FIRST_HINT_DURATION_MS` (= 4000ms). 사용자 탭 시 즉시 닫힘.
+5.14.7.1. ~~`kuji_meta` 에 `pickHintSeen` 플래그 추가. 최초 통 선택 격자 진입 시 1회 toast 표시.~~ **폐기됨 (2026-05-08, PROGRESS 4.14.1)**. 사용자 메모리 룰 `feedback_lottery_red_text`("복권 영역 안내·힌트·경고 문구 금지") 우선 적용. `pick-hint-toast.js` 모듈 삭제. `dispatch.pick_hint_seen` 호출처 0건. `kuji_meta.pickHintSeen` 영속 키는 호환을 위해 유지하되 읽지 않음 (deprecated). `PICK_FIRST_HINT_TEXT_KO` / `PICK_FIRST_HINT_DURATION_MS` 상수는 numbers.js 잔존하나 사용처 0 (deprecated, 다음 정리 라운드 제거 후보).
+5.14.7.2. ~~문구 = `PICK_FIRST_HINT_TEXT_KO`~~ **폐기**.
+5.14.7.3. ~~표시 시간 = `PICK_FIRST_HINT_DURATION_MS`~~ **폐기**.
 
 # 6. 사용자 시나리오 (M2 + M2.1 갱신)
 
 6.1. **첫 진입**: 면책 안내 → 추첨 탭 → 구매 씬 (인벤토리 0매) → 박스 카드 + 갤러리 (모두 미뽑힘) + 구매 패널 (skip 체크박스 OFF 기본).
-6.2. **첫 구매 + 첫 통 선택 + 첫 뜯기 (skip OFF, 기본 흐름, B-α)**: Quick 1매 → 가격 790엔 표시 → 구매 → 인벤토리 1매 raw → 통 선택 격자 자동 표시 (10×8 슬롯) + "선택 0/1" 헤더 + 첫 진입 안내 toast → 슬롯 1개 클릭 (selected 상태) + "선택 1/1" → "확인" 버튼 활성 → 클릭 → drawOne 1회 호출 + ticket lockedResult 부여 + 격자 종료 → 페이지플립 카드 표시 (외부 면, 등급 미공개) → 좌측 드래그 / 클릭 → 페리페리 reveal → 등급 / 상품 인플레이스 표시 + 갤러리 갱신 (이 시점에 첫 갤러리 변화) → 확인 버튼 → 인벤토리 0매 → 구매 씬 복귀.
-6.3. **5매 통째 선택 (skip OFF)**: Quick 5매 → 인벤토리 5매 raw → 격자 표시 + "선택 0/5" 헤더 → 사용자가 슬롯 5개 클릭 (예: gridIndex 17, 3, 50, 22, 8) + "선택 5/5" → 확인 → drawOne 5회 연속 호출 + ticket 5매 lockedResult 부여 (선택 순서 그대로) + 격자 종료 → 페이지플립 패널 진입 → 카드 1장씩 reveal → 5번째 reveal 후 인벤토리 0매 → 구매 씬 복귀. 갤러리는 매 reveal마다 1매씩 갱신.
+6.2. **첫 구매 + 첫 통 선택 + 첫 뜯기 (skip OFF, 기본 흐름, B-α, 2026-05-08 toast 폐기 정합)**: Quick 1매 → 가격 790엔 표시 → 구매 → 인벤토리 1매 raw → 통 선택 격자 자동 표시 (산개 배치 79슬롯) + "선택 0/1 · 잔여 80" 헤더 → 슬롯 1개 클릭 (selected 상태) + "선택 1/1" → 200ms 후 자동 confirm → drawOne 1회 호출 + ticket lockedResult 부여 + 격자 종료 → 페이지플립 카드 표시 (외부 면, 등급 미공개) → 좌측 드래그 / 클릭 → 페리페리 reveal → 등급 / 상품 인플레이스 표시 + 갤러리 갱신 (이 시점에 첫 갤러리 변화) → 확인 버튼 → 인벤토리 0매 → 구매 씬 복귀.
+6.3. **5매 통째 선택 (skip OFF, 2026-05-08 자동 전이 정합)**: Quick 5매 → 인벤토리 5매 raw → 격자 표시 + "선택 0/5" 헤더 → 사용자가 슬롯 5개 클릭 (예: gridIndex 17, 3, 50, 22, 8) → 5번째 클릭 시점 200ms 후 자동 confirm → drawOne 5회 연속 호출 + ticket 5매 lockedResult 부여 (선택 순서 그대로) + 격자 종료 → 페이지플립 패널 진입 → 카드 1장씩 reveal → 5번째 reveal 후 인벤토리 0매 → 구매 씬 복귀. 갤러리는 매 reveal마다 1매씩 갱신.
 6.4. **skip ON 흐름**: 구매 패널에서 "통에서 선택 건너뛰기" 체크 → Quick 10매 → 인벤토리 10매 raw (lockedResult 즉시 미부여 - skip ON에서는 lockedResult 미사용) → 통 선택 격자 미표시, 페이지플립 카드 곧바로 표시 → 좌측 드래그 / 클릭 = drawOne(splice(0)) 즉시 호출 → 인플레이스 표시 → 확인 → 다음 (M2 흐름과 동일).
 6.5. **80매 풀 추첨**: 사용자가 5매씩 16회 또는 1매 80회 등 자유. 사용자 선택의 마지막 일반 슬롯 splice 시점에 isLastOne true → 그 ticket의 lockedResult에 lastOnePrize 첨부 → reveal 시 페이지플립 카드에 마지막 카드 + 大猿悟空 SOFVICS 동시 인플레이스 표시. 격자의 Last One 슬롯도 reveal 시점에 회색화.
 6.6. **결정론 검증 (skip ON)**: 시드 메모 → 80매 뜯기 → 동일 시드 다시 입력 (`box_round` `BOX_ROUND_INITIAL` 리셋, 5.7.4) → 첫 박스 추첨 순서 동일 재현.

@@ -5,6 +5,11 @@ import {
   BOX_SIZE,
   LINEUP,
   PICK_GRID_COLS_DEFAULT,
+  PICK_SLOT_ROTATE_RANGE_DEG,
+  PICK_GRID_CLAMP_MIN_PCT,
+  PICK_GRID_CLAMP_MAX_PCT,
+  PICK_SLOT_JITTER_RATIO,
+  PICK_SLOT_SELECTED_Z_BOOST,
 } from "../data/numbers.js";
 import { fnv1a } from "../core/hash.js";
 import { renderPickSlot, PICK_SLOT_KINDS } from "./pick-slot.js";
@@ -27,17 +32,17 @@ function deterministicShuffle(seedKey, n) {
   return order;
 }
 
-// 슬롯별 회전(±36°) + z-index 0~15. 시드+gi 해시 기반.
+// 슬롯별 회전(±RANGE/2°) + z-index 0~15. 시드+gi 해시 기반.
 function slotJitter(seedKey, gi) {
   const h = fnv1a(`${seedKey}|jit|${gi}`);
-  const angle = (((h & 0xFFFF) / 0xFFFF) - 0.5) * 72;        // -36° ~ +36°
-  const z = (h >>> 8) & 0x0F;                                  // 0 ~ 15 z-index
+  const angle = (((h & 0xFFFF) / 0xFFFF) - 0.5) * PICK_SLOT_ROTATE_RANGE_DEG;  // -RANGE/2 ~ +RANGE/2
+  const z = (h >>> 8) & 0x0F;                                                  // 0 ~ 15 z-index (비트 마스크)
   return { angle, z };
 }
 
 // 슬롯 절대 위치 (% 좌표). 격자 셀 + 셀 내부 jitter.
 // 무작위 분포는 Poisson clumping으로 군집과 공백이 생기므로,
-// 셔플된 순서로 격자 셀에 균등 배정 후 셀 내부에서 ±50% jitter로 자연스러움 부여.
+// 셔플된 순서로 격자 셀에 균등 배정 후 셀 내부에서 PICK_SLOT_JITTER_RATIO 비율 jitter로 자연스러움 부여.
 // 셀 경계를 살짝 넘으며 인접 셀과 섞여 격자 흔적 약화.
 function slotPosition(seedKey, posInShuffle, cols, rows) {
   const row = Math.floor(posInShuffle / cols);
@@ -47,11 +52,13 @@ function slotPosition(seedKey, posInShuffle, cols, rows) {
   const centerX = col * cellW + cellW / 2;
   const centerY = row * cellH + cellH / 2;
   const h = fnv1a(`${seedKey}|pos|${posInShuffle}`);
-  const jx = (((h & 0xFFFF) / 0xFFFF) - 0.5) * cellW;          // ±50% 셀 폭
-  const jy = (((h >>> 16) & 0xFFFF) / 0xFFFF - 0.5) * cellH;   // ±50% 셀 높이
-  // 셀 경계를 살짝 넘는 게 자연스러우나, 화면 밖으로 나가지 않도록 5%~95% 클램프
-  const xPct = Math.max(5, Math.min(95, centerX + jx));
-  const yPct = Math.max(5, Math.min(95, centerY + jy));
+  // PICK_SLOT_JITTER_RATIO 0.5 = ±50% 셀 폭 jitter. (rand - 0.5) * 2 → -1~+1 → * RATIO * cellW.
+  const rx = ((h & 0xFFFF) / 0xFFFF) - 0.5;
+  const ry = ((h >>> 16) & 0xFFFF) / 0xFFFF - 0.5;
+  const jx = rx * 2 * PICK_SLOT_JITTER_RATIO * cellW;
+  const jy = ry * 2 * PICK_SLOT_JITTER_RATIO * cellH;
+  const xPct = Math.max(PICK_GRID_CLAMP_MIN_PCT, Math.min(PICK_GRID_CLAMP_MAX_PCT, centerX + jx));
+  const yPct = Math.max(PICK_GRID_CLAMP_MIN_PCT, Math.min(PICK_GRID_CLAMP_MAX_PCT, centerY + jy));
   return { xPct, yPct };
 }
 
@@ -145,7 +152,7 @@ export function renderPickPanel(state, dispatch) {
     slot.style.setProperty("--slot-x", `${xPct.toFixed(2)}%`);
     slot.style.setProperty("--slot-y", `${yPct.toFixed(2)}%`);
     let zBase = z;
-    if (kind === PICK_SLOT_KINDS.NORMAL_SELECTED) zBase += 30;
+    if (kind === PICK_SLOT_KINDS.NORMAL_SELECTED) zBase += PICK_SLOT_SELECTED_Z_BOOST;
     slot.style.setProperty("--jitter-z", String(zBase));
     grid.appendChild(slot);
   }

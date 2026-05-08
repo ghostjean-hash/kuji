@@ -2,10 +2,10 @@
 
 # 1. 현재 상태
 
-1.1. **현재 스프린트**: M2.1-pick-from-bin.
-1.2. **현재 단계**: 단계 5 implement 완료 + 사용자 라이브 UX/UI 정정 라운드 다수 완료 + **비-블로커 정리 라운드 (1.5.4 5건 모두 흡수)**. **다음 세션 진입점 = 사용자 placeholder 자산 외부 작업 완료 후 코드 경로 수정 OR M2.1 마무리 (단계 6/7/8) 결정**.
-1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03.
-1.4. **마지막 갱신**: 2026-05-08 (비-블로커 정리 라운드 + 통 슬롯 산개 정정 - 4.15/4.16 절 추가).
+1.1. **현재 스프린트**: ~~M2.1-pick-from-bin~~ → **종료 (2026-05-08)**.
+1.2. **현재 단계**: M2.1 8단계 파이프라인 모든 단계 통과. **단계 6 round 3 final 통과 + 단계 7 QA + 단계 8 improve + M3 후보 plan 등재**. 다음 세션 진입점 = 사용자 placeholder 자산 외부 작업 완료 OR M3 진입 결정.
+1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03 ~ 2026-05-08 (5일).
+1.4. **마지막 갱신**: 2026-05-08 (M2.1 종료 - 단계 6 round 3 통과, 단계 7 QA, 단계 8 improve + M3 plan 후보. 4.17 절 추가).
 
 ## 1.5. 다음 세션 즉시 작업 후보
 
@@ -45,7 +45,7 @@
 | M0.5 | 도메인 리서치 | 단순 조사 (8단계 미적용) | 완료 |
 | M1 | base-system + 一番くじ ドラゴンボール | 1~7 ✅ / 8 ✅ (UX 결함 백로그 + M2 후보 등재) | 종료 (기능 정합 / UX 미완) |
 | M2 | ux-redesign | 1 ✅ / 2 ✅ → 3 (3차) ✅ / 4 ✅ / 5 ✅ + 사용자 UI 정정 다수 / 6~8 사용자 라이브 컨펌 갈음 | 종료 (라이브 컨펌으로 갈음. 단계 6/7 정식 보고서 미작성. 학습은 M2.1 단계 6에서 흡수) |
-| **M2.1** | pick-from-bin | 1 ✅ / 2 B-α ✅ / 3 (round 5) ✅ / 4 B-α ✅ / 5 B-α ✅ → T18/T19 대기 | **진행 중 (B-α 재정정 완료)** |
+| **M2.1** | pick-from-bin | 1 ✅ / 2 B-α ✅ / 3 (round 5) ✅ / 4 B-α ✅ / 5 B-α ✅ / 6 (round 3) ✅ / 7 ✅ / 8 ✅ | **종료 (2026-05-08, 8단계 모두 통과)** |
 
 # 3. 단계 스킵 사유
 
@@ -244,6 +244,26 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 4.15.6. **변경 요약**: 5 파일 수정 + 1 파일 신설. `src/render/main.js`, `src/render/pick-panel.js`, `src/data/numbers.js`, `docs/02_data.md`, `tests/runner.js` + `tests/suites/build_consumed_grid_set.test.js` 신설. 동작 변경 0 (refactor + dead code 제거 + 테스트 추가만).
 
+## 4.17. 2026-05-08 - M2.1 정식 마무리 (단계 6 round 3 통과 + 단계 7 + 단계 8)
+
+라이브 정정 모드 종료. 8단계 파이프라인 정식 마무리 사이클 진행.
+
+4.17.1. **시각 튜닝 매직 넘버 5종 흡수**: 6.2.14 백로그 흡수. `PICK_SLOT_ROTATE_RANGE_DEG (72)` / `PICK_GRID_CLAMP_MIN_PCT (5)` / `PICK_GRID_CLAMP_MAX_PCT (95)` / `PICK_SLOT_JITTER_RATIO (0.5)` / `PICK_SLOT_SELECTED_Z_BOOST (30)`. numbers.js + 02_data 1.12 + pick-panel.js 정합.
+
+4.17.2. **단계 6 subagent 격리 검증 round 1**: P0 5 / P1 4 / P2 4건 식별. 검증자: general-purpose subagent (깨끗한 컨텍스트). 결함: toast 폐기 docs 누락 / 5.7-5.8 매트릭스 폐기 식별자 / Last One 슬롯 spec vs 코드 / tokens.css 색 vs 02_data SSOT / 미등재 토큰 / 매직 30 / 변경이력 누락 / requiresReceive 미명시. 6.2.14 백로그도 본 round에서 흡수.
+
+4.17.3. **단계 6 정정 사이클 (사용자 결정 + 자비스 자동)**: P0 2.3 (A) 통 비노출 - spec 갱신 / P0 2.4 (A) 라이브 정정 유지 - 02_data 갱신 / P2 4.2 settings-tab 도움말 유지. 자비스 자동 정정 9개 파일 (spec / 02_data / 03_architecture / numbers.js / pick-panel.js / pick-slot.js).
+
+4.17.4. **단계 6 round 2**: 잔존 P0 1건 (colors.js 미동기화 - round 1 정정의 코드 측 누락). 자동 재시도 한도 소진. 사용자 명시 승인으로 round 3 진입.
+
+4.17.5. **단계 6 round 3 통과**: colors.js 6건 동기화 (3건 값 정정 + 3건 신규 export). cross-check 02_data 2.2 ↔ colors.js 100% 일치. P0 0건. **단계 6 게이트 통과**. 보고서 `docs/pipeline/M2.1-pick-from-bin/06_impl_review.md`.
+
+4.17.6. **단계 7 QA**: `07_qa.md` 작성. 정적 시나리오 6.1~6.4 / 7.11 정합 + 라이브 정정 4.14 / 4.16 흡수 검증 + 단위 테스트 커버리지 (11 suite, build_consumed_grid_set.test.js 포함). **통과**.
+
+4.17.7. **단계 8 improve + M3 plan 후보**: `08_improve.md` 작성. M2.1 8단계 모두 통과 + 학습 14건 흡수 정합. M3 후보 = 一番くじ ワンピース 라인업 추가 + 다중 라인업 인터페이스(CB-1) + M2.1 정리 라운드(P2 6건) + CB-2 인라인 hex 토큰화 + 6.2.12 gridIndex 의무 기록. 추정 3.0일.
+
+4.17.8. **M2.1 정식 종료**: 8단계 모두 통과. PROGRESS 6.2 학습 14건 흡수. M3 후보 plan 등재. 사용자 외부 작업 1건(placeholder 자산) 대기.
+
 ## 4.16. 2026-05-08 - 통 슬롯 산개 정정 (Poisson clumping 해소)
 
 4.16.1. **결함 보고 (사용자 캡처)**: 통 선택 격자에 79슬롯이 6개 정도의 클러스터로 군집화. "복권을 펼쳐놓으라고 했는데 왜 모여 있지?" 라이브 정정 모드 진입.
@@ -283,7 +303,7 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 6.1.3. CB-1: `core/history.tierCounts(history)`의 `lineup` 인자 추가 (M3 다중 라인업 시점).
 6.1.4. CB-2: `styles/main.css` 인라인 hex → tokens.css 변수화.
 
-## 6.2. M2 라이브 정정 사이클 학습 (M2.1 단계 6에서 흡수 예정)
+## 6.2. M2 / M2.1 라이브 정정 사이클 학습 (**2026-05-08 단계 6 round 3 통과로 모두 흡수 완료**)
 
 6.2.1. ~~단계 6 검증 흐름 정합~~. **2026-05-03 종료 확정**. 라이브 컨펌으로 갈음. 학습 6.2.2~6.2.5는 M2.1 단계 6 검증 룰에 첫 적용.
 6.2.2. **render 신규 모듈 prop 일관성**: peel-panel.js 첫 분기에서 `onConfirm` 전달 누락 사고. 단계 6 검증 룰에 prop drilling 정합 추가.
@@ -303,12 +323,25 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 6.2.15. **무작위 분포 vs 균등 분포 (4.16 학습)**: "산개" UX는 무작위 좌표 ≠ 균등 분포. 무작위는 통계적으로 군집과 공백을 만든다 (Poisson clumping). 균등 산개를 원하면 격자 + jitter / 블루 노이즈 / Poisson disk sampling 같은 균등성 제약 필요. 다음 라인업 (M3 ワンピース)에서 통 시각 모델 재설계 시 이 구분 명시.
 
-## 6.3. M3 후보 (M2.1 단계 8에서 정식 plan 작성)
+## 6.3. M3 후보 (**M2.1 단계 8 improve에서 정식 등재 - 2026-05-08**)
 
 6.3.1. `一番くじ ワンピース MONKEY.D.LUFFY` 라인업 추가 (이찌방쿠지 표준 메커닉).
 6.3.2. CB-1 다중 라인업 인터페이스 보강 (`core/history.tierCounts(history, lineup)`).
 6.3.3. CB-2 styles/main.css 인라인 hex → tokens.css 변수화.
 6.3.4. M2.1 통 선택 격자 라인업별 종횡비 hook 활성화 (P2 대비).
+
+## 6.3.5. M2.1 정리 라운드 (단계 6 round 3 P2 6건, M3에서 흡수 예정)
+
+6.3.5.1. `buildConsumedGridSet` → `core/pick-grid.js` 분리 (4.1 회색지대 해소).
+6.3.5.2. main.js dispatch.pick_hint_seen handler 제거 (호출처 0건 dead).
+6.3.5.3. 04_impl_plan.md `pendingPickResult` 잔존 정리.
+6.3.5.4. pick-slot.js `LAST_ONE_PENDING` / `LAST_ONE_DRAWN` dead export 제거.
+6.3.5.5. numbers.js `PICK_FIRST_HINT_*` dead export 제거.
+6.3.5.6. spec 6.5 시나리오 표현 단축형 명확화.
+
+## 6.3.6. M2 / M2.1 누적 백로그 (M3에서 흡수)
+
+6.3.6.1. M1 OP-3 / M2.1 6.2.12: 모든 draw 경로에 gridIndex 의무 기록 → skip 모드 placeholder 충당 폐기.
 
 ## 6.4. M4+ 보류
 

@@ -24,7 +24,9 @@ export const COLOR_INK_SECONDARY = "#4A3F30";
 export const COLOR_INK_MUTED = "#9C8B78";
 export const COLOR_BORDER_SUBTLE = "#E8DECF";
 export const COLOR_FRAME_RED = "#C8102E";
+export const COLOR_FRAME_RED_DARK = "#A30D24";  // 2026-05-08 신설 (4.14.13): 빨강 보조 (그림자 / 깊이)
 export const COLOR_GOLD_EDGE = "#C9A961";
+export const COLOR_GOLD_EDGE_SOFT = "#E5D5A8";  // 2026-05-08 신설 (4.14.13): Last One 행 옅은 골드 틴트
 
 // 결과 / 상태 색
 export const COLOR_RESULT_NORMAL = "#1F1A14";
@@ -41,11 +43,12 @@ export const COLOR_TICKET_DIM_RGBA = "rgba(0, 0, 0, 0.5)";
 export const COLOR_GAUGE_BG = "#E8DECF";
 export const COLOR_GAUGE_FILL = "#C9A961";
 
-// 02_data 2.2 통 선택 슬롯 (M2.1 + B-α 재정정)
-export const COLOR_PICK_SLOT_BG = "#F3EDE0";  // 잔여 미선택 슬롯 배경 (보조 패널 톤)
-export const COLOR_PICK_SLOT_BORDER = "#C9A961";  // 잔여 미선택 슬롯 테두리 (골드)
+// 02_data 2.2 통 선택 슬롯 (M2.1 + B-α 재정정 / 2026-05-08 라이브 정정 SSOT 정합)
+export const COLOR_PICK_SLOT_BG = "#FFFFFF";  // 잔여 미선택 슬롯 배경 (순백, 종이 모티프). 4.14.14 산개 메타포 강화 시 변경.
+export const COLOR_PICK_SLOT_BG_GRAD = "linear-gradient(135deg, #FFFFFF 0%, #FBF6EC 100%)";  // 2026-05-08 신설: 슬롯 배경 그라디언트 (종이 깊이감)
+export const COLOR_PICK_SLOT_BORDER = "#B89B5A";  // 잔여 미선택 슬롯 테두리 (골드, 약간 어둡게). 4.14.13 보더 두께 1px 통일 시 변경.
 export const COLOR_PICK_SLOT_HOVER_GLOW = "rgba(201, 169, 97, 0.6)";  // 호버 글로우 (골드 알파)
-export const COLOR_PICK_SLOT_EMPTY_BG = "#E8DECF";  // 뽑힌 슬롯 배경 (옅은 종이)
+export const COLOR_PICK_SLOT_EMPTY_BG = "#DCD3C2";  // 뽑힌 슬롯 배경 (회색 강도 증가). 4.14.14 시 변경.
 export const COLOR_PICK_SLOT_EMPTY_BORDER = "#9C8B78";  // 뽑힌 슬롯 테두리 (약한 잉크)
 export const COLOR_PICK_SLOT_SELECTED_BG = "#FFE9C7";  // M2.1 B-α: 선택됨 슬롯 배경 (밝은 골드 톤)
 export const COLOR_PICK_SLOT_SELECTED_BORDER = "#C8102E";  // M2.1 B-α: 선택됨 슬롯 테두리 (브랜드 빨강 강조)

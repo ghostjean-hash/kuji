@@ -254,9 +254,14 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 | `PICK_SLOT_HOVER_GLOW_PX` | 12 | 호버 글로우 반경 |
 | `PICK_SLOT_CLICK_TO_CARD_MS` | 400 | 슬롯 클릭 → 페이지플립 카드 전환 시간 |
 | `PICK_SLOT_EMPTY_FADE_MS` | 200 | 뽑힌 슬롯 회색화 전환 시간 |
-| `PICK_FIRST_HINT_DURATION_MS` | 4000 | 첫 진입 안내 toast 표시 시간 (1회만) |
-| `PICK_FIRST_HINT_TEXT_KO` | `"N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다."` | 첫 진입 안내 문구 (B-α 정합. 사행성 표현 0건). N은 호출처에서 동적 치환 (또는 그대로 표시) |
+| ~~`PICK_FIRST_HINT_DURATION_MS`~~ | ~~4000~~ | **2026-05-08 deprecated (4.17 단계 6)** - toast 폐기로 사용처 0. 호환 위해 numbers.js 잔존, 다음 정리 라운드 제거 후보. |
+| ~~`PICK_FIRST_HINT_TEXT_KO`~~ | ~~"N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다."~~ | **2026-05-08 deprecated (4.17 단계 6)** - 동일. |
 | `PICK_AUTO_CONFIRM_DELAY_MS` | 200 | **2026-05-08 신설** - 사용자가 N매 선택 완료 후 자동 confirm까지 시각 확인 딜레이 (4.14.5). 너무 짧으면 마지막 선택 슬롯 강조를 놓치고, 너무 길면 답답함. |
+| `PICK_SLOT_ROTATE_RANGE_DEG` | 72 | **2026-05-08 신설 (4.17)** - 슬롯 회전 폭. ±36° = 72° 범위. 산개 메타포의 "흩뿌려진 종이" 느낌. |
+| `PICK_GRID_CLAMP_MIN_PCT` | 5 | **2026-05-08 신설 (4.17)** - 슬롯 위치 % 하한. 가장자리 잘림 방지. |
+| `PICK_GRID_CLAMP_MAX_PCT` | 95 | **2026-05-08 신설 (4.17)** - 슬롯 위치 % 상한. |
+| `PICK_SLOT_JITTER_RATIO` | 0.5 | **2026-05-08 신설 (4.17)** - 셀 내부 jitter 비율 (±50% 셀 폭/높이). 격자 흔적 약화 (4.16 격자 매핑). 0.3 미만 → 격자 보임 / 0.7 이상 → 인접 셀 충돌 빈번. |
+| `PICK_SLOT_SELECTED_Z_BOOST` | 30 | **2026-05-08 신설 (4.17 단계 6 P1 3.1)** - 선택됨 슬롯 z-index 가중. 베이스 jitter z(0~15) + 30 = 30~45 범위. 미선택과의 z 충돌 회피. |
 
 `PICK_GRID_ROWS_DEFAULT` 는 정의 키가 아니라 `Math.ceil(BOX_SIZE / PICK_GRID_COLS_DEFAULT)` 도출. `BOX_SIZE` 가 `PICK_GRID_COLS_DEFAULT` 로 나누어떨어지지 않는 라인업은 마지막 행 부분 채움 (M3 ワンピース 라인업 도입 시 검증).
 
@@ -294,7 +299,9 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 | `COLOR_INK_MUTED` | `#9C8B78` | 약한 잉크 (보조 텍스트) |
 | `COLOR_BORDER_SUBTLE` | `#E8DECF` | 옅은 종이 테두리 |
 | `COLOR_FRAME_RED` | `#C8102E` | 一番くじ 브랜드 빨강 |
+| `COLOR_FRAME_RED_DARK` | `#A30D24` | **2026-05-08 신설 (4.14.13 단계 6)** - 빨강 보조 (그림자 / 깊이) |
 | `COLOR_GOLD_EDGE` | `#C9A961` | 골드 액센트 (Last One / 추정 강조) |
+| `COLOR_GOLD_EDGE_SOFT` | `#E5D5A8` | **2026-05-08 신설 (4.14.13 단계 6)** - Last One 행 옅은 골드 틴트 (보더 강조 → 배경 틴트로 표현 변경) |
 | `COLOR_RESULT_NORMAL` | `#1F1A14` | 결과 텍스트 (Light) |
 | `COLOR_RESULT_LAST_ONE` | `#C8102E` | Last One 강조 |
 | `COLOR_RESULT_DC_WIN` | `#2A8C5F` | 채도 낮춘 그린 |
@@ -306,10 +313,11 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 | `COLOR_TICKET_DIM_RGBA` | `"rgba(0, 0, 0, 0.5)"` | 뽑힌 등급 갤러리 딤드 오버레이 |
 | `COLOR_GAUGE_BG` | `#E8DECF` | 게이지 배경 |
 | `COLOR_GAUGE_FILL` | `#C9A961` | 게이지 채움 (골드) |
-| `COLOR_PICK_SLOT_BG` | `#F3EDE0` | **M2.1** - 잔여 미선택 슬롯 배경 (보조 패널 톤) |
-| `COLOR_PICK_SLOT_BORDER` | `#C9A961` | **M2.1** - 잔여 미선택 슬롯 테두리 (골드) |
+| `COLOR_PICK_SLOT_BG` | `#FFFFFF` | **M2.1 (2026-05-08 라이브 정정)** - 잔여 미선택 슬롯 배경 (순백, 종이 모티프). 이전 `#F3EDE0`에서 4.14.14 산개 메타포 강화 시 변경. |
+| `COLOR_PICK_SLOT_BG_GRAD` | `"linear-gradient(135deg, #FFFFFF 0%, #FBF6EC 100%)"` | **2026-05-08 신설 (4.14.14 단계 6)** - 슬롯 배경 그라디언트 (종이 깊이감) |
+| `COLOR_PICK_SLOT_BORDER` | `#B89B5A` | **M2.1 (2026-05-08 라이브 정정)** - 잔여 미선택 슬롯 테두리 (골드, 약간 어둡게). 이전 `#C9A961`에서 4.14.13 보더 두께 1px 통일 시 변경. |
 | `COLOR_PICK_SLOT_HOVER_GLOW` | `"rgba(201, 169, 97, 0.6)"` | **M2.1** - 호버 글로우 (골드 알파) |
-| `COLOR_PICK_SLOT_EMPTY_BG` | `#E8DECF` | **M2.1** - 뽑힌 슬롯 배경 (옅은 종이) |
+| `COLOR_PICK_SLOT_EMPTY_BG` | `#DCD3C2` | **M2.1 (2026-05-08 라이브 정정)** - 뽑힌 슬롯 배경. 이전 `#E8DECF`에서 4.14.14 시 변경 (회색 강도 증가). |
 | `COLOR_PICK_SLOT_EMPTY_BORDER` | `#9C8B78` | **M2.1** - 뽑힌 슬롯 테두리 (약한 잉크) |
 | `COLOR_PICK_SLOT_SELECTED_BG` | `#FFE9C7` | **M2.1 B-α 신설** - 선택됨 슬롯 배경 (밝은 골드 톤) |
 | `COLOR_PICK_SLOT_SELECTED_BORDER` | `#C8102E` | **M2.1 B-α 신설** - 선택됨 슬롯 테두리 (브랜드 빨강 = 강조) |
@@ -328,7 +336,7 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 | `kuji_history` | JSON array | 추첨 이력. 항목 = `{ time, boxId, drawIndex, tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, pickIndex (M2.1, number \| null), gridIndex (M2.1, number \| null), revealed (M2.1, deprecated B-α) }`. M2.1 B-α: history 항목은 **reveal 시점에만 append** (`revealed` 필드는 항상 true이므로 deprecated). 새로고침 복원은 `kuji_unopened_tickets[*].lockedResult` 로 처리 (8.10). **`pickIndex`** = drawOne 호출 시점의 deck 잔여 인덱스. **`gridIndex`** = 사용자 격자 슬롯 위치 (B-α: 사용자 선택 순서 그대로 ticket에 매핑됨). skip ON 시 pickIndex 0 / gridIndex null. |
 | `kuji_dc_tickets` | JSON array | DC 응모권 |
 | `kuji_dc_results` | JSON array | DC 추첨 결과 |
-| `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean)) |
+| `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated** - toast 폐기로 읽지 않음)) |
 | `kuji_unopened_tickets` | JSON array | **M2 신설 + M2.1 B-α 갱신** - 미개봉 복권 인벤토리. 항목 = `Ticket = { id, purchasedAt, lockedResult }`. **`lockedResult`** = null (= raw, 등급 미결정) 또는 DrawResult 객체 `{ tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, lastOnePrize?, pickIndex, gridIndex }` (= 통 선택 "확인" 시점에 splice 결과로 부여 + reveal 전 미공개). skip ON 흐름에서는 lockedResult 미사용 (페이지플립 시점에 drawOne 즉시 호출). |
 | `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
 
@@ -338,7 +346,7 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 3.2.2. M1(v1) → M2(v2) 마이그레이션: 기존 사용자에게 `kuji_unopened_tickets = []` 초기화 + `schemaVersion = 2` 갱신. 기존 박스 / 이력 보존.
 3.2.3. **M2(v2) → M2.1(v3) 마이그레이션**:
 - `kuji_settings_skip_pick = BUY_SKIP_PICK_DEFAULT` (= false) 초기화.
-- `kuji_meta.pickHintSeen = false` 초기화 (첫 진입 안내 toast 표시 보장).
+- ~~`kuji_meta.pickHintSeen = false` 초기화~~ **2026-05-08 deprecated** - toast 폐기로 키만 보존, 읽지 않음.
 - `kuji_history` 기존 항목 backfill: `revealed = true` (이미 화면에 노출된 이력으로 간주), `pickIndex = null` / `gridIndex = null` (M2 시점에는 head pop = `splice(0)` + 통 선택 미사용이므로 인덱스 의미 없음).
 - `kuji_unopened_tickets` 기존 항목 backfill: `lockedResult = null` (M2.1 B-α 신설 필드. M2 시점 raw ticket을 raw 그대로 유지 → 새 격자 흐름으로 진입).
 - `schemaVersion = 3` 갱신.

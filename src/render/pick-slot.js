@@ -1,11 +1,13 @@
-// 통(bin) 단일 슬롯 (M2.1 + B-α 5상태). 03_architecture 3.15.
-// 5상태: normal-available / normal-selected / normal-drawn / last-one-pending / last-one-drawn.
+// 통(bin) 단일 슬롯 (M2.1 + B-α). 03_architecture 3.15.
+// 활성 3상태: normal-available / normal-selected / normal-drawn.
+// **2026-05-08 deprecated (4.14.14, 단계 6 P0 2.3)**: LAST_ONE_PENDING / LAST_ONE_DRAWN 상태는
+// 사용처 0. Last One 슬롯이 통에 노출되지 않으므로 본 분기는 호환 export로만 잔존.
 
 const KIND_NORMAL_AVAILABLE = "normal-available";
 const KIND_NORMAL_SELECTED = "normal-selected";  // B-α 신설
 const KIND_NORMAL_DRAWN = "normal-drawn";
-const KIND_LAST_ONE_PENDING = "last-one-pending";
-const KIND_LAST_ONE_DRAWN = "last-one-drawn";
+const KIND_LAST_ONE_PENDING = "last-one-pending";  // deprecated 2026-05-08
+const KIND_LAST_ONE_DRAWN = "last-one-drawn";  // deprecated 2026-05-08
 
 const LAST_ONE_LABEL = "L1";
 

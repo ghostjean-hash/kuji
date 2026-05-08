@@ -52,7 +52,7 @@ kuji/
 │   │   ├── peel-card.js          # M2: 단일 복권 카드 + 페이지플립 애니
 │   │   ├── pick-panel.js         # M2.1: 통(bin) 슬롯 격자 + 슬롯 클릭 → splice(pickIndex)
 │   │   ├── pick-slot.js          # M2.1: 단일 슬롯 (잔여 / 뽑힘 / Last One) + 호버 / 클릭
-│   │   ├── pick-hint-toast.js    # M2.1: 첫 진입 안내 toast (1회 표시)
+│   │   │                            # (pick-hint-toast.js 폐기 - 2026-05-08, PROGRESS 4.14.1)
 │   │   ├── product-gallery.js    # M2: 상품 갤러리 컨테이너
 │   │   ├── product-item.js       # M2: 등급 1개 항목 (이미지 + 카운트 + 게이지)
 │   │   ├── product-image.js      # M2: SVG 이미지 wrapper + 딤드 + 오버레이
@@ -87,7 +87,8 @@ kuji/
         ├── double_chance.test.js
         ├── history.test.js
         ├── storage.test.js
-        └── storage_v3.test.js    # M2.1: v2→v3 마이그레이션 (skip_pick / pickHintSeen / history backfill)
+        ├── storage_v3.test.js    # M2.1: v2→v3 마이그레이션 (skip_pick / history backfill. pickHintSeen은 deprecated 호환만)
+        └── build_consumed_grid_set.test.js # M2.1 4.15.5: drawnSet 단일 진실원 검증
 ```
 
 # 2. 의존성 규칙
@@ -215,7 +216,7 @@ export function loadState(): {
   unopenedTickets,        // M2 + B-α: 항목 = { id, purchasedAt, lockedResult }
   settingsSkipPick,       // M2.1: kuji_settings_skip_pick (boolean)
 }
-//   meta = { disclaimerSeen, schemaVersion, pickHintSeen (M2.1, boolean) }
+//   meta = { disclaimerSeen, schemaVersion, pickHintSeen (M2.1, boolean. 2026-05-08 deprecated - 호환 키만 유지) }
 //   unopenedTickets[i].lockedResult = null (raw) | DrawResult (B-α 확인 후, reveal 전).
 export function saveState(partial): void
 export function clearAll(): void
@@ -224,7 +225,7 @@ export function isStorageAvailable(): boolean
 // M2.1 마이그레이션 (loadState 내부 호출, 02_data 3.2.3)
 export function migrateV2ToV3(state): state
 //   (a) settingsSkipPick = BUY_SKIP_PICK_DEFAULT (= false) 초기화.
-//   (b) meta.pickHintSeen = false 초기화.
+//   (b) meta.pickHintSeen = false 초기화. **2026-05-08 deprecated** - 키는 유지하나 읽지 않음 (toast 폐기).
 //   (c) history 항목 backfill: { revealed: true, pickIndex: null, gridIndex: null } 누락 필드 추가.
 //   (d) unopenedTickets 항목 backfill: { lockedResult: null } 누락 필드 추가 (B-α).
 //   (e) meta.schemaVersion = 3 갱신.
@@ -252,7 +253,7 @@ state = {
   history,            // core/history HistoryEntry[]. B-α: reveal 시점에만 append.
   dcTickets,
   dcResults,
-  meta,               // { disclaimerSeen, schemaVersion, pickHintSeen (M2.1) }
+  meta,               // { disclaimerSeen, schemaVersion, pickHintSeen (deprecated 2026-05-08) }
   storageMode,        // 'persistent' | 'memory'
   unopenedTickets,    // M2 + B-α: Ticket[] = [{ id, purchasedAt, lockedResult }]
                       //   lockedResult: null = raw, DrawResult 객체 = 통 선택 확인 후 미reveal.
@@ -324,7 +325,7 @@ export function renderPickPanel(state, dispatch): HTMLElement
 //     - 정확한 알고리즘: 사용자 선택 순서 [g1, g2, ..., gN].
 //       각 gi에 대해 j_i = (잔여 격자 위치 정렬 후 gi의 인덱스). drawOne(boxState, drawRng, LINEUP, j_i) 호출 후 다음 gi로.
 //       잔여 격자 = 0 ~ BOX_SIZE - 2 중 drawnSet ∪ {g1...g_{i-1}} 에 없는 것.
-//   첫 진입 시 (state.meta.pickHintSeen === false) 안내 toast (pick-hint-toast.js).
+//   (~~첫 진입 시 (state.meta.pickHintSeen === false) 안내 toast~~ - 2026-05-08 폐기, 4.14.1)
 ```
 
 ## 3.15. render/pick-slot.js (M2.1 B-α 갱신, 5상태)
@@ -341,13 +342,9 @@ export function renderPickSlot(props): HTMLElement
 //   onClick: normal-available / normal-selected에서만 호출 (선택 토글).
 ```
 
-## 3.16. render/pick-hint-toast.js (M2.1 신설)
+## 3.16. render/pick-hint-toast.js (**2026-05-08 폐기**)
 
-```js
-// 첫 진입 안내 toast. PICK_FIRST_HINT_TEXT_KO + PICK_FIRST_HINT_DURATION_MS.
-// 표시 후 dispatch({type: 'pick_hint_seen'}) → state.meta.pickHintSeen = true 영속.
-export function renderPickHintToast(dispatch): HTMLElement
-```
+~~첫 진입 안내 toast~~ 모듈은 사용자 결정으로 폐기됨 (PROGRESS 4.14.1, 메모리 룰 `feedback_lottery_red_text`). `src/render/pick-hint-toast.js` 파일 삭제 + `dispatch.pick_hint_seen` 호출처 0건. `PICK_FIRST_HINT_TEXT_KO` / `PICK_FIRST_HINT_DURATION_MS` 상수는 numbers.js에 잔존(deprecated, 다음 정리 라운드 제거 후보).
 
 # 4. 상태 / 데이터 흐름
 
@@ -406,10 +403,16 @@ export function renderPickHintToast(dispatch): HTMLElement
 - main.js dispatch.peel:
   - 첫 ticket.lockedResult가 있으면 (B-α 흐름): result = ticket.lockedResult. drawOne 호출 X.
   - 없으면 (skip ON 흐름): drawOne(boxState, drawRng, LINEUP) 호출.
-  - **history.appendHistory** (entry 생성, revealed: true) + DC ticket + 인벤토리 1매 제거.
-  - persist + pendingPeelResult 설정 + reveal 모션.
+  - **history.appendHistory** (entry 생성, revealed: true) + DC ticket + 인벤토리 1매 제거. **2026-05-08 흐름 정정 (PROGRESS 4.14.8)**: history append는 reveal 시점에 무조건 수행. 이전 흐름은 주요 보상(`requiresReceive`)인 경우 receive_confirm까지 미루어 새로고침/팝업 dismiss 시 entry 손실 가능했음.
+  - **`requiresReceive` UI 플래그 산출**: `!result.isLastOne && tierMeta && tierMeta.count === 1` (= A~F 주요 보상 1매 한정). 의미는 "받기 모달 노출 + peel-card 확인 버튼 활성화 게이트". history append 게이트가 아님 (4.14.8 이전 의미와 구분). 게이트 효과:
+    - hero-carousel: `requiresReceive && !receivedConfirmed` 조건일 때 "받기" 버튼 노출 (해당 tier 카드).
+    - peel-panel/peel-card: `requiresReceive && !receivedConfirmed` 조건일 때 "확인" 버튼 disabled.
+  - persist + pendingPeelResult 설정 (`requiresReceive`, `receivedConfirmed: !requiresReceive` 포함) + reveal 모션.
+- 사용자 받기 클릭 (requiresReceive 흐름) → `dispatch({type: 'receive_confirm'})`:
+  - `pendingPeelResult.receivedConfirmed = true`로 마킹 (UI 게이트 해제). history는 손대지 않음 (이미 peel에서 append됨).
 - 사용자 확인 → `dispatch({type: 'peel_confirm'})`:
-  - state.pendingPeelResult = null. lastDrawnTier = null. rerender.
+  - 게이트: `requiresReceive && !receivedConfirmed`이면 차단.
+  - 통과 시 state.pendingPeelResult = null. lastDrawnTier = null. rerender.
 - 다음 ticket: 또 lockedResult 있으면 b2 유지. 인벤토리 0 도달 → 구매 씬.
 
 4.7. **M2.1 B-α 새로고침 복원**:
@@ -425,10 +428,7 @@ export function renderPickHintToast(dispatch): HTMLElement
 - main.js: `state.settingsSkipPick = value`. 영속 (`kuji_settings_skip_pick`).
 - 본문 재렌더. 진행 중인 reveal 영향 없음 (4장 6.b3 그대로 유지). 다음 1매부터 b1/b2 분기 적용.
 
-4.9. **M2.1 첫 진입 안내**:
-- 첫 격자 진입 시 (`state.meta.pickHintSeen === false`) → pick-hint-toast 자동 표시.
-- toast 닫힘 또는 `PICK_FIRST_HINT_DURATION_MS` 경과 → `dispatch({type: 'pick_hint_seen'})`.
-- main.js: `state.meta.pickHintSeen = true`. 영속 (`kuji_meta`).
+4.9. ~~**M2.1 첫 진입 안내**~~ **2026-05-08 폐기 (PROGRESS 4.14.1)**. 메모리 룰 `feedback_lottery_red_text`("복권 영역 안내·힌트·경고 문구 금지") 우선 적용. pick-hint-toast.js 파일 삭제. dispatch.pick_hint_seen 호출처 0건. `state.meta.pickHintSeen` 영속 키는 호환 유지하되 읽지 않음.
 
 # 5. 정적 검사 / 단계 6 게이트 검증식
 
@@ -438,14 +438,16 @@ export function renderPickHintToast(dispatch): HTMLElement
 5.4. **단위 테스트 100% pass**: tests/test.html 모든 suite의 fail 0건.
 5.5. **`tests/` 매직 넘버 0개 (M2 추가, M1 OP-4 반영)**: tests/suites/*.test.js 도 src/ 와 동일 매직 넘버 룰 적용.
 5.6. **시그니처 grep (M2 추가, M1 OP-2 반영)**: `initBox\(`, `drawOne\(`, `lastOnePrize\(` 호출처 모두 `lineup` 인자 정합 여부 grep. **M2.1 추가**: `drawOne\(` 호출처에 `pickIndex` 인자 정합 grep (skip ON 흐름은 미전달, skip OFF 흐름은 정수 전달).
-5.7. **마이그레이션 단위 테스트 (M2.1 신설)**: `tests/suites/storage_v3.test.js`. v2 fixture (skip_pick 부재 + history `revealed` / `pickIndex` 필드 부재 + meta `pickHintSeen` 부재) → `migrateV2ToV3` 호출 → backfill 결과 검증.
-5.8. **state 매트릭스 분기 정합 (M2.1 신설, M2 PROGRESS 6.2.3 학습 흡수)**: `render/draw-tab.js` 의 6번 영역 분기가 `unopenedTickets.length` × `settingsSkipPick` × `pendingPickResult` × `pendingPeelResult` × `boxState.deck.length` 매트릭스의 5분기 (a/b1/b2/b3/c) 모두 정합한지 grep + 시각 검증.
-5.9. **prop drilling 정합 (M2.1 신설, M2 PROGRESS 6.2.2 학습 흡수)**: 신규 모듈 (pick-panel, pick-slot, pick-hint-toast) 의 prop 시그니처가 호출처에서 누락 없이 전달되는지 grep.
+5.7. **마이그레이션 단위 테스트 (M2.1 신설)**: `tests/suites/storage_v3.test.js`. v2 fixture (skip_pick 부재 + history `revealed` / `pickIndex` / `gridIndex` 필드 부재) → `migrateV2ToV3` 호출 → backfill 결과 검증. (`meta.pickHintSeen` 검증은 2026-05-08 toast 폐기 후 호환 검증으로만 유지).
+5.8. **state 매트릭스 분기 정합 (M2.1 신설, M2 PROGRESS 6.2.3 학습 흡수, B-α 갱신)**: `render/draw-tab.js` 의 6번 영역 분기가 `unopenedTickets.length` × `settingsSkipPick` × `first ticket.lockedResult` × `pendingPeelResult` × `boxState.deck.length` 매트릭스의 5분기 (a/b1/b2/b3/c) 모두 정합한지 grep + 시각 검증. (B-α 재정정: `pendingPickResult` 폐기, `ticket.lockedResult`로 통합).
+5.9. **prop drilling 정합 (M2.1 신설, M2 PROGRESS 6.2.2 학습 흡수)**: 신규 모듈 (pick-panel, pick-slot) 의 prop 시그니처가 호출처에서 누락 없이 전달되는지 grep. (~~pick-hint-toast~~ 2026-05-08 폐기).
 
 # 6. 변경 이력
 
 6.1. 2026-05-02: M1 단계 4 impl_plan 작성. placeholder 교체. 모듈 분해 / 의존성 그래프 / 인터페이스 시그니처 / 데이터 흐름 정의.
 6.2. 2026-05-02: **M2 단계 4 impl_plan 작성**. core/buy.js + render/ 9개 신규 모듈 + input/drag.js + data/assets.js + assets/ (icons / products) 추가. 의존성 그래프 + 정적 검사 5.5 / 5.6 보강.
-6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설.
+6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설. **(이후 6.5에서 findUnrevealed/revealHistory 폐기 + pendingPickResult → ticket.lockedResult 통합. 6.6에서 pick-hint-toast 폐기)**.
+
+6.6. 2026-05-08: **M2.1 라이브 정정 + 단계 6 docs 정합 흡수**. (1) **toast 폐기** (PROGRESS 4.14.1, 메모리 룰 `feedback_lottery_red_text`): pick-hint-toast.js 파일 삭제 / dispatch.pick_hint_seen 호출처 0건 / 03_arch 1장 트리 / 3.16 / 4.9 / 5.7 / 5.9 폐기 표기. PICK_FIRST_HINT_* + meta.pickHintSeen은 호환 잔존 deprecated. (2) **dispatch.peel 흐름 정정** (4.14.8): history append를 reveal 시점에 무조건 수행 (이전: requiresReceive면 receive_confirm까지 미룸 → 새로고침 시 entry 손실 가능). `requiresReceive`는 UI 게이트 플래그로만 사용 (4.6 명시). (3) **buildConsumedGridSet 단일 진실원** (4.14.7 / 4.15.5): pick-panel 렌더와 main.js performPickConfirm가 동일 함수 사용. tests/suites/build_consumed_grid_set.test.js 9 케이스. (4) **통 슬롯 산개** (4.16): 무작위 좌표 → 격자 셀 + ±50% jitter (Poisson clumping 해소). slotPosition 시그니처 변경 (seedKey, posInShuffle, cols, rows). (5) **Last One 슬롯 통 비노출** (4.14.14): pick-panel.js NORMAL_SLOT_COUNT = BOX_SIZE - 1로 일반 슬롯만 렌더. spec 5.14.2.5 / 5.14.3.5/3.6 폐기 표기. pick-slot.js LAST_ONE_PENDING/DRAWN deprecated. (6) **5.8 매트릭스 갱신**: pendingPickResult → ticket.lockedResult로 통합 (B-α 정합). (7) **시각 튜닝 매직 넘버 4종 흡수** (4.17, 단계 6 P1 3.1): PICK_SLOT_ROTATE_RANGE_DEG / PICK_GRID_CLAMP_MIN_PCT / PICK_GRID_CLAMP_MAX_PCT / PICK_SLOT_JITTER_RATIO + PICK_SLOT_SELECTED_Z_BOOST(=30) numbers.js + 02_data 1.12 등재. (8) **02_data 2.2 색 SSOT 정합**: pick-slot 3개 색을 라이브 정정 의도(현재 코드값)로 갱신 + `COLOR_FRAME_RED_DARK` / `COLOR_GOLD_EDGE_SOFT` / `COLOR_PICK_SLOT_BG_GRAD` 3건 신규 등재 (단계 6 P0 2.4 / 2.5). (9) **PICK_AUTO_CONFIRM_DELAY_MS** (4.14.5 / 4.15.2): 200ms 매직 넘버 → 명명 상수.
 6.4. 2026-05-03: **M2.1 단계 5 implement 발견 정정**. history entry 스키마에 `gridIndex (number \| null)` 필드 추가 (격자 위치 영구 기록 = 새로고침 격자 회색 복원의 SSOT). 3.7 / 4.6 갱신. 3.14 pick-panel.js 격자 위치 → 잔여 deck 인덱스 j 변환 알고리즘 명시 (drawnGridIndices 기반). 02_data 3.1 / 3.2.3 동시 갱신 (4.9).
 6.5. 2026-05-03: **M2.1 단계 5 T19 결함 정정 → B-α 재정정 (단계 4 갱신)**. 3.7 history.js (B-α: revealed deprecated, findUnrevealed/revealHistory 폐기). 3.10 storage.js (migrateV3InPlace 신설 = lockedResult 부재 항목에 null 부여). 3.11 state (pendingPickResult 폐기, selectedGridIndices 신설). 3.14 pick-panel.js (lockedGridIndices ∪ drawnGridIndices 기반 회색 도출, selectedGridIndices 표시, 확인 버튼). 3.15 pick-slot.js (5상태). 4.6 흐름 갱신 (toggle_pick_select / confirm_pick / peel skip OFF는 ticket.lockedResult 사용). 4.7 새로고침 복원 (lockedResult 기반).
