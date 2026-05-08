@@ -2,7 +2,9 @@ import { suite, test, assert, assertEq, assertThrows } from "../core.js";
 import { initBox } from "../../src/core/box.js";
 import { drawOne } from "../../src/core/draw.js";
 import { createRng } from "../../src/core/random.js";
-import { BOX_SIZE, TIERS, LINEUP } from "../../src/data/numbers.js";
+// M3: LINEUP / TIERS 단수 폐기 → LINEUP_DRAGONBALL alias.
+import { LINEUP_DRAGONBALL as LINEUP, TIERS_DRAGONBALL as TIERS } from "../../src/data/numbers.js";
+const BOX_SIZE = LINEUP.boxSize;
 
 suite("draw", () => {
   test("79회 클릭으로 박스 종료 (deck pop 79 + Last One 동시 1)", () => {

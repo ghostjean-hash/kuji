@@ -12,6 +12,8 @@
 
 01_spec 5.14 통 선택 메커닉을 src/ 코드로 구현. core/draw 시그니처 + history 신규 함수 + render 3개 신규 모듈 + storage v3 마이그레이션 + 기존 4개 모듈 갱신 + 단위 테스트 2개 신설. **OP-2 / 6.2.2 / 6.2.3 학습 흡수**.
 
+> **2026-05-08 노트 (M3 단계 5 T19 정합)**: 본 문서 내 `pendingPickResult` 참조는 M2.1 1차 설계(T1~T17) 시점의 식별자. **B-α 재정정 (단계 5 라이브 정정)에서 폐기**되어 `unopenedTickets[i].lockedResult`로 통합됨. 본 문서는 역사 정합을 위해 원문 보존 (strikethrough 미적용). 최신 SSOT는 `docs/03_architecture.md` 3.7 / 3.10 / 3.11 + `docs/pipeline/M2.1-pick-from-bin/03_design_review_round5.md`.
+
 # 2. 모듈 분해 (03_architecture 갱신 반영)
 
 ## 2.1. 신규 모듈 (5개)

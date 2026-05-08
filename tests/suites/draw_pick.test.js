@@ -5,7 +5,9 @@ import { suite, test, assert, assertEq, assertThrows } from "../core.js";
 import { initBox } from "../../src/core/box.js";
 import { drawOne } from "../../src/core/draw.js";
 import { createRng } from "../../src/core/random.js";
-import { BOX_SIZE, LINEUP } from "../../src/data/numbers.js";
+// M3: LINEUP 단수 폐기 → LINEUP_DRAGONBALL alias.
+import { LINEUP_DRAGONBALL as LINEUP } from "../../src/data/numbers.js";
+const BOX_SIZE = LINEUP.boxSize;
 
 suite("draw_pick (M2.1)", () => {
   test("pickIndex 미전달 → splice(0) = head pop. result.pickIndex === 0 (skip ON)", () => {

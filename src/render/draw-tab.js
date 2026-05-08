@@ -9,9 +9,10 @@ import { renderProductGallery } from "./product-gallery.js";
 import { renderBuyPanel } from "./buy-panel.js";
 import { renderPeelPanel } from "./peel-panel.js";
 import { renderPickPanel } from "./pick-panel.js";
-import { BOX_SIZE } from "../data/numbers.js";
+import { getLineupById } from "../data/numbers.js";
 
 export function renderDrawTab(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("div");
   el.className = "draw-tab";
 
@@ -48,7 +49,7 @@ export function renderDrawTab(state, dispatch) {
     done.className = "buy-panel";
     done.innerHTML = `
       <h2 class="buy-panel-title">박스 종료</h2>
-      <p style="color: var(--ink-muted); font-size: var(--font-size-sm);">박스 ${BOX_SIZE}매를 모두 뽑았습니다. 설정 탭에서 박스 리셋 가능.</p>
+      <p style="color: var(--ink-muted); font-size: var(--font-size-sm);">박스 ${lineup.boxSize}매를 모두 뽑았습니다. 설정 탭에서 박스 리셋 가능.</p>
     `;
     el.appendChild(done);
   } else {

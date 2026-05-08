@@ -492,6 +492,15 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `COLOR_PICK_SLOT_EMPTY_BORDER` | `#9C8B78` | **M2.1** - 뽑힌 슬롯 테두리 (약한 잉크) |
 | `COLOR_PICK_SLOT_SELECTED_BG` | `#FFE9C7` | **M2.1 B-α 신설** - 선택됨 슬롯 배경 (밝은 골드 톤) |
 | `COLOR_PICK_SLOT_SELECTED_BORDER` | `#C8102E` | **M2.1 B-α 신설** - 선택됨 슬롯 테두리 (브랜드 빨강 = 강조) |
+| `COLOR_TEXT_ON_RED` | `#FFFFFF` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 빨강 배경 위 텍스트 (순백). 다수 호출처 (modal confirm / buy buttons / hero / receive 등) |
+| `COLOR_BORDER_LIGHT_GRAY` | `#E5E7EB` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 밝은 회색 보더 (메모리 저장소 안내 등) |
+| `COLOR_PAPER_GRAY` | `#D6CFC2` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 종이 회색 (뜯기 카드 외부 / 비활성 상태) |
+| `COLOR_PAPER_GRAY_BORDER` | `#B8AE9E` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 종이 회색 테두리 |
+| `COLOR_FRAME_RED_DEEPER` | `#8B0820` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 빨강 그라디언트 끝 (frame-red 보다 더 깊은 빨강) |
+| `COLOR_GOLD_LIGHT` | `#FFD966` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 호버/강조 노란 골드 |
+| `COLOR_NIGHT_GRAD_FROM` | `#1A1A2E` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - DC 패널 어두운 야간 그라디언트 시작 |
+| `COLOR_NIGHT_GRAD_TO` | `#2D2A4E` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - DC 패널 어두운 야간 그라디언트 끝 |
+| `COLOR_GOLD_DEEP` | `#B89651` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 골드 그라디언트 중간 |
 
 # 3. 스토리지 (`src/data/storage.js`)
 

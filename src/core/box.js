@@ -12,7 +12,7 @@ export function initBox(seed, boxRound, lineup) {
   if (!lineup || !Array.isArray(lineup.tiers) || typeof lineup.boxSize !== "number") {
     throw new Error("[box] invalid lineup. expected {tiers, boxSize}.");
   }
-  const id = boxId(seed, boxRound);
+  const id = boxId(seed, boxRound, lineup.id);
 
   const labels = [];
   for (const t of lineup.tiers) {

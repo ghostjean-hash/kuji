@@ -1,26 +1,47 @@
-import {
-  LINEUP_TITLE_KO,
-  LINEUP_TITLE_JA,
-  LINEUP_IP,
-  LINEUP_OPERATOR,
-  LINEUP_RELEASE_DATE_STORE,
-  LINEUP_END_DATE,
-  LINEUP_OUTLETS,
-  LINEUP_PRICE_JPY,
-  BOX_SIZE,
-  BOX_SIZE_ESTIMATED,
-  TIERS_COUNT_ESTIMATED,
-  LINEUP_SOURCES,
-} from "../data/numbers.js";
+// 설정 탭. M3: Lineup dropdown 신설 (사용자 결정 8.3 (A) settings-tab dropdown).
+
+import { LINEUPS, getLineupById } from "../data/numbers.js";
 
 export function renderSettingsTab(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("div");
   el.className = "settings-tab";
 
-  // 시드
+  // M3 신설: Lineup dropdown
+  const lineupSection = document.createElement("section");
+  lineupSection.className = "settings-section settings-lineup";
+  lineupSection.innerHTML = "<h2>라인업</h2>";
+  const lineupRow = document.createElement("div");
+  lineupRow.className = "lineup-row";
+  const lineupSelect = document.createElement("select");
+  lineupSelect.className = "lineup-select";
+  for (const l of LINEUPS) {
+    const opt = document.createElement("option");
+    opt.value = l.id;
+    opt.textContent = `${l.ip} - ${l.titleKo}`;
+    if (l.id === lineup.id) opt.selected = true;
+    lineupSelect.appendChild(opt);
+  }
+  lineupSelect.addEventListener("change", () => {
+    const newId = lineupSelect.value;
+    if (newId !== lineup.id) {
+      dispatch({ type: "set_current_lineup", lineupId: newId });
+      // 사용자 취소 시 dropdown 원복
+      lineupSelect.value = lineup.id;
+    }
+  });
+  lineupRow.appendChild(lineupSelect);
+  lineupSection.appendChild(lineupRow);
+  const lineupHelp = document.createElement("p");
+  lineupHelp.className = "settings-help";
+  lineupHelp.textContent = "라인업 전환 시 현재 라인업의 박스 / 인벤토리 / 이력 / DC는 보존되며, 다음 전환 시 복원됩니다.";
+  lineupSection.appendChild(lineupHelp);
+  el.appendChild(lineupSection);
+
+  // 시드 (라인업 공유 - 사용자 결정 8.2 (A))
   const seedSection = document.createElement("section");
   seedSection.className = "settings-section";
-  seedSection.innerHTML = "<h2>시드</h2>";
+  seedSection.innerHTML = "<h2>시드 (모든 라인업 공유)</h2>";
   const seedRow = document.createElement("div");
   seedRow.className = "seed-row";
   const seedInput = document.createElement("input");
@@ -38,17 +59,17 @@ export function renderSettingsTab(state, dispatch) {
   seedSection.appendChild(seedRow);
   el.appendChild(seedSection);
 
-  // 박스 리셋
+  // 박스 리셋 (활성 라인업)
   const boxSection = document.createElement("section");
   boxSection.className = "settings-section";
-  boxSection.innerHTML = "<h2>박스</h2>";
+  boxSection.innerHTML = "<h2>박스 (활성 라인업)</h2>";
   const resetBtn = document.createElement("button");
   resetBtn.textContent = "박스 리셋 (회차 +1)";
   resetBtn.addEventListener("click", () => dispatch({ type: "reset_box" }));
   boxSection.appendChild(resetBtn);
   el.appendChild(boxSection);
 
-  // M2.1: 통 선택 토글 (구매 패널과 양방향 동기화)
+  // M2.1: 통 선택 토글
   const pickSection = document.createElement("section");
   pickSection.className = "settings-section";
   pickSection.innerHTML = "<h2>통 선택</h2>";
@@ -73,28 +94,28 @@ export function renderSettingsTab(state, dispatch) {
   pickSection.appendChild(pickHelp);
   el.appendChild(pickSection);
 
-  // 라인업 정보
+  // 라인업 정보 (활성 라인업)
   const infoSection = document.createElement("section");
   infoSection.className = "settings-section";
   infoSection.innerHTML = `
-    <h2>라인업 정보</h2>
+    <h2>라인업 정보 (활성)</h2>
     <table class="lineup-info">
-      <tr><th>제목</th><td>${LINEUP_TITLE_KO}<br><small>${LINEUP_TITLE_JA}</small></td></tr>
-      <tr><th>IP</th><td>${LINEUP_IP}</td></tr>
-      <tr><th>운영사</th><td>${LINEUP_OPERATOR}</td></tr>
-      <tr><th>가격</th><td>${LINEUP_PRICE_JPY}엔 (1회)</td></tr>
-      <tr><th>박스 매수</th><td>${BOX_SIZE}매${BOX_SIZE_ESTIMATED ? " (추정)" : ""}</td></tr>
-      <tr><th>등급별 매수</th><td>${TIERS_COUNT_ESTIMATED ? "추정값" : "확정"}</td></tr>
-      <tr><th>발매일</th><td>${LINEUP_RELEASE_DATE_STORE}</td></tr>
-      <tr><th>캠페인 종료</th><td>${LINEUP_END_DATE}</td></tr>
-      <tr><th>매장</th><td>${LINEUP_OUTLETS.join(", ")}</td></tr>
+      <tr><th>제목</th><td>${lineup.titleKo}<br><small>${lineup.titleJa}</small></td></tr>
+      <tr><th>IP</th><td>${lineup.ip}</td></tr>
+      <tr><th>운영사</th><td>${lineup.operator}</td></tr>
+      <tr><th>가격</th><td>${lineup.priceJpy}엔 (1회)</td></tr>
+      <tr><th>박스 매수</th><td>${lineup.boxSize}매${lineup.boxSizeEstimated ? " (추정)" : ""}</td></tr>
+      <tr><th>등급별 매수</th><td>${lineup.tiersCountEstimated ? "추정값" : "확정"} (${lineup.tiers.length}등급)</td></tr>
+      <tr><th>발매일</th><td>${lineup.releaseDateStore}</td></tr>
+      <tr><th>캠페인 종료</th><td>${lineup.endDate}</td></tr>
+      <tr><th>매장</th><td>${lineup.outlets.join(", ")}</td></tr>
     </table>
   `;
   const sourceTitle = document.createElement("h3");
   sourceTitle.textContent = "출처";
   infoSection.appendChild(sourceTitle);
   const sourceList = document.createElement("ul");
-  for (const s of LINEUP_SOURCES) {
+  for (const s of lineup.sources) {
     const li = document.createElement("li");
     li.innerHTML = `<a href="${s.url}" target="_blank" rel="noopener noreferrer">${s.name}</a>`;
     sourceList.appendChild(li);

@@ -53,7 +53,7 @@ suite("storage_v3 (M2.1)", () => {
     assertEq(v3.history[1].tier, "G");
   });
 
-  test("migrateV2ToV3: schemaVersion = 3 갱신", () => {
+  test("migrateV2ToV3: schemaVersion = 3 갱신 (M3에서 v3까지만, v4는 별도 migrateV3ToV4)", () => {
     const v2 = {
       seed: 1, boxRound: 1, boxState: null,
       history: [], dcTickets: [], dcResults: [],
@@ -61,7 +61,7 @@ suite("storage_v3 (M2.1)", () => {
       unopenedTickets: [],
     };
     const v3 = migrateV2ToV3(v2);
-    assertEq(v3.meta.schemaVersion, SCHEMA_VERSION);  // = 3
+    assertEq(v3.meta.schemaVersion, 3);  // M3: v3까지만 마킹 (v4 마이그레이션은 migrateV3ToV4 별도 호출)
   });
 
   test("migrateV2ToV3: 박스 / 인벤토리 / DC 보존", () => {
@@ -101,12 +101,12 @@ suite("storage_v3 (M2.1)", () => {
     assertEq(v3.history[0].pickIndex, 5);  // 보존
   });
 
-  test("loadState 신규 사용자 → 기본값 (settingsSkipPick = false, pickHintSeen = false, schemaVersion = 3)", () => {
+  test("loadState 신규 사용자 → 기본값 (settingsSkipPick = false, pickHintSeen = false, schemaVersion = SCHEMA_VERSION)", () => {
     clearAll();
     const s = loadState();
     assertEq(s.settingsSkipPick, BUY_SKIP_PICK_DEFAULT);
-    assertEq(s.meta.pickHintSeen, false);
-    assertEq(s.meta.schemaVersion, SCHEMA_VERSION);
+    assertEq(s.meta.pickHintSeen, false);  // deprecated 키 호환
+    assertEq(s.meta.schemaVersion, SCHEMA_VERSION);  // M3: 4
     clearAll();
   });
 

@@ -1,6 +1,7 @@
 import { suite, test, assertEq } from "../core.js";
 import { lastOnePrize } from "../../src/core/last_one.js";
-import { TIERS, LINEUP } from "../../src/data/numbers.js";
+// M3: LINEUP / TIERS 단수 폐기 → LINEUP_DRAGONBALL alias.
+import { LINEUP_DRAGONBALL as LINEUP, TIERS_DRAGONBALL as TIERS } from "../../src/data/numbers.js";
 
 suite("last_one", () => {
   test("lastOnePrize는 TIERS의 'Last One' 행과 정합", () => {

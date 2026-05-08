@@ -2,21 +2,19 @@
 // 4장 6.b1 분기에서 호출. B-α: 슬롯 토글 + "확인" 버튼 N매 통째 splice.
 
 import {
-  BOX_SIZE,
-  LINEUP,
   PICK_GRID_COLS_DEFAULT,
   PICK_SLOT_ROTATE_RANGE_DEG,
   PICK_GRID_CLAMP_MIN_PCT,
   PICK_GRID_CLAMP_MAX_PCT,
   PICK_SLOT_JITTER_RATIO,
   PICK_SLOT_SELECTED_Z_BOOST,
+  getLineupById,
 } from "../data/numbers.js";
 import { fnv1a } from "../core/hash.js";
 import { renderPickSlot, PICK_SLOT_KINDS } from "./pick-slot.js";
 
 // Last One 슬롯은 통(bin)에 노출 안 됨 (last-one-row에서 별도 표시. 4.14.14 결정).
-// 통에 표시되는 일반 슬롯은 BOX_SIZE - 1매.
-const NORMAL_SLOT_COUNT = BOX_SIZE - 1;
+// 통에 표시되는 일반 슬롯은 lineup.boxSize - 1매. M3에서 라인업별 동적.
 
 // 통 메타포: 격자 배치 순서를 박스별 결정론적으로 셔플 + 슬롯별 미세 회전·오프셋.
 // 박스가 바뀌면 자연스럽게 다시 섞이지만, 같은 박스 내에서는 일관된 위치 유지.
@@ -63,8 +61,10 @@ function slotPosition(seedKey, posInShuffle, cols, rows) {
 }
 
 export function renderPickPanel(state, dispatch) {
-  const cols = (LINEUP && LINEUP.gridCols) || PICK_GRID_COLS_DEFAULT;
-  const rows = Math.ceil(BOX_SIZE / cols);
+  const lineup = getLineupById(state.currentLineupId);
+  const NORMAL_SLOT_COUNT = lineup.boxSize - 1;
+  const cols = lineup.gridCols || PICK_GRID_COLS_DEFAULT;
+  const rows = Math.ceil(lineup.boxSize / cols);
 
   const el = document.createElement("section");
   el.className = "pick-panel";

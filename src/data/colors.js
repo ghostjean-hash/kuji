@@ -52,3 +52,14 @@ export const COLOR_PICK_SLOT_EMPTY_BG = "#DCD3C2";  // 뽑힌 슬롯 배경 (회
 export const COLOR_PICK_SLOT_EMPTY_BORDER = "#9C8B78";  // 뽑힌 슬롯 테두리 (약한 잉크)
 export const COLOR_PICK_SLOT_SELECTED_BG = "#FFE9C7";  // M2.1 B-α: 선택됨 슬롯 배경 (밝은 골드 톤)
 export const COLOR_PICK_SLOT_SELECTED_BORDER = "#C8102E";  // M2.1 B-α: 선택됨 슬롯 테두리 (브랜드 빨강 강조)
+
+// M3 단계 6 P0 2.3: main.css 잔존 인라인 hex 흡수 (8종 + #FFFFFF 텍스트 토큰)
+export const COLOR_TEXT_ON_RED = "#FFFFFF";  // 빨강 배경 위 흰 텍스트
+export const COLOR_BORDER_LIGHT_GRAY = "#E5E7EB";
+export const COLOR_PAPER_GRAY = "#D6CFC2";
+export const COLOR_PAPER_GRAY_BORDER = "#B8AE9E";
+export const COLOR_FRAME_RED_DEEPER = "#8B0820";
+export const COLOR_GOLD_LIGHT = "#FFD966";
+export const COLOR_NIGHT_GRAD_FROM = "#1A1A2E";
+export const COLOR_NIGHT_GRAD_TO = "#2D2A4E";
+export const COLOR_GOLD_DEEP = "#B89651";

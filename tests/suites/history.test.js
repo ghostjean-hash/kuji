@@ -1,6 +1,8 @@
 import { suite, test, assertEq } from "../core.js";
 import { appendHistory, tierCounts } from "../../src/core/history.js";
 // M2.1 B-α: findUnrevealed / revealHistory 폐기 (history는 reveal 시점에만 append).
+// M3 단계 5 T7: tierCounts(history, lineup) 시그니처. 라인업별 등급 수 가변성 흡수.
+import { LINEUP_DRAGONBALL as LINEUP } from "../../src/data/numbers.js";
 
 suite("history", () => {
   test("appendHistory 누적 (불변)", () => {
@@ -17,7 +19,7 @@ suite("history", () => {
       { tier: "G", typeIndex: 3, isLastOne: false },
       { tier: "G", typeIndex: 1, isLastOne: false },
     ];
-    const c = tierCounts(h);
+    const c = tierCounts(h, LINEUP);
     assertEq(c["A"], 1);
     assertEq(c["G"], 2);
     assertEq(c["Last One"], 0);
@@ -27,7 +29,7 @@ suite("history", () => {
       { tier: "A", typeIndex: 0, isLastOne: false },
       { tier: "G", typeIndex: 1, isLastOne: true },  // 마지막 deck pop + Last One 동시
     ];
-    const c = tierCounts(h);
+    const c = tierCounts(h, LINEUP);
     assertEq(c["A"], 1);
     assertEq(c["G"], 1);
     assertEq(c["Last One"], 1);
@@ -45,7 +47,7 @@ suite("history", () => {
       { tier: "G", typeIndex: 1, isLastOne: false, revealed: false },  // 미reveal = 제외
       { tier: "B", typeIndex: 0, isLastOne: false },  // revealed 미정의 = 포함
     ];
-    const c = tierCounts(h);
+    const c = tierCounts(h, LINEUP);
     assertEq(c["A"], 1);
     assertEq(c["G"], 0);
     assertEq(c["B"], 1);

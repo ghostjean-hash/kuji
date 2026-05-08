@@ -1,6 +1,8 @@
 import { suite, test, assert, assertEq } from "../core.js";
 import { initBox, remaining, isLastDraw } from "../../src/core/box.js";
-import { BOX_SIZE, LINEUP } from "../../src/data/numbers.js";
+// M3: LINEUP 단수 폐기 → LINEUP_DRAGONBALL alias로 import.
+import { LINEUP_DRAGONBALL as LINEUP } from "../../src/data/numbers.js";
+const BOX_SIZE = LINEUP.boxSize;
 
 suite("box", () => {
   test("initBox deck 길이 = BOX_SIZE - 1 (Last One 제외)", () => {

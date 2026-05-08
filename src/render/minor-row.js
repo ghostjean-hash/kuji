@@ -1,6 +1,6 @@
 // 마이너 row (M2 재설계, 4장 영역 3). G~J 다수 등급 4종 가로 스크롤 1줄.
 
-import { TIERS, PERCENT_BASE } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
@@ -8,7 +8,9 @@ import { showProductDetailModal } from "./product-detail-modal.js";
 
 export function renderMinorRow(state, dispatch) {
   // G~J: count >= 2 (Last One 제외, count === 1 이라 자동 분리)
-  const MINOR_TIERS = TIERS.filter((t) => t.count >= 2);
+  // M3: 활성 라인업의 tiers에서 동적 필터.
+  const lineup = getLineupById(state.currentLineupId);
+  const MINOR_TIERS = lineup.tiers.filter((t) => t.count >= 2 && t.tier !== "Last One");
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnByTier = {};
   for (const t of MINOR_TIERS) drawnByTier[t.tier] = 0;

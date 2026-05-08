@@ -1,6 +1,6 @@
 // 메인 캐러셀 (M2 재설계, 4장 영역 2). A~F 1매 등급 6종을 가로 드래그 캐러셀로 표시.
 
-import { TIERS, PERCENT_BASE } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
@@ -8,7 +8,9 @@ import { showProductDetailModal } from "./product-detail-modal.js";
 
 export function renderHeroCarousel(state, dispatch) {
   // A~F: count === 1 + tier !== "Last One"
-  const HERO_TIERS = TIERS.filter((t) => t.count === 1 && t.tier !== "Last One");
+  // M3: 활성 라인업의 tiers에서 동적 필터.
+  const lineup = getLineupById(state.currentLineupId);
+  const HERO_TIERS = lineup.tiers.filter((t) => t.count === 1 && t.tier !== "Last One");
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnByTier = {};
   for (const t of HERO_TIERS) drawnByTier[t.tier] = 0;

@@ -9,8 +9,17 @@
   --border-subtle: #E8DECF;
   --frame-red: #C8102E;
   --frame-red-dark: #A30D24;
+  --frame-red-deeper: #8B0820;       /* M3 P0 2.3: 빨강 그라디언트 끝 */
   --gold-edge: #C9A961;
   --gold-edge-soft: #E5D5A8;
+  --gold-deep: #B89651;              /* M3 P0 2.3: 골드 그라디언트 중간 */
+  --gold-light: #FFD966;             /* M3 P0 2.3: 호버/강조 노란 골드 */
+  --text-on-red: #FFFFFF;            /* M3 P0 2.3: 빨강/딥 배경 위 흰 텍스트 */
+  --border-light-gray: #E5E7EB;      /* M3 P0 2.3 */
+  --paper-gray: #D6CFC2;             /* M3 P0 2.3 */
+  --paper-gray-border: #B8AE9E;      /* M3 P0 2.3 */
+  --night-grad-from: #1A1A2E;        /* M3 P0 2.3: DC 어두운 야간 그라디언트 */
+  --night-grad-to: #2D2A4E;
 
   --result-normal: #1F1A14;
   --result-last-one: #C8102E;

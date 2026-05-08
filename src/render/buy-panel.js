@@ -1,11 +1,13 @@
 // 구매 패널 (M2 신설, 03_architecture 3.x).
 // Quick(1/3/10) + 자유 입력 + 가격 합산 + 구매 버튼.
 
-import { BUY_QUICK_OPTIONS, BUY_FREE_INPUT_MIN, LINEUP_PRICE_JPY } from "../data/numbers.js";
+import { BUY_QUICK_OPTIONS, BUY_FREE_INPUT_MIN, getLineupById } from "../data/numbers.js";
 import { remaining } from "../core/box.js";
 import { validateBuyCount } from "../core/buy.js";
 
 export function renderBuyPanel(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);
+  const priceJpy = lineup.priceJpy;
   const el = document.createElement("section");
   el.className = "buy-panel";
 
@@ -110,7 +112,7 @@ export function renderBuyPanel(state, dispatch) {
 
   function refreshUI() {
     const v = validateBuyCount(selectedCount, deckRemaining);
-    summary.innerHTML = `<span class="label">${selectedCount}매 × ${LINEUP_PRICE_JPY}엔</span><span class="price">${(selectedCount * LINEUP_PRICE_JPY).toLocaleString()}엔</span>`;
+    summary.innerHTML = `<span class="label">${selectedCount}매 × ${priceJpy}엔</span><span class="price">${(selectedCount * priceJpy).toLocaleString()}엔</span>`;
     buyBtn.textContent = v.ok ? `${selectedCount}매 구매하기` : "구매 불가";
     buyBtn.disabled = !v.ok;
     errorEl.textContent = v.ok ? "" : (v.error || "");

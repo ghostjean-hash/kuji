@@ -3,24 +3,27 @@
 # 1. 현재 상태
 
 1.1. **현재 스프린트**: **M3-second-lineup** (2026-05-08 시작).
-1.2. **현재 단계**: 단계 1~4 모두 통과. **단계 5 implement 진입**. 단계 3 round 3 통과 + 단계 4 사용자 (A) 승인 + 이월 결정 3건 권장안 채택. 사용자 명시 (2026-05-08): "철저하게 플랜, 문서 작업 후 구현, 대충 구현 용납못함" - 라이브 정정 갈음 금지 (메모리 룰 `feedback_no_cutting_corners`).
+1.2. **현재 단계**: **M3 8단계 모두 통과 (2026-05-08 종료)**. 단계 6 round 2 통과 + 단계 7/8 정식 보고서. 사용자 명시 룰 (feedback_no_cutting_corners) 정합 - 라이브 정정 갈음 0건. 다음 = 사용자 외부 작업 (placeholder 자산 17장) OR M4 진입.
 1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03 ~ 2026-05-08 (5일). M3: 2026-05-08 ~.
 1.4. **마지막 갱신**: 2026-05-08 (M3 단계 1 plan 작성 + 사용자 결정 3건 선행 합의: 전환 UI A / 격리 정책 A / 정리 라운드 A. 추정 4.0일).
 
-## 1.5. 현재 진행 (M3 단계 5 implement)
+## 1.5. 현재 진행 (M3 종료, 다음 결정 대기)
 
-1.5.1. **M3 단계 1~4 모두 통과**:
-- 단계 1 plan: 추정 4.0일 → 단계 4에서 5.0일로 갱신 (검증 round 3 흡수).
-- 단계 2 design: 02_data 1.4 LINEUPS 배열 + 1.7 자산 라인업별 + 3.x storage v4 + SCHEMA 4 + 01_spec 5.13.A 다중 라인업 절 + 4장/7장/8.13.
-- 단계 3 design_review: round 1 (P0 4 / P1 5 / P2 3) → round 2 (잔존 P0 1) → round 3 통과 (사용자 명시 승인 자동 재시도 1회 초과).
-- 단계 4 impl_plan: T1~T22 / 5 Phase / 의존성 그래프 / 추정 2.7일 (단계 5).
+1.5.1. **M3 정식 종료 (2026-05-08, 8단계 모두 통과)**:
+- 단계 6 round 2 통과 (P0 0건). 단계 7/8 정식 보고서 작성.
+- 사용자 명시 룰 (feedback_no_cutting_corners) 정합 - 라이브 정정 갈음 0건.
+- M3 학습 3건 신규 (L-M3-1 dispatch 영속 의무 / L-M3-2 인라인 hex 게이트 / L-M3-3 정식 8단계 정당화).
 
-1.5.2. **단계 5 진입 결정 (사용자 (A) 승인)**:
-- 이월 결정 권장안 채택: gridIndex (C 보존) / BOX_SIZE (B alias) / LINEUP (A 즉시 폐기).
-- T1~T22 정합 진행.
+1.5.2. **사용자 외부 작업 (M3 종료 후 병행)**:
+- placeholder 자산 17장 = 드래곤볼 A~F + Z (7장) + 원피스 A~I + Z (10장).
+- 사용자 외부 AI 도구 생성 + 폴더 배치 (`the_chronicle_of_goku_placeholder/` + `monkey_d_luffy_placeholder/`).
+- 배치 완료 후 자비스가 numbers.js의 `LINEUP_*_ASSETS_AVAILABLE` true 갱신 + commit + push.
 
-1.5.3. **사용자 외부 작업 (병행 가능)**:
-- M2.1 4.13.12 placeholder 자산 7장 (드래곤볼 A~F + Z) + M3 4.13.12-OP 원피스 placeholder 10장 (A~I + Z) 외부 도구 생성 + 폴더 배치. M3 진행과 무관.
+1.5.3. **M4 후보** (단계 8 improve 등재):
+- 천장 룰 메커닉 (XENOGLOSSIA 30연 S賞 확정).
+- assets.js 라인업 분기 + SVG fallback (M3 단계 6 P2 흡수).
+- tests/suites LINEUP_DRAGONBALL alias 정리.
+- M3 학습 3건 검증 룰 흡수.
 
 1.5.5. **M3 후보** (단계 8에서 정식 plan 작성 예정):
 - 一番くじ ワンピース MONKEY.D.LUFFY 라인업 추가 (이찌방쿠지 표준 메커닉).
@@ -31,9 +34,9 @@
 
 ## 1.6. 다음 세션 권장 첫 메시지 (참고)
 
-- 단계 5 진행: "M3 단계 5 Phase A부터 진입" / "Phase B 다음 진행"
-- 단계 6 진입: "M3 단계 6 subagent 격리 검증 호출"
-- 자산 마무리: "placeholder 자산 N장 배치 완료 - 코드 경로 수정"
+- M4 진입: "M4 단계 1 plan 작성"
+- 자산 마무리: "placeholder 자산 17장 배치 완료 - 코드 경로 수정"
+- 라이브 검증 결함 보고: "<발견 결함>" (사용자 단계 7 시각 검증)
 
 # 2. 스프린트 추적
 
@@ -44,7 +47,7 @@
 | M1 | base-system + 一番くじ ドラゴンボール | 1~7 ✅ / 8 ✅ (UX 결함 백로그 + M2 후보 등재) | 종료 (기능 정합 / UX 미완) |
 | M2 | ux-redesign | 1 ✅ / 2 ✅ → 3 (3차) ✅ / 4 ✅ / 5 ✅ + 사용자 UI 정정 다수 / 6~8 사용자 라이브 컨펌 갈음 | 종료 (라이브 컨펌으로 갈음. 단계 6/7 정식 보고서 미작성. 학습은 M2.1 단계 6에서 흡수) |
 | **M2.1** | pick-from-bin | 1 ✅ / 2 B-α ✅ / 3 (round 5) ✅ / 4 B-α ✅ / 5 B-α ✅ / 6 (round 3) ✅ / 7 ✅ / 8 ✅ | **종료 (2026-05-08, 8단계 모두 통과)** |
-| **M3** | second-lineup | 1 ✅ / 2 ✅ / 3 (round 3) ✅ / 4 ✅ → 5 implement 진입 | 진행 중 (단계 5) |
+| **M3** | second-lineup | 1 ✅ / 2 ✅ / 3 (round 3) ✅ / 4 ✅ / 5 ✅ / 6 (round 2) ✅ / 7 ✅ / 8 ✅ | **종료 (2026-05-08, 8단계 모두 정식 통과)** |
 
 # 3. 단계 스킵 사유
 
@@ -242,6 +245,28 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 4.15.5. **`buildConsumedGridSet` 단위 테스트 추가**: `tests/suites/build_consumed_grid_set.test.js` 신설. 9 테스트 케이스 — 초기 상태 / history.gridIndex 단독 / lockedResult.gridIndex 단독 / 병합 / skip 모드 placeholder 충당 (4.14.7 핵심 시나리오) / 충돌 회피 / 다른 박스 무시 / null·undefined 안전 / lockedResult null·undefined ticket 안전. runner.js에 등록. `performPickConfirm` j 검증 부분은 main.js 내부 함수 (export 안 됨)라 직접 테스트 어려움 — 회귀 위험은 buildConsumedGridSet 단위 테스트 + 사용자 라이브 검증으로 갈음.
 
 4.15.6. **변경 요약**: 5 파일 수정 + 1 파일 신설. `src/render/main.js`, `src/render/pick-panel.js`, `src/data/numbers.js`, `docs/02_data.md`, `tests/runner.js` + `tests/suites/build_consumed_grid_set.test.js` 신설. 동작 변경 0 (refactor + dead code 제거 + 테스트 추가만).
+
+## 4.19. 2026-05-08 - M3 정식 종료 (단계 5~8 통과)
+
+4.19.1. **단계 5 implement T1~T22 완료**:
+- Phase A (data + 마이그레이션): numbers.js 전면 재작성 + storage v3→v4.
+- Phase B (core): box.id lineup_id + history.tierCounts(lineup) + drawDc(dcConfig) + pick-grid.js 신설.
+- Phase C (render): main.js state + dispatch.set_current_lineup + header IP 라벨 + 12 render 모듈 등급 수 가변성 + settings-tab Lineup dropdown + pick-panel.
+- Phase D (M2.1 정리): pick_hint_seen handler / pick-slot LAST_ONE / numbers.js PICK_FIRST_HINT_* dead 제거 + 04_impl_plan strikethrough.
+- Phase E (styles + tests + grep): tokens.css 9종 + main.css var() 치환 + storage_v4.test.js + lineup_isolation.test.js + 기존 11 suite 정합 + T22 grep 통과.
+
+4.19.2. **단계 6 impl_review (2 라운드)**:
+- round 1: P0 3 (set_current_lineup 동작 0건 / draw-tab BOX_SIZE / main.css 인라인 hex 35건) / P1 4 / P2 3.
+- 자비스 자동 정정: P0 2.1 saveState({ currentLineupId }) 명시 / P0 2.2 lineup 동적 lookup / P0 2.3 9종 토큰 신설 + main.css sed 일괄 치환 / P1 3.4 confirm_pick dead 제거 / P1 3.3 03_arch 3.14/3.15 3상태 docs.
+- round 2: **통과 (P0 0 / P1 0)**. 보고서 `06_impl_review.md`.
+
+4.19.3. **단계 7 QA**: 정적 시나리오 정합 (라인업 전환 / 격리 / 마이그레이션 / 결정론) + 단위 테스트 13 suite + 라이브 시각 검증 사용자 핸드오프. 보고서 `07_qa.md`.
+
+4.19.4. **단계 8 improve**: M4 후보 plan 등재 (천장 룰 XENOGLOSSIA + assets.js 분기 + tests alias 정리). 학습 3건 신규 (L-M3-1/2/3). 보고서 `08_improve.md`.
+
+4.19.5. **사용자 명시 룰 정합**: 메모리 `feedback_no_cutting_corners` 첫 정합 스프린트. 라이브 정정 갈음 0건. 단계 3/6 정식 subagent 격리 검증 + round 사이클.
+
+4.19.6. **M3 종료 결정**: 8단계 모두 통과. M4 후보 등재. 사용자 외부 작업 1건 (placeholder 17장) 대기.
 
 ## 4.18. 2026-05-08 - M3 단계 1~4 통과 (사용자 결정 8.X + design_review round 3)
 

@@ -1,14 +1,10 @@
-import {
-  DC_WINNERS_TOTAL,
-  DC_POOL_SIZE_DEFAULT,
-  DC_POOL_SIZE_NOTE_KO,
-  DC_PRIZE_NAME_KO,
-  DC_PRIZE_NAME_JA,
-  DC_PRIZE_NOTE_KO,
-} from "../data/numbers.js";
+import { DC_POOL_SIZE_NOTE_KO, getLineupById } from "../data/numbers.js";
 import { formatPercent } from "./format.js";
 
 export function renderDcTab(state, dispatch) {
+  // M3: 활성 라인업의 dc 객체 동적 lookup.
+  const lineup = getLineupById(state.currentLineupId);
+  const dc = lineup.dc;
   const el = document.createElement("div");
   el.className = "dc-tab";
 
@@ -16,15 +12,15 @@ export function renderDcTab(state, dispatch) {
   head.className = "dc-head";
   head.innerHTML = `
     <h2>Double Chance</h2>
-    <p class="dc-prize">${DC_PRIZE_NAME_KO} <small>(${DC_PRIZE_NAME_JA})</small></p>
-    <p class="dc-prob">당첨자 ${DC_WINNERS_TOTAL}명 / 풀 ${DC_POOL_SIZE_DEFAULT}매 (단순화 가정)</p>
+    <p class="dc-prize">${dc.prizeNameKo} <small>(${dc.prizeNameJa})</small></p>
+    <p class="dc-prob">당첨자 ${dc.winnersTotal}명 / 풀 ${dc.poolSizeDefault}매 (단순화 가정)</p>
     <p class="dc-note">${DC_POOL_SIZE_NOTE_KO}</p>
-    <p class="dc-note">${DC_PRIZE_NOTE_KO}</p>
+    <p class="dc-note">${dc.prizeNoteKo}</p>
   `;
   el.appendChild(head);
 
   const ticketCount = state.dcTickets.length;
-  const p = DC_WINNERS_TOTAL / DC_POOL_SIZE_DEFAULT;
+  const p = dc.winnersTotal / dc.poolSizeDefault;
   const probWin = ticketCount > 0 ? 1 - Math.pow(1 - p, ticketCount) : 0;
   const ticketsSection = document.createElement("section");
   ticketsSection.className = "dc-tickets";

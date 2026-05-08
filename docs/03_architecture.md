@@ -334,13 +334,13 @@ export function renderPickPanel(state, dispatch): HTMLElement
 //       (확인 후 reveal 전 ticket의 격자 위치. 회색으로 표시 = 이미 통에서 빠진 자리.)
 //     - drawnSet = new Set([...drawnGridIndices, ...lockedGridIndices])
 //     - selectedSet = new Set(state.selectedGridIndices)
-//     - lastOneAttached = (history 또는 lockedTicket 중 isLastOne true 항목 존재)
+//     - **2026-05-08 (4.14.14 / M3 단계 6 P1 3.3 정합)**: Last One 슬롯은 통(bin)에 노출하지 않음 (last-one-row에서 별도 표시).
 //
-//   슬롯 상태 매핑:
-//     - i === BOX_SIZE - 1 (Last One): lastOneAttached ? 'last-one-drawn' : 'last-one-pending'
+//   슬롯 상태 매핑 (M3: 3상태로 축소):
 //     - i in drawnSet: 'normal-drawn'
 //     - i in selectedSet: 'normal-selected'
 //     - else: 'normal-available'
+//     - i === lineup.boxSize - 1 (Last One): 통 격자 미렌더 (continue).
 //
 //   클릭 핸들러 (잔여 일반 슬롯 = available 또는 selected):
 //     - dispatch({ type: 'toggle_pick_select', gridIndex: i })
@@ -363,15 +363,14 @@ export function renderPickPanel(state, dispatch): HTMLElement
 //   (~~첫 진입 시 (state.meta.pickHintSeen === false) 안내 toast~~ - 2026-05-08 폐기, 4.14.1)
 ```
 
-## 3.15. render/pick-slot.js (M2.1 B-α 갱신, 5상태)
+## 3.15. render/pick-slot.js (M2.1 B-α / **M3 단계 5 T17 - 3상태로 축소**)
 
 ```js
-// 단일 슬롯. 5상태:
+// 단일 슬롯. 3상태 (M3 P1 3.3 docs 정합):
 // - normal-available: 잔여 미선택. 클릭 = 선택 토글.
 // - normal-selected: 선택됨 (B-α 신설). 브랜드 빨강 테두리 + 체크 마크 + 펄스. 클릭 = 해제 토글.
 // - normal-drawn: 이미 뽑힘 (history 또는 lockedTicket). 회색. 클릭 무시.
-// - last-one-pending: Last One 슬롯 대기. 골드 강조. 클릭 비활성. hover 안내.
-// - last-one-drawn: Last One 자동 지급 완료. 회색.
+// (~~last-one-pending~~ / ~~last-one-drawn~~ 2상태는 4.14.14 + M3 T17 폐기 - Last One 통 비노출).
 export function renderPickSlot(props): HTMLElement
 //   props = { kind, gridIndex, onClick? }
 //   onClick: normal-available / normal-selected에서만 호출 (선택 토글).

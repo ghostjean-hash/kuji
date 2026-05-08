@@ -1,18 +1,18 @@
 // 상품 갤러리 (M2 재설계, 4장 영역 5). 디폴트 접힘 + 펼침 토글. 펼치면 11종 모두 자세히.
 
-import { TIERS } from "../data/numbers.js";
+import { getLineupById } from "../data/numbers.js";
 import { renderProductItem } from "./product-item.js";
 
 export function renderProductGallery(state, dispatch) {
-  // 접힌 상태 갤러리는 draw-tab의 minor-meta-row 토글에서 처리. 펼친 상태에서만 본 컴포넌트 호출.
+  // M3: 활성 라인업 tiers 동적 lookup.
+  const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("section");
   el.className = "product-gallery is-expanded";
 
-  // 박스 ID 필터 등급별 카운트 + 종 인덱스
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnByTier = {};
   const drawnTypesByTier = {};
-  for (const t of TIERS) {
+  for (const t of lineup.tiers) {
     drawnByTier[t.tier] = 0;
     drawnTypesByTier[t.tier] = [];
   }
@@ -21,14 +21,14 @@ export function renderProductGallery(state, dispatch) {
       drawnByTier[e.tier] += 1;
       drawnTypesByTier[e.tier].push(e.typeIndex);
     }
-    if (e.isLastOne) drawnByTier["Last One"] += 1;
+    if (e.isLastOne && ("Last One" in drawnByTier)) drawnByTier["Last One"] += 1;
   }
 
   const isLastDrawAhead = state.boxState.deck.length === 1;
 
   const list = document.createElement("div");
   list.className = "product-gallery-list";
-  for (const t of TIERS) {
+  for (const t of lineup.tiers) {
     const item = renderProductItem({
       tierMeta: t,
       drawnCount: drawnByTier[t.tier],

@@ -1,8 +1,9 @@
-import { TIERS } from "../data/numbers.js";
+import { getLineupById } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 
 // 등급별 잔여 그리드 (`くじ券回収貼付け表` / 쿠지권 회수 첨부표).
 export function renderTierGrid(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("section");
   el.className = "tier-grid";
   const title = document.createElement("h2");
@@ -12,15 +13,15 @@ export function renderTierGrid(state, dispatch) {
 
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnCounts = {};
-  for (const t of TIERS) drawnCounts[t.tier] = 0;
+  for (const t of lineup.tiers) drawnCounts[t.tier] = 0;
   for (const e of drawnInBox) {
     if (e.tier in drawnCounts) drawnCounts[e.tier] += 1;
-    if (e.isLastOne) drawnCounts["Last One"] += 1;
+    if (e.isLastOne && ("Last One" in drawnCounts)) drawnCounts["Last One"] += 1;
   }
 
   const grid = document.createElement("div");
   grid.className = "tier-grid-rows";
-  for (const t of TIERS) {
+  for (const t of lineup.tiers) {
     const row = document.createElement("div");
     row.className = "tier-row";
     row.style.setProperty("--tier-color", TIER_COLORS[t.tier]);

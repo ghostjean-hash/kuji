@@ -3,10 +3,12 @@
 // 회귀 위험 영역. (history.gridIndex + lockedResult.gridIndex 추적분 + 부족분 lowest gi placeholder).
 
 import { suite, test, assert, assertEq } from "../core.js";
-import { buildConsumedGridSet } from "../../src/render/main.js";
+// M3 단계 5 T9: render/main.js → core/pick-grid.js로 이전. 시그니처 (state, lineup).
+import { buildConsumedGridSet } from "../../src/core/pick-grid.js";
 import { initBox } from "../../src/core/box.js";
-import { LINEUP, BOX_SIZE } from "../../src/data/numbers.js";
+import { LINEUP_DRAGONBALL as LINEUP } from "../../src/data/numbers.js";
 
+const BOX_SIZE = LINEUP.boxSize;
 const NORMAL_SLOT_COUNT = BOX_SIZE - 1;
 
 function makeState({ history = [], unopenedTickets = [], deckLength }) {
@@ -26,7 +28,7 @@ function makeState({ history = [], unopenedTickets = [], deckLength }) {
 suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
   test("초기 상태 (history 0 / lockedResult 0 / deck 풀) → 빈 set", () => {
     const s = makeState({});
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 0);
   });
 
@@ -36,7 +38,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       deckLength: NORMAL_SLOT_COUNT - 1,
     });
     s.history[0].boxId = s.boxState.id;
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 1);
     assert(out.has(5), "gi=5 포함");
   });
@@ -49,7 +51,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       ],
       deckLength: NORMAL_SLOT_COUNT - 2,
     });
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 2);
     assert(out.has(12), "gi=12 포함");
     assert(out.has(33), "gi=33 포함");
@@ -64,7 +66,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       deckLength: NORMAL_SLOT_COUNT - 3,
     });
     s.history.forEach((e) => (e.boxId = s.boxState.id));
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 3);
   });
 
@@ -80,7 +82,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       deckLength: NORMAL_SLOT_COUNT - 3,
     });
     s.history.forEach((e) => (e.boxId = s.boxState.id));
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 3);
     assert(out.has(7), "추적된 gi=7 유지");
     assert(out.has(0), "placeholder 0");
@@ -97,7 +99,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       deckLength: NORMAL_SLOT_COUNT - 2,
     });
     s.history.forEach((e) => (e.boxId = s.boxState.id));
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 2);
     assert(out.has(0), "추적된 gi=0 유지");
     assert(out.has(1), "placeholder는 1로 (0 건너뜀)");
@@ -109,7 +111,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
         { boxId: "other-box-id", gridIndex: 9, isLastOne: false },
       ],
     });
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 0);
   });
 
@@ -121,7 +123,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       ],
     });
     s.history.forEach((e) => (e.boxId = s.boxState.id));
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     // 둘 다 추적 미가능. deckLength도 풀이라 placeholder 충당 0.
     assertEq(out.size, 0);
   });
@@ -135,7 +137,7 @@ suite("buildConsumedGridSet (M2.1 / 4.14.7)", () => {
       ],
       deckLength: NORMAL_SLOT_COUNT - 1,
     });
-    const out = buildConsumedGridSet(s);
+    const out = buildConsumedGridSet(s, LINEUP);
     assertEq(out.size, 1);
     assert(out.has(4), "lockedResult.gridIndex만 추적");
   });

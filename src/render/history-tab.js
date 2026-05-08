@@ -1,8 +1,9 @@
-import { TIERS, HISTORY_RECENT_LIMIT } from "../data/numbers.js";
+import { HISTORY_RECENT_LIMIT, getLineupById } from "../data/numbers.js";
 import { tierCounts } from "../core/history.js";
 import { TIER_COLORS, COLOR_TIER_FALLBACK } from "../data/colors.js";
 
 export function renderHistoryTab(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("div");
   el.className = "history-tab";
 
@@ -19,7 +20,7 @@ export function renderHistoryTab(state, dispatch) {
   `;
   el.appendChild(summary);
 
-  const counts = tierCounts(state.history);
+  const counts = tierCounts(state.history, lineup);
   const countSection = document.createElement("section");
   countSection.className = "tier-counts";
   const countTitle = document.createElement("h2");
@@ -27,7 +28,7 @@ export function renderHistoryTab(state, dispatch) {
   countSection.appendChild(countTitle);
   const countGrid = document.createElement("div");
   countGrid.className = "tier-counts-grid";
-  for (const t of TIERS) {
+  for (const t of lineup.tiers) {
     const item = document.createElement("div");
     item.className = "tier-count-item";
     item.style.setProperty("--tier-color", TIER_COLORS[t.tier]);

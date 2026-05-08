@@ -1,9 +1,7 @@
-// 추첨 이력 (01_spec 5.6 + M2.1 5.14.4.6).
+// 추첨 이력 (01_spec 5.6 + M2.1 5.14.4.6 + M3 lineup 인자).
 // entry 스키마 (호출처 = render/main.js dispatch.peel / dispatch.pick):
 //   { time, boxId, drawIndex, tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne,
-//     pickIndex (M2.1, number | null), revealed (M2.1, boolean) }
-
-import { TIERS } from "../data/numbers.js";
+//     pickIndex (M2.1, number | null), gridIndex (M2.1, number | null), revealed (M2.1, deprecated 호환) }
 
 export function appendHistory(history, entry) {
   return [...history, entry];
@@ -11,16 +9,20 @@ export function appendHistory(history, entry) {
 
 // 등급별 누적 카운트. Last One 동시 지급분도 별도 카운트.
 // M2.1 B-α: history는 reveal 시점에만 append. revealed === false 항목은 안전장치로 제외.
-export function tierCounts(history) {
+// M3 (CB-1, 단계 4 T7): lineup 인자 추가. 라인업별 등급 수 가변성 흡수 (드래곤볼 10 vs 원피스 9).
+export function tierCounts(history, lineup) {
+  if (!lineup || !Array.isArray(lineup.tiers)) {
+    throw new Error("[history] tierCounts: lineup.tiers required (M3 CB-1).");
+  }
   const counts = {};
-  for (const t of TIERS) counts[t.tier] = 0;
+  for (const t of lineup.tiers) counts[t.tier] = 0;
   for (const e of history) {
     if (!e || e.revealed === false) continue;
     if (e.tier && (e.tier in counts)) counts[e.tier] += 1;
-    if (e.isLastOne) counts["Last One"] += 1;
+    if (e.isLastOne && ("Last One" in counts)) counts["Last One"] += 1;
   }
   return counts;
 }
 
-// M2.1 1차 (findUnrevealed / revealHistory)는 B-α 폐기. 호출처 0건 보장 (T17 grep).
+// M2.1 1차 (findUnrevealed / revealHistory)는 B-α 폐기. 호출처 0건 보장.
 // 새로고침 복원은 ticket.lockedResult 기반 (data/storage.js).

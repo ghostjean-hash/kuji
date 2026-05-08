@@ -1,11 +1,12 @@
 // Last One row (M2 재설계, 4장 영역 4). 1줄 골드 강조 + 도달까지 잔여 카운터.
 
-import { TIERS } from "../data/numbers.js";
+import { getLineupById } from "../data/numbers.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { showProductDetailModal } from "./product-detail-modal.js";
 
 export function renderLastOneRow(state, dispatch) {
-  const lastOne = TIERS.find((t) => t.tier === "Last One");
+  const lineup = getLineupById(state.currentLineupId);
+  const lastOne = lineup.tiers.find((t) => t.tier === "Last One");
   if (!lastOne) return document.createDocumentFragment();
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const isLastOneDrawn = drawnInBox.some((e) => e.isLastOne);
