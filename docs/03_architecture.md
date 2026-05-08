@@ -182,7 +182,7 @@ export function drawDc(tickets, rng, winnersTotal, poolSize): DcResult
 //   p = winnersTotal / poolSize. 사용자 N매에 대해 1 - (1 - p)^N 시행.
 ```
 
-## 3.7. core/history.js (M2.1 B-α 갱신)
+## 3.7. core/history.js (M2.1 B-α 갱신 / **M3 lineup 인자 추가 - CB-1**)
 
 ```js
 // 추첨 이력 누적 / 통계. M2.1 B-α: history는 reveal 시점에만 append.
@@ -200,6 +200,21 @@ export function tierCounts(history): Record<TierLabel, number>
 // findUnrevealed / revealHistory (M2.1 1차)는 B-α 폐기. 새로고침 복원은 ticket.lockedResult 기반 (3.10).
 ```
 
+### 3.7.M3. M3 시그니처 갱신
+
+```js
+// CB-1 흡수 (M2.1 단계 8 백로그 6.3.2): lineup 인자 추가.
+// 기존 tierCounts(history) → tierCounts(history, lineup).
+// lineup.tiers를 순회하며 각 등급별 history 카운트 산출.
+// 라인업별 등급 수 가변성 (드래곤볼 10 vs 원피스 9) 흡수.
+export function tierCounts(history, lineup): Record<string, number>
+
+// boxId 산출에 lineup.id 포함 (M3 단계 3 P0 2.1 정합):
+// 호출처: core/box.initBox(seed, round, lineup) 내부.
+//   const id = fnv1a(`${lineup.id}|${seed}|${round}`).toString(16).padStart(BOX_ID_HEX_LENGTH, '0');
+// → 동일 시드 + 동일 회차 + 다른 라인업 = 다른 box.id.
+```
+
 ## 3.8. data/numbers.js
 
 `docs/02_data.md` 1장의 모든 키를 `export const`로 변환. 자동 검증: numbers.js의 export 키 집합 = 02_data 1장 정의 키 집합 (단계 6 impl_review 검증식).
@@ -208,7 +223,7 @@ export function tierCounts(history): Record<TierLabel, number>
 
 `docs/02_data.md` 2장 색상을 `export const`로 변환.
 
-## 3.10. data/storage.js (M2.1 v3 마이그레이션 + B-α in-place backfill)
+## 3.10. data/storage.js (M2.1 v3 마이그레이션 + B-α in-place backfill / **M3 v4 다중 라인업 격리**)
 
 ```js
 export function loadState(): {
@@ -238,6 +253,26 @@ export function migrateV3InPlace(state): state
 //   (b) 다른 필드는 변경 없음. schemaVersion 그대로 3.
 //   (c) 멱등: 이미 lockedResult 정의된 ticket에는 미적용.
 //   loadState에서 v2→v3 마이그레이션 후 또는 v3 즉시 호출.
+```
+
+### 3.10.M3. M3 v4 다중 라인업 격리
+
+```js
+// 02_data 3.2.5 마이그레이션 v3 → v4.
+// v3 (단일 라인업) 키 6종을 v4 격리 키로 이전. 멱등 보장.
+// 전역 키 (kuji_seed / kuji_settings_skip_pick / kuji_meta) 보존.
+export function migrateV3ToV4(): void
+
+// 라인업별 격리 키 lookup:
+//   loadStateForLineup(lineupId) → { history, unopenedTickets, boxState, boxRound, dcTickets, dcResults }
+//   saveStateForLineup(lineupId, partial)
+// 또는 단일 loadState/saveState가 currentLineupId 의존:
+//   loadState() → state (currentLineupId 자동 도출 + 라인업별 키 lookup).
+// 단계 5 implement에서 결정.
+
+// 전역 키 lookup:
+//   loadGlobalSettings() → { seed, settingsSkipPick, meta, currentLineupId, schemaVersion }
+//   saveGlobalSettings(partial)
 ```
 
 ## 3.11. render/main.js
@@ -342,9 +377,42 @@ export function renderPickSlot(props): HTMLElement
 //   onClick: normal-available / normal-selected에서만 호출 (선택 토글).
 ```
 
+## 3.15.M3. core/pick-grid.js (**M3 신설 - M2.1 정리 3.5.1**)
+
+```js
+// M2.1 4.14.7 / 4.15.5의 buildConsumedGridSet을 render/main.js에서 core로 이전.
+// CLAUDE.md 4.1 (게임 로직 / 렌더 분리) 정합.
+// DOM 의존성 0건. lineup 인자로 등급 수 가변성 흡수.
+export function buildConsumedGridSet(state, lineup): Set<number>
+```
+
 ## 3.16. render/pick-hint-toast.js (**2026-05-08 폐기**)
 
 ~~첫 진입 안내 toast~~ 모듈은 사용자 결정으로 폐기됨 (PROGRESS 4.14.1, 메모리 룰 `feedback_lottery_red_text`). `src/render/pick-hint-toast.js` 파일 삭제 + `dispatch.pick_hint_seen` 호출처 0건. `PICK_FIRST_HINT_TEXT_KO` / `PICK_FIRST_HINT_DURATION_MS` 상수는 numbers.js에 잔존(deprecated, 다음 정리 라운드 제거 후보).
+
+## 3.17. render/settings-tab.js (**M3 Lineup 섹션 추가**)
+
+```js
+// 사용자 결정 8.3 (A) - 헤더 라벨만 정보성. settings-tab dropdown으로 전환.
+// 'Lineup' 섹션 신설. 02_data 1.4.LINEUPS 배열 → dropdown 옵션 N개.
+// 사용자 선택 → confirmModal → dispatch.set_current_lineup.
+```
+
+## 3.18. dispatch.set_current_lineup (**M3 신설**)
+
+```js
+// main.js dispatch 분기.
+// payload: { type: 'set_current_lineup', lineupId: string }
+// 동작:
+//   1. confirmModal 표시 (메모리 only state 폐기 안내).
+//   2. 사용자 확인 시:
+//      a. persistAll (현재 라인업 state 영속).
+//      b. state.currentLineupId = lineupId.
+//      c. saveGlobalSettings({ currentLineupId: lineupId }).
+//      d. state = bootstrapState(loadStateForLineup(lineupId)) (새 라인업 공간 로드).
+//      e. state.pendingPeelResult = null / state.selectedGridIndices = [] (메모리 only 폐기).
+//      f. rerender.
+```
 
 # 4. 상태 / 데이터 흐름
 
@@ -430,6 +498,54 @@ export function renderPickSlot(props): HTMLElement
 
 4.9. ~~**M2.1 첫 진입 안내**~~ **2026-05-08 폐기 (PROGRESS 4.14.1)**. 메모리 룰 `feedback_lottery_red_text`("복권 영역 안내·힌트·경고 문구 금지") 우선 적용. pick-hint-toast.js 파일 삭제. dispatch.pick_hint_seen 호출처 0건. `state.meta.pickHintSeen` 영속 키는 호환 유지하되 읽지 않음.
 
+## 4.M3. M3 다중 라인업 흐름
+
+### 4.M3.1. 부팅 (M3 v4 정합)
+
+```
+mount(rootEl):
+  1. 마이그레이션 점검:
+     - kuji_schema_version 미존재 또는 < 4 → migrateV3ToV4() 호출 (멱등).
+     - schemaVersion === 3 → migrateV3InPlace 호출 (B-α in-place backfill, 02_data 3.2.4).
+     - schemaVersion < 3 → migrateV2ToV3 → migrateV3ToV4 순차 호출.
+  2. globalSettings = loadGlobalSettings()
+     - currentLineupId 미존재 → LINEUP_DEFAULT_ID 부여 + saveGlobalSettings.
+  3. lineup = getLineupById(globalSettings.currentLineupId)
+     - 미발견 → console.warn + LINEUP_DEFAULT 사용 (spec 7.16.1).
+  4. state = bootstrapState(loadStateForLineup(lineup.id), globalSettings, lineup)
+  5. rerender.
+```
+
+### 4.M3.2. 라인업 전환 (사용자 액션)
+
+```
+사용자 settings-tab dropdown 변경 → dispatch.set_current_lineup(newLineupId)
+  → main.js (3.18 정합):
+    confirmModal "라인업을 전환합니다. ..."
+    사용자 확인:
+      persistAll(state, oldLineupId)       (현재 라인업 영속)
+      saveGlobalSettings({ currentLineupId: newLineupId })
+      newState = bootstrapState(loadStateForLineup(newLineupId), globalSettings, newLineup)
+      state = newState                      (메모리 only state 폐기)
+      rerender
+  → 사용자에게 새 라인업 박스 + 인벤토리 + 이력 + DC 표시.
+```
+
+### 4.M3.3. 영속 매핑 (02_data 3.1.1 / 3.1.2 정합)
+
+| 카테고리 | 키 | 의존 |
+|---|---|---|
+| 라인업별 격리 | `kuji_history_${lineup_id}` 등 6종 | currentLineupId |
+| 전역 | `kuji_seed` / `kuji_settings_skip_pick` / `kuji_meta` / `kuji_current_lineup_id` / `kuji_schema_version` | 라인업 무관 |
+
+### 4.M3.4. 마이그레이션 v3 → v4 (02_data 3.2.5 알고리즘)
+
+`migrateV3ToV4()`:
+- DETECTED_LINEUP_ID = LINEUP_DRAGONBALL_ID (M2.1 단일 라인업 가정).
+- v3 키 6종 → v4 격리 키 이전 (멱등).
+- 전역 키 신설 + 보존.
+- schemaVersion = 4.
+
 # 5. 정적 검사 / 단계 6 게이트 검증식
 
 5.1. **매직 넘버 0개**: `src/` 전수 grep으로 숫자 리터럴 추출. `data/numbers.js` 정의 / 단순 인덱스(0, 1) / 산술 항등(매수 비교) 외 매직 값 0개.
@@ -442,11 +558,29 @@ export function renderPickSlot(props): HTMLElement
 5.8. **state 매트릭스 분기 정합 (M2.1 신설, M2 PROGRESS 6.2.3 학습 흡수, B-α 갱신)**: `render/draw-tab.js` 의 6번 영역 분기가 `unopenedTickets.length` × `settingsSkipPick` × `first ticket.lockedResult` × `pendingPeelResult` × `boxState.deck.length` 매트릭스의 5분기 (a/b1/b2/b3/c) 모두 정합한지 grep + 시각 검증. (B-α 재정정: `pendingPickResult` 폐기, `ticket.lockedResult`로 통합).
 5.9. **prop drilling 정합 (M2.1 신설, M2 PROGRESS 6.2.2 학습 흡수)**: 신규 모듈 (pick-panel, pick-slot) 의 prop 시그니처가 호출처에서 누락 없이 전달되는지 grep. (~~pick-hint-toast~~ 2026-05-08 폐기).
 
+5.10. **M3 라인업 격리 grep (단계 6 신설)**: 다음 패턴 grep 통과 의무.
+- `kuji_${KEY}` 형태에 lineup_id 빠진 곳 0건 (격리 6종 키): `kuji_history\\b` / `kuji_unopened_tickets\\b` / `kuji_box_state\\b` / `kuji_box_round\\b` / `kuji_dc_tickets\\b` / `kuji_dc_results\\b` 단독 등장 0건 (모두 `_${lineup_id}` 또는 변수 보간 형태).
+- `LINEUP\\b` (대문자 단수 글로벌) 잔존 0건 (메타 / 변경이력 텍스트 제외).
+- `BOX_SIZE\\b` 단수 글로벌 잔존 0건 (또는 단계 4 결정에 따라 호환 alias 유지 시 `LINEUP_DRAGONBALL.boxSize`로 alias 명시).
+- box.id 산출에 `lineup.id` 포함 검증.
+
+5.11. **M3 등급 수 가변성 grep (단계 6 신설)**: render 모듈이 등급 수에 의존하지 않는지 grep.
+- 하드코딩 정수 `10` (드래곤볼 등급 수) 또는 `9` (원피스) 잔존 0건.
+- `lineup.tiers.length` 또는 `tiers.length` 동적 처리 정합.
+- A~J 하드코딩 (10개 등급 라벨) 잔존 0건. 라벨은 `lineup.tiers[i].tier`로 lookup.
+
+5.12. **M3 currentLineupId 분기 매트릭스 (단계 6 신설)**: state.currentLineupId × 영속 키 격리 정합.
+- 부팅 시 currentLineupId 부재 → LINEUP_DEFAULT_ID 부여 정합.
+- 라인업 미발견 (getLineupById fallback) 정합.
+- 라인업 전환 시 메모리 only state (pendingPeelResult / selectedGridIndices) 폐기 정합.
+
 # 6. 변경 이력
 
 6.1. 2026-05-02: M1 단계 4 impl_plan 작성. placeholder 교체. 모듈 분해 / 의존성 그래프 / 인터페이스 시그니처 / 데이터 흐름 정의.
 6.2. 2026-05-02: **M2 단계 4 impl_plan 작성**. core/buy.js + render/ 9개 신규 모듈 + input/drag.js + data/assets.js + assets/ (icons / products) 추가. 의존성 그래프 + 정적 검사 5.5 / 5.6 보강.
 6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설. **(이후 6.5에서 findUnrevealed/revealHistory 폐기 + pendingPickResult → ticket.lockedResult 통합. 6.6에서 pick-hint-toast 폐기)**.
+
+6.7. 2026-05-08: **M3 단계 4 impl_plan 사전 정합 (단계 3 통과 후)**. (1) 3.7.M3 신설 - history.tierCounts(history, lineup) 시그니처 + box.id lineup_id 포함. (2) 3.10.M3 신설 - storage v4 다중 라인업 격리 (migrateV3ToV4 / loadStateForLineup / saveGlobalSettings). (3) 3.15.M3 신설 - core/pick-grid.js (M2.1 정리 3.5.1 흡수, render→core 이전). (4) 3.17 settings-tab Lineup 섹션 + 3.18 dispatch.set_current_lineup. (5) 4.M3 흐름 신설 (부팅 / 전환 / 영속 매핑 / 마이그레이션 알고리즘). (6) 5.10/5.11/5.12 단계 6 게이트 grep 신설 (라인업 격리 / 등급 수 가변성 / currentLineupId 매트릭스).
 
 6.6. 2026-05-08: **M2.1 라이브 정정 + 단계 6 docs 정합 흡수**. (1) **toast 폐기** (PROGRESS 4.14.1, 메모리 룰 `feedback_lottery_red_text`): pick-hint-toast.js 파일 삭제 / dispatch.pick_hint_seen 호출처 0건 / 03_arch 1장 트리 / 3.16 / 4.9 / 5.7 / 5.9 폐기 표기. PICK_FIRST_HINT_* + meta.pickHintSeen은 호환 잔존 deprecated. (2) **dispatch.peel 흐름 정정** (4.14.8): history append를 reveal 시점에 무조건 수행 (이전: requiresReceive면 receive_confirm까지 미룸 → 새로고침 시 entry 손실 가능). `requiresReceive`는 UI 게이트 플래그로만 사용 (4.6 명시). (3) **buildConsumedGridSet 단일 진실원** (4.14.7 / 4.15.5): pick-panel 렌더와 main.js performPickConfirm가 동일 함수 사용. tests/suites/build_consumed_grid_set.test.js 9 케이스. (4) **통 슬롯 산개** (4.16): 무작위 좌표 → 격자 셀 + ±50% jitter (Poisson clumping 해소). slotPosition 시그니처 변경 (seedKey, posInShuffle, cols, rows). (5) **Last One 슬롯 통 비노출** (4.14.14): pick-panel.js NORMAL_SLOT_COUNT = BOX_SIZE - 1로 일반 슬롯만 렌더. spec 5.14.2.5 / 5.14.3.5/3.6 폐기 표기. pick-slot.js LAST_ONE_PENDING/DRAWN deprecated. (6) **5.8 매트릭스 갱신**: pendingPickResult → ticket.lockedResult로 통합 (B-α 정합). (7) **시각 튜닝 매직 넘버 4종 흡수** (4.17, 단계 6 P1 3.1): PICK_SLOT_ROTATE_RANGE_DEG / PICK_GRID_CLAMP_MIN_PCT / PICK_GRID_CLAMP_MAX_PCT / PICK_SLOT_JITTER_RATIO + PICK_SLOT_SELECTED_Z_BOOST(=30) numbers.js + 02_data 1.12 등재. (8) **02_data 2.2 색 SSOT 정합**: pick-slot 3개 색을 라이브 정정 의도(현재 코드값)로 갱신 + `COLOR_FRAME_RED_DARK` / `COLOR_GOLD_EDGE_SOFT` / `COLOR_PICK_SLOT_BG_GRAD` 3건 신규 등재 (단계 6 P0 2.4 / 2.5). (9) **PICK_AUTO_CONFIRM_DELAY_MS** (4.14.5 / 4.15.2): 200ms 매직 넘버 → 명명 상수.
 6.4. 2026-05-03: **M2.1 단계 5 implement 발견 정정**. history entry 스키마에 `gridIndex (number \| null)` 필드 추가 (격자 위치 영구 기록 = 새로고침 격자 회색 복원의 SSOT). 3.7 / 4.6 갱신. 3.14 pick-panel.js 격자 위치 → 잔여 deck 인덱스 j 변환 알고리즘 명시 (drawnGridIndices 기반). 02_data 3.1 / 3.2.3 동시 갱신 (4.9).

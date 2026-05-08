@@ -29,7 +29,7 @@
 
 ```
 [추첨 탭] (기본)
-  1. 헤더 (압축): 라인업 타이틀 + 가격 + 추정 배지 (1줄)
+  1. 헤더 (압축): 라인업 타이틀 + 가격 + 추정 배지 + **라인업 IP 라벨 (M3 신설, 5.13.A.3 "DRAGONBALL"/"ONE PIECE"/...)** (1줄)
   2. 메인 캐러셀 (A~F, 1매 등급 6개): 가로 드래그.
      ├─ 중심 카드 = 큰 상품 이미지 + 등급 배지 + 1/1
      ├─ 좌우 미리보기 (peek)
@@ -54,7 +54,7 @@
 
 [전적 탭] (M1 그대로 + 새 디자인 언어)
 [Double Chance 탭] (M1 그대로 + 새 디자인 언어)
-[설정 탭] (M1 그대로 + 새 디자인 언어 + M2.1 "통에서 선택 건너뛰기" 체크박스 추가)
+[설정 탭] (M1 그대로 + 새 디자인 언어 + M2.1 "통에서 선택 건너뛰기" 체크박스 + **M3 'Lineup' 섹션 dropdown (5.13.A.4)**)
 
 [하단 탭 바] 4탭 SVG 아이콘 (추첨 / 전적 / DC / 설정, 02_data 1.10)
 
@@ -75,21 +75,21 @@
 ## 5.1. 박스 (Box)
 
 5.1.1. 박스 1개는 SSOT 정의 등급별 매수 분포의 카드 모음.
-5.1.2. 박스 매수(`BOX_SIZE`, 02_data 1.4.1)는 등급별 매수 합 (Last One 1매 포함).
-5.1.3. 박스 ID는 시드 + 박스 회차로 결정. 동일 시드 + 동일 회차 → 동일 박스.
+5.1.2. 박스 매수(`lineup.boxSize`, 02_data 1.4.0 명세 / 1.4-DB.1 / 1.4-OP.1)는 등급별 매수 합 (Last One 1매 포함). **M3 갱신**: 단수 `BOX_SIZE` 글로벌은 폐기. 라인업별 동적 lookup.
+5.1.3. 박스 ID는 라인업 + 시드 + 박스 회차로 결정. **M3 갱신**: 라인업 격리(5.13.A.2) 정합 위해 `lineup.id` 포함. 동일 라인업 + 동일 시드 + 동일 회차 → 동일 박스. 시드 동일 + 라인업만 다른 박스는 다른 box.id (격리 보장).
 5.1.4. 박스 잔여 = 박스 매수 - 추첨 횟수. (deck 잔여 + Last One 미수령 여부와 별개로 사용자 표시는 5.1.4 정의)
 
 ## 5.2. 등급 (Tier)
 
 5.2.1. 등급 = 라인업 정의 (A / B / C / ... / Last One).
-5.2.2. 각 등급은 (라벨, 일본어, 한국어, 종 수, 매수, 사이즈, 자산 ID) 속성 (02_data 1.4.2 + 1.7).
+5.2.2. 각 등급은 (라벨, 일본어, 한국어, 종 수, 매수, 사이즈, 자산 ID) 속성 (02_data 1.4-DB.2 / 1.4-OP.2 + 1.7).
 5.2.3. 종 수 ≥ 2 등급(예: G등급 8종)은 추첨 시 종 인덱스를 별도 결정 (서브 추첨).
 5.2.4. **등급 표기 정책**. 데이터 컬럼 / 라벨 / 코드 식별자는 영문 단독 (`A`, `B`, ..., `Last One`). 본문 자연어 설명은 한국어 음역 (`A등급`, `Last One 등급`). 일본어 원어 인용 시 `A賞` 형태.
 
 ## 5.3. 추첨 (Draw)
 
 5.3.1. PRNG: 02_data 1.2 `PRNG_NAME`.
-5.3.2. 박스 초기화 시: `BOX_SIZE - 1` 매(Last One 제외)의 등급 라벨 배열 셔플 (Fisher-Yates).
+5.3.2. 박스 초기화 시: `lineup.boxSize - 1` 매(Last One 제외)의 등급 라벨 배열 셔플 (Fisher-Yates). 라인업별 boxSize에 따라 셔플 길이 동적.
 5.3.3. 추첨 1회 = 셔플된 배열의 `splice(pickIndex)`. 비복원 보장. **M2.1 갱신**: `pickIndex` 옵셔널. 미전달 또는 skip ON 시 `splice(0)` (= 현행 head pop 동작).
 5.3.4. 등급 결정 후 종 수 ≥ 2 등급은 종 인덱스를 별도 PRNG 호출로 결정 (균등 분포).
 5.3.5. 결과 = (등급, 종 인덱스, 상품명, 사이즈, 시각, pickIndex).
@@ -103,7 +103,7 @@
 ## 5.4. Last One 보너스
 
 5.4.1. 박스 잔여가 1매가 된 시점 = 다음 추첨이 "마지막 추첨".
-5.4.2. 마지막 추첨이 실행되는 순간 Last One 보너스 상품(02_data 1.4.2 Last One 행)이 자동 지급.
+5.4.2. 마지막 추첨이 실행되는 순간 Last One 보너스 상품(02_data 1.4-DB.2 / 1.4-OP.2 Last One 행)이 자동 지급.
 5.4.3. 결과 모달은 마지막 카드의 등급 + Last One 보너스를 동시 표시.
 5.4.4. 시뮬레이터 내부 구현: 79매 셔플 + 마지막 1매 추첨 시 Last One 자동 지급. 박스 매수는 79 + Last One 1 = 80.
 5.4.5. **M2: Last One 시각 강조** (5.11.3 갤러리 강조 + 5.12 디자인 언어).
@@ -111,11 +111,11 @@
 ## 5.5. Double Chance
 
 5.5.1. 추첨 1회마다 Double Chance 응모권 1매 자동 누적.
-5.5.2. 응모권 = (박스 ID, 추첨 회차, 시각).
+5.5.2. 응모권 = (박스 ID, 추첨 회차, 시각). **M3 갱신**: 박스 ID가 lineup.id 포함하므로 DC 응모권도 자연 격리. 02_data 3.1.1 `kuji_dc_tickets_${lineup_id}` 정합.
 5.5.3. Double Chance 추첨은 사용자 명시 트리거 (DC 탭).
-5.5.4. 추첨 풀 = 누적 응모권. 일본 캠페인 당첨자 수는 02_data 1.4.3 (`DC_WINNERS_TOTAL`).
+5.5.4. 추첨 풀 = 누적 응모권. 일본 캠페인 당첨자 수는 `lineup.dc.winnersTotal` (02_data 1.4-DB.3 / 1.4-OP.3). **M3 갱신**: 라인업별 차이 (드래곤볼 50 / 원피스 100).
 5.5.5. 시뮬레이터에서는 사용자 1인이므로 베르누이 단순화.
-5.5.6. 당첨 확률 = `DC_WINNERS_TOTAL` / `DC_POOL_SIZE_DEFAULT` (02_data 1.3). 응모권 N매에 대해 1 - (1 - p)^N. UI에 단순화 가정 명시.
+5.5.6. 당첨 확률 = `lineup.dc.winnersTotal` / `DC_POOL_SIZE_DEFAULT` (02_data 1.3). 응모권 N매에 대해 1 - (1 - p)^N. UI에 단순화 가정 명시.
 
 ## 5.6. 추첨 이력
 
@@ -125,15 +125,16 @@
 
 ## 5.7. 시드 / 결정론
 
-5.7.1. 박스 ID = `hash(seed, box_round)`. 같은 시드 + 같은 회차 → 같은 박스.
-5.7.2. 시드는 사용자가 입력하거나 기본값 사용 (02_data 1.1 `DEFAULT_SEED_FALLBACK_BITS`).
-5.7.3. 시드 변경 시 박스 진행 중이면 확인 모달.
-5.7.4. 박스 리셋 시 `box_round` += 1. 시드 변경 시 `box_round`는 `BOX_ROUND_INITIAL` 리셋.
+5.7.1. **박스 ID = `fnv1a("${lineup.id}|${seed}|${box_round}")` → 8 hex (BOX_ID_HEX_LENGTH)**. 같은 라인업 + 같은 시드 + 같은 회차 → 같은 박스. **M3 갱신 (단계 3 P0 2.1 정정)**: 시드 동일 + 라인업만 다른 박스는 다른 box.id (라인업 격리 + 결정론 회귀 회피).
+5.7.2. 시드는 사용자가 입력하거나 기본값 사용 (02_data 1.1 `DEFAULT_SEED_FALLBACK_BITS`). **M3**: 시드는 라인업 공유 (사용자 결정 8.2 (A)). settings-tab seed 입력 1건. 모든 라인업이 같은 seed 사용.
+5.7.3. 시드 변경 시 박스 진행 중이면 확인 모달. **M3**: 시드 변경은 모든 라인업 박스에 영향 (전역 키 변경). 확인 모달에 명시.
+5.7.4. 박스 리셋 시 `box_round` += 1. 시드 변경 시 `box_round`는 `BOX_ROUND_INITIAL` 리셋. **M3**: `box_round`는 라인업별 격리 키 (`kuji_box_round_${lineup_id}`). 라인업별 독립 회차.
+5.7.5. **drawRng 격리 (M3 단계 3 P1 3.4 정합)**: `drawRng`는 박스 단위 fresh PRNG. drawOne 호출 시점에 `createRng(fnv1a("${seed}|${box_round}|${drawIndex}"))`로 매번 재초기화 (M2 / M2.1 정합 유지). 라인업 전환 시 drawRng 자동 격리 (라인업별 box_round + lineup_id 포함 box.id 정합).
 
 ## 5.8. 신뢰도 표시 ("추정" 배지)
 
 5.8.1. 라인업 데이터의 `box_size_estimated:true` 또는 `count_estimated:true` 항목은 UI에 "추정" 배지 표시.
-5.8.2. 배지 클릭 시 출처 URL 일람 모달 표시 (02_data 1.4.4).
+5.8.2. 배지 클릭 시 출처 URL 일람 모달 표시 (02_data 1.4-DB.4 / 1.4-OP.4).
 5.8.3. 배지 색은 02_data 2.2 `COLOR_BADGE_ESTIMATED` (M2 골드 톤).
 
 ## 5.9. 구매 (Buy) - M2 신설
@@ -143,7 +144,7 @@
 - Quick 버튼: 02_data 1.6 `BUY_QUICK_OPTIONS` (= [1, 3, 5, 10]).
 - 자유 입력: `BUY_FREE_INPUT_MIN` (= 1) ~ (박스 deck 잔여 - 누적 인벤토리) 매수 사이 정수.
 5.9.3. **(누적 인벤토리 + 신규 구매 매수) ≤ 박스 deck 잔여** invariant. 부족 시 buy 비활성 + 안내. 통 선택 격자 잔여 슬롯 ≥ 인벤토리 보장의 근거 (5.14, 7.12).
-5.9.4. 가격 = `구매매수 × LINEUP_PRICE_JPY` 화면 표시.
+5.9.4. 가격 = `구매매수 × lineup.priceJpy` 화면 표시. **M3**: 라인업별 priceJpy 동적 lookup.
 5.9.5. 구매 완료 = 인벤토리(`unopenedTickets`)에 미개봉 복권 N매 추가.
 5.9.6. 미개봉 복권 항목 = `Ticket = { id, purchasedAt }`. 구매 시점만 기록. 등급은 미결정 (5.10 뜯기 시점에 결정).
 5.9.7. 구매 자체는 deck 변화 없음. deck shift는 5.10 뜯기에서만 발생.
@@ -161,7 +162,7 @@
 - 50% 시점 햅틱: `navigator.vibrate(PEEL_HAPTIC_HALF_MS)` (02_data 1.8). 완료 시점 햅틱: `navigator.vibrate(PEEL_HAPTIC_FULL_MS)`. 가능 시.
 5.10.4. 뜯기 시점:
 - **(skip OFF, B-α)**: 결과는 첫 ticket의 `lockedResult` 사용 (drawOne 재호출 없음. 5.14.4 확인 시점에 이미 결정됨). 페이지플립 reveal 시점에 history append + 갤러리 갱신.
-- **(skip ON)**: `core/draw.drawOne(boxState, drawRng, LINEUP)` 호출 (`pickIndex` 미전달 → `splice(0)`). 페이지플립 시작 시점 = drawOne 호출 시점. 즉시 history append + 갤러리 갱신.
+- **(skip ON)**: `core/draw.drawOne(boxState, drawRng, lineup)` 호출 (`pickIndex` 미전달 → `splice(0)`). 페이지플립 시작 시점 = drawOne 호출 시점. 즉시 history append + 갤러리 갱신. **M3 갱신**: 활성 lineup 객체 인자 전달 (`LINEUP` 단수 글로벌 폐기).
 결과는 **페이지플립 카드 내부 면에 직접 표시** (등급 + 상품). **모달 없음** (M2 재설계). 카드는 `PEEL_REVEAL_VIEW_MS` (02_data 1.9) 후 fade out. 동시에 4장 영역 2/3/4 (메인 캐러셀 / 마이너 row / Last One row) 중 해당 등급 위치에 인플레이스 시각 반영 (글로우 + 카운트 +1 + 미니 복권 오버레이). **갱신 트리거 = reveal 시점 history append** (T19 결함 2 정정. 슬롯 선택 / 확인 시점에는 갱신 X).
 5.10.5. 결과 = 등급 / 종 인덱스 / 상품 / Last One 트리거 (5.3, 5.4 동일).
 5.10.6. 마지막 1매 (`isLastDraw(boxState)` true) 시점 뜯기 = 페이지플립 내부 면에 **마지막 카드 + Last One 동시** 표시 (골드 톤 + 큰 글자). 동시에 Last One row 골드 펄스 강조. 모달 없음.
@@ -218,6 +219,45 @@
 - 외부 면: `COLOR_TICKET_OUTER_BG` (브랜드 빨강) + IP 일러스트 + 좌측 떼기 가이드 ▶.
 - 내부 면: `COLOR_TICKET_INNER_BG` (종이) + 큰 등급 글자 (카드 짧은변 50~60% 크기) + 상품명 / 사이즈.
 
+## 5.13.A. 다중 라인업 (M3 신설)
+
+### 5.13.A.1. 활성 라인업
+
+5.13.A.1.0. **표기 정책 (M3 단계 3 P0 2.3 정합)**: 본 문서에서 소문자 `lineup`은 **활성 라인업 객체** = `LINEUPS[state.currentLineupId]` (= `getLineupById(state.currentLineupId)`)를 의미. 대문자 `LINEUP` 단수 글로벌 export는 폐기 (M2.1 시점 식별자, M3에서 제거 예정). core 함수가 받는 `lineup` 인자는 호출처에서 활성 라인업으로 lookup 후 전달.
+5.13.A.1.1. 시뮬레이터는 동시에 **하나의 활성 라인업**을 표시한다 (`state.currentLineupId`). 02_data 1.4.LINEUPS 배열에서 lookup.
+5.13.A.1.2. 첫 진입 시 default 라인업 = `LINEUP_DEFAULT_ID` (= 드래곤볼). 영속 키 `kuji_current_lineup_id` 미존재 시 부여.
+5.13.A.1.3. 활성 라인업 전환은 사용자 명시 액션으로만 발생 (5.13.A.4 설정 탭 dropdown).
+
+### 5.13.A.2. 라인업별 데이터 격리 (사용자 결정 8.1 (A1))
+
+5.13.A.2.1. **격리 키 (라인업별 독립)**: `kuji_history_${lineup_id}` / `kuji_unopened_tickets_${lineup_id}` / `kuji_box_state_${lineup_id}` / `kuji_box_round_${lineup_id}` / `kuji_dc_tickets_${lineup_id}` / `kuji_dc_results_${lineup_id}`. 02_data 3.1.1 정합.
+5.13.A.2.2. **전역 키 (라인업 무관)**: `kuji_seed` (사용자 결정 8.2 (A) = 라인업 공유) / `kuji_settings_skip_pick` / `kuji_meta` / `kuji_current_lineup_id` / `kuji_schema_version`. 02_data 3.1.2 정합.
+5.13.A.2.3. **격리 효과**: 라인업 A에서 박스 N매 진행 → 라인업 B 전환 → 라인업 A 복귀 시 박스 + 인벤토리 + 이력 + DC 모두 N매 그대로 보존. 수집/완주 경험 보존.
+
+### 5.13.A.3. 헤더 라인업 라벨 (사용자 결정 8.3 (A))
+
+5.13.A.3.1. 헤더에 활성 라인업 짧은 라벨 (`lineup.ip`, 예: `"DRAGONBALL"` / `"ONE PIECE"`) 정보성 표시.
+5.13.A.3.2. 클릭 인터랙션 없음 (M3 보수적 스코프). 라인업 변경은 5.13.A.4 설정 탭에서.
+
+### 5.13.A.4. 설정 탭 'Lineup' 섹션
+
+5.13.A.4.1. 설정 탭 상단에 'Lineup' 섹션 신설. 현재 라인업 표시 + dropdown (또는 라디오 리스트).
+5.13.A.4.2. 사용자가 다른 라인업 선택 → **확인 모달**: "라인업을 전환합니다. 현재 라인업 데이터(박스 / 인벤토리 / 이력 / DC)는 보존됩니다. 진행 중인 reveal / 격자 선택은 폐기됩니다."
+5.13.A.4.3. 확인 시 `dispatch({type: 'set_current_lineup', lineupId})` → main.js가 새 라인업 공간 로드 + rerender.
+5.13.A.4.4. **라인업 전환 시 폐기되는 메모리 only state**: `pendingPeelResult` (메모리 전용 reveal 상태) / `selectedGridIndices` (B-α 격자 선택 메모리). 영속 데이터(history / inventory / DC / box) 0건 손실.
+
+### 5.13.A.5. 자산 fallback (사용자 결정 8.4 (A))
+
+5.13.A.5.1. `lineup.assetsAvailable === false` 라인업은 02_data 1.7.3 SVG fallback 사용. M2.1 G~J SVG 자산 패턴 답습.
+5.13.A.5.2. SVG fallback에 라인업 IP 표기 0건 (라이선스 안전). 등급 라벨(A~J)만 골드 텍스트로.
+5.13.A.5.3. 사용자 외부 작업으로 placeholder webp 배치 후 `assetsAvailable: true`로 갱신 + base path 정합.
+
+### 5.13.A.6. 라인업 추가 절차 (M4+ 새 라인업 시)
+
+5.13.A.6.1. 02_data 1.4-XX 절 신설 (메타 + 등급 + DC + 출처 + LINEUP 객체 + 검증식).
+5.13.A.6.2. `LINEUPS` 배열 추가 + 02_data 1.7.1-XX 자산 매핑 추가.
+5.13.A.6.3. 단계 6 게이트 검증 (라인업 격리 + 등급 수 가변성 + box.id 충돌 0).
+
 ## 5.14. 통 선택 (Pick from Bin) - M2.1 신설 + B-α 재정정 (단계 5 T19 결함 정정)
 
 매장 추첨함(クジ箱)에서 직접 N매를 모두 골라 손에 든 다음 한 장씩 뜯는 체험. 사용자 선택 = 셔플 배열 인덱스 매핑. 5.7 시드 결정론은 그대로 유지.
@@ -227,7 +267,7 @@
 5.14.0.1. **선택 단위**: N매 통째 (구매 매수 N개 슬롯 모두 선택 후 "확인" 버튼 = 1회 확정). 단계 1 plan의 (a) "1매당 1번"은 폐기 (단계 5 T19 사용자 시각 컨펌에서 매장 경험과 어긋남 발견).
 5.14.0.2. **인벤토리 ticket 모델**: 구매 직후 인벤토리에 N매 raw ticket 추가 (`lockedResult: null` = 등급 미결정). "확인" 시 N매 모두 `lockedResult` 부여 (각 ticket에 등급/종/사이즈/lastOnePrize 등 결과 정보 포함). 사용자에게는 reveal 전까지 미공개.
 5.14.0.3. **결과 시각 분리** (T19 결함 2 정정): 슬롯 선택 / "확인" 시점에 등급은 결정되지만 사용자에게는 미공개. 갤러리 / 캐러셀 / 마이너 row / Last One row 갱신은 reveal 시점에만 (history는 reveal 시점에만 append. revealed 필드는 deprecated).
-5.14.0.4. **drawOne 호출 시점**: "확인" 버튼 클릭 = `core/draw.drawOne(boxState, drawRng, LINEUP, deckIndex)` N회 연속 호출 (사용자 슬롯 선택 순서대로). 각 호출이 deck splice + lockedResult 결정.
+5.14.0.4. **drawOne 호출 시점**: "확인" 버튼 클릭 = `core/draw.drawOne(boxState, drawRng, lineup, deckIndex)` N회 연속 호출 (사용자 슬롯 선택 순서대로). 각 호출이 deck splice + lockedResult 결정. **M3**: `lineup` = 활성 라인업 객체 (= `LINEUPS[state.currentLineupId]`).
 5.14.0.5. **pendingPickResult 폐기**: M2.1 1차 설계의 `pendingPickResult` 메모리 변수는 폐기. ticket.lockedResult 로 통합. (state 객체에서도 제거.)
 
 ### 5.14.1. 진입 조건 (B-α)
@@ -239,13 +279,13 @@
 
 ### 5.14.2. 격자 레이아웃
 
-5.14.2.1. 격자 차원: `cols × rows`. `cols = LINEUP.gridCols ?? PICK_GRID_COLS_DEFAULT` (02_data 1.12, 기본 10). `rows = Math.ceil(NORMAL_SLOT_COUNT / cols)`. **2026-05-08 정정**: 통(bin) 격자에 표시되는 슬롯은 **일반 슬롯만** (Last One 슬롯 비노출, 4.14.14). `NORMAL_SLOT_COUNT = BOX_SIZE - 1 = 79`. 위치는 무작위 좌표가 아닌 격자 셀 + jitter 산개 (4.16).
-5.14.2.2. **통 격자 슬롯 수 = `NORMAL_SLOT_COUNT`** (= `BOX_SIZE - 1`). 내부 구성:
-- **일반 슬롯**: `BOX_SIZE - 1` 개 (드래곤볼 79). 셔플 배열 인덱스 0 ~ `BOX_SIZE - 2` 와 1:1 매핑. 사용자 클릭 가능.
+5.14.2.1. 격자 차원: `cols × rows`. `cols = lineup.gridCols ?? PICK_GRID_COLS_DEFAULT` (02_data 1.12, 기본 10). `rows = Math.ceil(NORMAL_SLOT_COUNT / cols)`. **2026-05-08 정정**: 통(bin) 격자에 표시되는 슬롯은 **일반 슬롯만** (Last One 슬롯 비노출, 4.14.14). **M3 갱신**: `NORMAL_SLOT_COUNT = lineup.boxSize - 1` (라인업별 동적, 드래곤볼 79 / 원피스 79). 위치는 무작위 좌표가 아닌 격자 셀 + jitter 산개 (4.16).
+5.14.2.2. **통 격자 슬롯 수 = `NORMAL_SLOT_COUNT`** (= `lineup.boxSize - 1`). 내부 구성:
+- **일반 슬롯**: `lineup.boxSize - 1` 개 (드래곤볼 79 / 원피스 79). 셔플 배열 인덱스 0 ~ `lineup.boxSize - 2` 와 1:1 매핑. 사용자 클릭 가능.
 - **Last One 슬롯**: ~~격자 마지막 셀 1개~~. **2026-05-08 정정 (4.14.14)**: 통 격자에 노출하지 않음. 별도 영역 `last-one-row` (4번 영역)에 단일 행으로 표시. `last-one-row`는 마지막 일반 슬롯 reveal 시점에 자동 지급 + 글로우 + "LAST ONE!" 배지로 동시 표시 (5.14.4.5 / 5.4 자동 지급 흐름 정합).
 5.14.2.3. 슬롯 최소 터치 타깃 = `PICK_SLOT_MIN_TAP_PX` (= 24px). 화면 폭이 부족하면 `cols`를 `PICK_GRID_COLS_MIN` (= 4) 까지 자동 축소.
 5.14.2.4. 슬롯 간 간격 = `PICK_SLOT_GAP_PX` (= 4px).
-5.14.2.5. ~~**Last One 슬롯 위치**: 격자 마지막 셀 (gridIndex = `BOX_SIZE - 1`).~~ **2026-05-08 폐기 (4.14.14)** - Last One 슬롯은 통에 노출하지 않으며 `last-one-row`에서 별도 표시. `LAST_ONE_GRID_INDEX = BOX_SIZE - 1` 상수도 dead. `gridIndex = BOX_SIZE - 1` 값은 history 데이터 모델에서 더 이상 사용되지 않음 (Last One은 `isLastOne: true` + `gridIndex: null` 또는 `lastDrawnTier`로 식별).
+5.14.2.5. ~~**Last One 슬롯 위치**: 격자 마지막 셀 (gridIndex = `lineup.boxSize - 1`).~~ **2026-05-08 폐기 (4.14.14)** - Last One 슬롯은 통에 노출하지 않으며 `last-one-row`에서 별도 표시. `LAST_ONE_GRID_INDEX` 상수도 dead. `gridIndex = lineup.boxSize - 1` 값은 history 데이터 모델에서 더 이상 사용되지 않음 (Last One은 `isLastOne: true` + `gridIndex: null` 또는 `lastDrawnTier`로 식별).
 
 ### 5.14.3. 슬롯 상태 (B-α 5상태 + ~~Last One 2상태~~ - 2026-05-08 일반 3상태로 축소)
 
@@ -262,7 +302,7 @@
 5.14.4.2. **클릭 / 탭 (잔여 일반 슬롯)**: 선택 / 해제 토글 (메모리 전용. deck splice 없음. drawOne 호출 없음. history 미커밋). 같은 슬롯 재클릭 = 해제. 다른 슬롯 클릭 = 추가 선택.
 5.14.4.3. **선택 카운트 헤더**: 격자 패널 상단에 "선택 K / N" 표시. K = 현재 선택된 슬롯 수, N = 인벤토리 raw ticket 수 (= 사용자가 골라야 할 매수).
 5.14.4.4. **"확인" 버튼**: K === N 시 활성. 클릭 시:
-- 사용자 슬롯 선택 순서대로 `core/draw.drawOne(boxState, drawRng, LINEUP, deckIndex)` N회 연속 호출. 각 호출 전 격자 위치 → 잔여 deck 인덱스 변환 (5.14.2.2 매핑 + 03_architecture 3.14 알고리즘. 단 N개 동시 변환 시 매 호출마다 splice로 잔여 deck이 줄어드는 것을 반영하여 변환).
+- 사용자 슬롯 선택 순서대로 `core/draw.drawOne(boxState, drawRng, lineup, deckIndex)` N회 연속 호출. 각 호출 전 격자 위치 → 잔여 deck 인덱스 변환 (5.14.2.2 매핑 + 03_architecture 3.14 알고리즘. 단 N개 동시 변환 시 매 호출마다 splice로 잔여 deck이 줄어드는 것을 반영하여 변환). **M3**: `lineup` 활성 객체 인자.
 - N개 결과를 인벤토리의 raw ticket N매에 `lockedResult` 순차 부여 (사용자 선택 순서 그대로 ticket 인덱스 0 ~ N-1).
 - **history 미커밋** (T19 결함 2 정정): 결과는 ticket.lockedResult에만 저장. history는 reveal 시점에만 append.
 - 격자 패널 닫힘 → peel 패널 자동 진입 (4장 6.b2 분기).
@@ -327,13 +367,18 @@
 7.6. DC 응모권 0에서 추첨 비활성.
 7.7. 시드 변경 + 박스 진행 중 → 확인 모달.
 7.8. localStorage 비활성 → 메모리 모드 fallback + 4장 시트 안내. **M2.1 추가**: skip 설정도 메모리 모드 fallback (세션 한정 적용).
-7.9. 라인업 등급별 매수 합 ≠ `BOX_SIZE` → 부팅 실패 (02_data 1.4.2.1).
+7.9. 라인업 등급별 매수 합 ≠ `lineup.boxSize` → 부팅 실패 (02_data 1.4-DB.2.1 / 1.4-OP.2.1).
 7.10. 뜯기 애니메이션 도중 사용자가 탭 전환 → 결과 영속 보장. M2.1 B-α: skip OFF는 "확인" 버튼 시점 (drawOne N회 + lockedResult 부여 + 영속). skip ON은 페이지플립 시작 시점 (drawOne 1회 + 즉시 reveal).
 7.11. **M2.1 B-α: 통 선택 격자 표시 중 새로고침** → 사용자 슬롯 선택 상태 폐기 (메모리 전용). 인벤토리 raw ticket 그대로 영속됨 (lockedResult: null) → 새로고침 후 격자 다시 표시. 사용자 처음부터 다시 선택.
 7.11.b. **M2.1 B-α: "확인" 클릭 후 reveal 전 새로고침** → ticket.lockedResult 영속 → 새로고침 시 b2 분기 진입 (페이지플립 카드 표시). 사용자 reveal 진행. 박스 deck splice + lockedResult 영속이 함께 일어나므로 결정론 / 박스 상태 정합 안전.
 7.12. **M2.1: 통 선택 격자에서 잔여 슬롯이 인벤토리보다 적은 경우** (예: deck 잔여 3 + 인벤토리 raw 5) → 시뮬레이터 부팅 실패 또는 인벤토리 자동 정리. 정상 흐름에서 발생 불가 (구매 검증 5.9.3 invariant). 발생 시 storage corruption → 마이그레이션 처리.
 7.13. **M2.1 B-α: skip 토글 + 격자 표시 중** → 5.14.6.5 분기 (사용자 선택 폐기 + splice(0) N회 + lockedResult 일괄 + peel 진입). reveal 진행 중 (pendingPeelResult) 토글은 다음 사이클에 적용.
 7.14. **M2.1 B-α: 격자에서 사용자가 선택을 N개보다 적게 한 상태에서 다른 액션** (탭 전환 / 박스 리셋 / 시드 변경) → 사용자 선택 메모리 폐기. 박스 리셋 / 시드 변경은 인벤토리도 폐기. 탭 전환은 인벤토리 raw 보존, 다시 격자 진입 시 처음부터 선택.
+7.15. **M3: 라인업 전환 시 진행 중 reveal** → confirmModal에서 사용자에게 명시 (메모리 only state 폐기 안내). 사용자가 확인 시 `pendingPeelResult` / `selectedGridIndices` 폐기. 영속 데이터(history / inventory / DC / box) 라인업 A 공간 그대로 유지. 라인업 B 공간 로드.
+7.16. **M3: 라인업 전환 시 새로고침 직후 (`kuji_current_lineup_id` 부재)** → `LINEUP_DEFAULT_ID` (드래곤볼) 부여. 다른 라인업 데이터는 격리 키에 그대로 유지 (다음 전환 시 복원).
+7.16.1. **M3: 라인업 X가 LINEUPS 배열에서 미발견** (예: M5에서 라인업 X 추가 후 다시 M3 코드로 회귀, 또는 `kuji_current_lineup_id`에 알 수 없는 ID가 영속됨) → `getLineupById`가 `LINEUP_DEFAULT` 반환 + `console.warn`. **사용자 데이터 처리**: X의 격리 키 (`kuji_history_X`, `kuji_unopened_tickets_X` 등) 그대로 잔존 (폐기 X). 활성 라인업만 `LINEUP_DEFAULT_ID`로 복귀. 다음에 X 라인업이 LINEUPS 배열에 다시 추가되면 자동 복원.
+7.17. **M3: 마이그레이션 v3 → v4 도중 일부 키 이전 실패** → 다음 부팅 시 `kuji_schema_version` 미존재 또는 < 4 + source 키 잔존 detect → 재시도. 멱등 정합 (이미 이전된 키는 source 기준 미존재이므로 건너뜀).
+7.18. **M3: 라인업별 가변성** → 등급 수 (드래곤볼 10등급 vs 원피스 9등급), 등급별 매수, type_count, DC winnersTotal 모두 다름. render 모듈은 `lineup.tiers.length` 동적 처리 (활성 lineup 객체 = `LINEUPS[state.currentLineupId]`). 하드코딩 발견 시 단계 6 검증 fail.
 
 # 8. 변경 이력
 
@@ -349,3 +394,4 @@
 8.10. 2026-05-03: **M2.1 단계 5 T19 결함 정정 → 단계 2 design B-α 재정정 (사용자 명시 승인)**. 결함 1 (메커닉 단위, 단계 1 plan 권장 오류): 선택 단위 (a) "1매당 1번" → (b) "N매 통째" (B-α: 확인 버튼). 결함 2 (시각 노출): 슬롯 클릭 시점 history 즉시 커밋이 갤러리 즉시 노출 유발. 정정: history 커밋을 reveal 시점으로 이동. 5.14 절 전면 재작성 (5.14.0 메커닉 모델 신설 + 5.14.1~5.14.7 B-α 재기술 + pendingPickResult 폐기 + ticket.lockedResult 통합) / 5.3.7 / 5.3.8 / 5.10.1 / 5.10.4 / 4장 6.b1/b2/b3 분기 갱신 / 1장 한 줄 / 2장 코어 루프 갱신 / 6장 시나리오 6.2/6.3/6.5/6.6.b/6.7 갱신 / 7.10/7.11/7.13 갱신 + 7.11.b/7.14 신설.
 8.11. 2026-05-03: **M2.1 단계 3 round 4 검증 결함 정정 (자동 재시도 1회)**. C-R4-1 (5.14.7.2 spec 본문 vs 02_data 1.12 PICK_FIRST_HINT_TEXT_KO 값 일치 - 02_data + src/data/numbers.js 동시 갱신). C-R4-2 (5.14.4.5 Last One 슬롯 회색화 시점 - 격자 닫힘 시점 후 다음 사이클 격자 재진입 시 시각 분리 정합 명확화). M-R4-1 (02_data 3.2.4 신설 - 기존 v3 사용자의 unopenedTickets[*].lockedResult in-place backfill 정책 추가, schemaVersion bump 없음).
 8.12. 2026-05-03: **M2.1 B-α 보강 - 자동 선택 버튼 (사용자 명시 승인)**. 5.14.4.8 신설 = 격자 패널 하단 "자동 선택 N매" 버튼 (잔여 일반 슬롯 중 격자 인덱스 오름차순 첫 N개를 selected로 일괄 설정. 메모리 토글만. PRNG / drawOne 호출 0. 결정론 영향 0). 사용자가 자동 선택 후 변경 가능. skip ON과의 차이 명시.
+8.13. 2026-05-08: **M3 단계 2 design**. (1) 5.13.A **다중 라인업 절 신설** (5.13.A.1 활성 라인업 / 5.13.A.2 격리 정책 / 5.13.A.3 헤더 라벨 / 5.13.A.4 설정 탭 dropdown / 5.13.A.5 자산 fallback / 5.13.A.6 라인업 추가 절차). (2) 4장 헤더에 라인업 IP 라벨 추가 + 설정 탭에 'Lineup' 섹션 추가. (3) 7.15~7.18 엣지 케이스 신설 (전환 시 진행 중 reveal / 새로고침 / 마이그레이션 실패 / 라인업 가변성). 사용자 결정 4건 정합 (전환 UI A / 격리 정책 A1 / 정리 라운드 A / kuji_seed 공유 A / 헤더 라벨만 A / 자산 SVG fallback A).

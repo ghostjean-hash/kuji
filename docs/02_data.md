@@ -13,7 +13,7 @@
 | `STORAGE_KEY_PREFIX` | `"kuji_"` | localStorage 키 prefix |
 | `DEFAULT_SEED_FALLBACK_BITS` | 32 | 시드 기본값 (`Date.now()`) 변환 비트 |
 | `BOX_ROUND_INITIAL` | 1 | 박스 회차 초기값 |
-| `SCHEMA_VERSION` | 3 | localStorage 스키마 버전 (M2.1: `settings_skip_pick` 추가로 v3 증가) |
+| `SCHEMA_VERSION` | 4 | localStorage 스키마 버전 (M3: 다중 라인업 격리로 v4 증가. 라인업별 키 prefix + 전역 `kuji_current_lineup_id` + `kuji_schema_version` 신설) |
 
 ## 1.2. PRNG
 
@@ -31,25 +31,61 @@
 | `DC_POOL_SIZE_DEFAULT` | 5000 | DC 응모권 풀 추정 크기 |
 | `DC_POOL_SIZE_NOTE_KO` | `"단순화 가정. 실제 응모권 풀은 라인업 인기에 따라 천 ~ 수만 단위 변동"` | UI 안내 |
 
-## 1.4. 라인업: 一番くじ ドラゴンボール THE CHRONICLE OF GOKU
+## 1.4. 라인업 (다중 라인업 - **M3 갱신 2026-05-08**)
 
-### 1.4.1. 메타
+### 1.4.0. 라인업 구조 명세
+
+M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를 정의. 개별 라인업은 1.4-DB (드래곤볼) / 1.4-OP (원피스) 절에 데이터 정의.
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| `id` | string | 고유 식별자 (research/lineups.json `lineup_id` 정합) |
+| `titleJa` / `titleKo` | string | 표기명 (일본어 / 한국어) |
+| `ip` | string | IP 라벨 (헤더 표시용 짧은 라벨, 예: `"DRAGONBALL"` / `"ONE PIECE"`) |
+| `operator` | string | 운영사 (예: `"BANDAI SPIRITS"`) |
+| `releaseDateStore` / `endDate` | string (YYYY-MM-DD) | 매장 발매일 / 캠페인 종료일 |
+| `outlets` | string[] | 판매처 ID 배열 |
+| `priceJpy` | number | 1회 가격 (엔) |
+| `boxSize` / `boxSizeEstimated` | number / boolean | 박스 매수 + 추정 플래그 |
+| `gridCols` | number? | 통 격자 열 수 (옵셔널, 미정의 시 `PICK_GRID_COLS_DEFAULT = 10`. M2.1 hook) |
+| `tiers` | TierDef[] | 등급별 정의 배열 (1.4-DB.2 / 1.4-OP.2 / 1.4-XX.2 형식) |
+| `tiersCountEstimated` | boolean | 등급별 매수 추정 플래그 |
+| `dc` | DCDef | Double Chance 정의 (`winnersTotal` / `poolSizeDefault` / `prizeNameJa` / `prizeNameKo` / `prizeNoteKo`) |
+| `sources` | SourceDef[] | 출처 배열 (`name` / `url`) |
+| `assetsBasePath` | string | **M3 신설** - 자산 폴더 base path (예: `"the_chronicle_of_goku_placeholder"`) |
+| `assetsAvailable` | boolean | **M3 신설** - 자산 배치 완료 여부. false면 SVG fallback (1.7.3) |
+
+**라인업별 차이를 흡수해야 하는 영역**:
+- 등급 수 (드래곤볼 10등급 A~J vs 원피스 9등급 A~I).
+- 등급별 매수 분포 (드래곤볼 1/1/1/1/1/1/8/8/24/33+1 vs 원피스 1/2/2/3/4/6/12/16/33+1).
+- 등급별 type_count (드래곤볼 8/8/10/10 vs 원피스 2/1/1/2/3/8/14/10).
+- DC `winnersTotal` (드래곤볼 50 vs 원피스 100).
+- 자산 base path / available 플래그.
+
+### 1.4-DB. 라인업: 一番くじ ドラゴンボール THE CHRONICLE OF GOKU
+
+#### 1.4-DB.1. 메타
 
 | 키 | 값 | 비고 |
 |---|---|---|
-| `LINEUP_ID` | `"ichiban_dragonball_chronicle_2026_05"` | research/lineups.json |
-| `LINEUP_TITLE_JA` | `"一番くじ ドラゴンボール THE CHRONICLE OF GOKU"` | |
-| `LINEUP_TITLE_KO` | `"이찌방쿠지 드래곤볼 THE CHRONICLE OF GOKU"` | |
-| `LINEUP_IP` | `"DRAGONBALL"` | |
-| `LINEUP_OPERATOR` | `"BANDAI SPIRITS"` | |
-| `LINEUP_RELEASE_DATE_STORE` | `"2026-05-08"` | |
-| `LINEUP_END_DATE` | `"2026-08-31"` | |
-| `LINEUP_OUTLETS` | `["Seven_Eleven", "Ito_Yokado", "Yume_Town"]` | |
-| `LINEUP_PRICE_JPY` | 790 | 1회 가격 |
-| `BOX_SIZE` | 80 | 박스 매수 (estimated) |
-| `BOX_SIZE_ESTIMATED` | true | "추정" 배지 |
+| `LINEUP_DRAGONBALL_ID` | `"ichiban_dragonball_chronicle_2026_05"` | research/lineups.json |
+| `LINEUP_DRAGONBALL_TITLE_JA` | `"一番くじ ドラゴンボール THE CHRONICLE OF GOKU"` | |
+| `LINEUP_DRAGONBALL_TITLE_KO` | `"이찌방쿠지 드래곤볼 THE CHRONICLE OF GOKU"` | |
+| `LINEUP_DRAGONBALL_IP` | `"DRAGONBALL"` | |
+| `LINEUP_DRAGONBALL_OPERATOR` | `"BANDAI SPIRITS"` | |
+| `LINEUP_DRAGONBALL_RELEASE_DATE_STORE` | `"2026-05-08"` | |
+| `LINEUP_DRAGONBALL_END_DATE` | `"2026-08-31"` | |
+| `LINEUP_DRAGONBALL_OUTLETS` | `["Seven_Eleven", "Ito_Yokado", "Yume_Town"]` | |
+| `LINEUP_DRAGONBALL_PRICE_JPY` | 790 | 1회 가격 |
+| `LINEUP_DRAGONBALL_BOX_SIZE` | 80 | 박스 매수 (estimated) |
+| `LINEUP_DRAGONBALL_BOX_SIZE_ESTIMATED` | true | "추정" 배지 |
+| `LINEUP_DRAGONBALL_ASSETS_BASE_PATH` | `"the_chronicle_of_goku_placeholder"` | **M3 신설** - 자산 폴더 |
+| `LINEUP_DRAGONBALL_ASSETS_AVAILABLE` | false | **M3 신설** - placeholder 배치 전 (사용자 외부 작업 대기) |
 
-### 1.4.2. 등급별 매수 (count_estimated:true)
+**구 호환**: `LINEUP_ID` / `LINEUP_TITLE_JA` 등 구 명칭은 deprecated. 단계 4 impl_plan에서 `LINEUP_DRAGONBALL_*`로 리네임 + 호환 alias export 검토.
+**구 BOX_SIZE = 80**: M3에서도 `BOX_SIZE` 단일 export 잔존 가능 여부 단계 4에서 결정 (test/render 모듈이 `LINEUP.boxSize` 동적 참조로 전환되면 폐기). 자세한 정합은 03_architecture.
+
+#### 1.4-DB.2. 등급별 매수 (count_estimated:true)
 
 | 등급 | 매수 | 종 수 | 일본어 | 한국어 | 사이즈 |
 |---|---|---|---|---|---|
@@ -65,25 +101,25 @@
 | J | 33 | 10 | `ジャガードミニタオル` | `자카드 미니 타올` | `25cm` |
 | Last One | 1 | 1 | `大猿悟空 SOFVICS` | `거대 원숭이 손오공 SOFVICS` | `26cm` |
 
-#### 1.4.2.1. 매수 합계 검증식
+##### 1.4-DB.2.1. 매수 합계 검증식
 
 ```
 일반 카드 합 = 1+1+1+1+1+1+8+8+24+33 = 79
-박스 매수 = 79 + Last One 1 = 80 = BOX_SIZE
+박스 매수 = 79 + Last One 1 = 80 = LINEUP_DRAGONBALL_BOX_SIZE
 ```
 
 부팅 시 본 등식 미성립 → 시뮬레이터 부팅 실패.
 
-### 1.4.3. Double Chance 상품
+#### 1.4-DB.3. Double Chance 상품
 
 | 키 | 값 | 비고 |
 |---|---|---|
-| `DC_PRIZE_NAME_JA` | `"大猿悟空 SOFVICS"` | ラストワン賞 동일 상품 |
-| `DC_PRIZE_NAME_KO` | `"거대 원숭이 손오공 SOFVICS"` | |
-| `DC_WINNERS_TOTAL` | 50 | 일본 캠페인 당첨자 수 |
-| `DC_PRIZE_NOTE_KO` | `"ラストワン賞과 동일 상품. winners_total은 일본 캠페인 기준"` | UI 안내 |
+| `LINEUP_DRAGONBALL_DC_PRIZE_NAME_JA` | `"大猿悟空 SOFVICS"` | ラストワン賞 동일 상품 |
+| `LINEUP_DRAGONBALL_DC_PRIZE_NAME_KO` | `"거대 원숭이 손오공 SOFVICS"` | |
+| `LINEUP_DRAGONBALL_DC_WINNERS_TOTAL` | 50 | 일본 캠페인 당첨자 수 |
+| `LINEUP_DRAGONBALL_DC_PRIZE_NOTE_KO` | `"ラストワン賞과 동일 상품. winners_total은 일본 캠페인 기준"` | UI 안내 |
 
-### 1.4.4. 출처
+#### 1.4-DB.4. 출처
 
 | 출처 | URL |
 |---|---|
@@ -92,29 +128,119 @@
 | inside-games | https://www.inside-games.jp/article/2026/04/28/180618.html |
 | magmix | https://magmix.jp/post/349310 |
 
-### 1.4.5. LINEUP 객체
+상수명: `LINEUP_DRAGONBALL_SOURCES = [{ name, url }, ...]` (위 표 4건). LINEUP_DRAGONBALL.sources에 그대로 매핑.
 
-`03_architecture` 3.3~3.5 의 `core/` 함수가 `lineup` 인자로 받는 구조체. 1.4 항목들 묶음으로 derive.
+#### 1.4-DB.5. LINEUP_DRAGONBALL 객체
+
+`03_architecture` 3.3~3.5 의 `core/` 함수가 `lineup` 인자로 받는 구조체. 1.4-DB 항목들 묶음으로 derive.
 
 | 키 | 값 | 출처 |
 |---|---|---|
-| `id` | `LINEUP_ID` | 1.4.1 |
-| `titleJa` / `titleKo` | `LINEUP_TITLE_JA` / `LINEUP_TITLE_KO` | 1.4.1 |
-| `ip` | `LINEUP_IP` | 1.4.1 |
-| `operator` | `LINEUP_OPERATOR` | 1.4.1 |
-| `releaseDateStore` | `LINEUP_RELEASE_DATE_STORE` | 1.4.1 |
-| `endDate` | `LINEUP_END_DATE` | 1.4.1 |
-| `outlets` | `LINEUP_OUTLETS` | 1.4.1 |
-| `priceJpy` | `LINEUP_PRICE_JPY` | 1.4.1 |
-| `boxSize` | `BOX_SIZE` | 1.4.1 |
-| `boxSizeEstimated` | `BOX_SIZE_ESTIMATED` | 1.4.1 |
-| `gridCols` | (옵셔널, 미정의 시 `PICK_GRID_COLS_DEFAULT`) | 1.12 (**M2.1 신설 hook**, M3 활용) |
-| `tiers` | `TIERS` | 1.4.2 |
-| `tiersCountEstimated` | `TIERS_COUNT_ESTIMATED` | 1.4.2 |
-| `dc.winnersTotal` | `DC_WINNERS_TOTAL` | 1.4.3 |
-| `dc.poolSizeDefault` | `DC_POOL_SIZE_DEFAULT` | 1.3 |
-| `dc.prizeNameJa` / `prizeNameKo` / `prizeNoteKo` | 1.4.3 | 1.4.3 |
-| `sources` | `LINEUP_SOURCES` | 1.4.4 |
+| `id` | `LINEUP_DRAGONBALL_ID` | 1.4-DB.1 |
+| `titleJa` / `titleKo` | `LINEUP_DRAGONBALL_TITLE_JA` / `_TITLE_KO` | 1.4-DB.1 |
+| `ip` | `LINEUP_DRAGONBALL_IP` | 1.4-DB.1 |
+| `operator` | `LINEUP_DRAGONBALL_OPERATOR` | 1.4-DB.1 |
+| `releaseDateStore` | `LINEUP_DRAGONBALL_RELEASE_DATE_STORE` | 1.4-DB.1 |
+| `endDate` | `LINEUP_DRAGONBALL_END_DATE` | 1.4-DB.1 |
+| `outlets` | `LINEUP_DRAGONBALL_OUTLETS` | 1.4-DB.1 |
+| `priceJpy` | `LINEUP_DRAGONBALL_PRICE_JPY` | 1.4-DB.1 |
+| `boxSize` | `LINEUP_DRAGONBALL_BOX_SIZE` | 1.4-DB.1 |
+| `boxSizeEstimated` | `LINEUP_DRAGONBALL_BOX_SIZE_ESTIMATED` | 1.4-DB.1 |
+| `gridCols` | (옵셔널, 미정의 시 `PICK_GRID_COLS_DEFAULT`) | 1.12 hook |
+| `tiers` | `TIERS_DRAGONBALL` | 1.4-DB.2 |
+| `tiersCountEstimated` | `TIERS_DRAGONBALL_COUNT_ESTIMATED` | 1.4-DB.2 |
+| `dc.winnersTotal` | `LINEUP_DRAGONBALL_DC_WINNERS_TOTAL` | 1.4-DB.3 |
+| `dc.poolSizeDefault` | `DC_POOL_SIZE_DEFAULT` | 1.3 (라인업 공유) |
+| `dc.prizeNameJa` / `prizeNameKo` / `prizeNoteKo` | 1.4-DB.3 | 1.4-DB.3 |
+| `sources` | `LINEUP_DRAGONBALL_SOURCES` | 1.4-DB.4 |
+| `assetsBasePath` | `LINEUP_DRAGONBALL_ASSETS_BASE_PATH` | 1.4-DB.1 |
+| `assetsAvailable` | `LINEUP_DRAGONBALL_ASSETS_AVAILABLE` | 1.4-DB.1 |
+
+### 1.4-OP. 라인업: 一番くじ ワンピース MONKEY.D.LUFFY-冒険の記憶と未来への航路- (**M3 신설**)
+
+#### 1.4-OP.1. 메타
+
+| 키 | 값 | 비고 |
+|---|---|---|
+| `LINEUP_ONEPIECE_ID` | `"ichiban_onepiece_luffy_2026_05"` | research/lineups.json |
+| `LINEUP_ONEPIECE_TITLE_JA` | `"一番くじ ワンピース MONKEY.D.LUFFY-冒険の記憶と未来への航路-"` | |
+| `LINEUP_ONEPIECE_TITLE_KO` | `"이찌방쿠지 원피스 MONKEY.D.LUFFY - 모험의 기억과 미래로의 항로"` | |
+| `LINEUP_ONEPIECE_IP` | `"ONE PIECE"` | 헤더 라벨 |
+| `LINEUP_ONEPIECE_OPERATOR` | `"BANDAI SPIRITS"` | |
+| `LINEUP_ONEPIECE_RELEASE_DATE_STORE` | `"2026-05-02"` | |
+| `LINEUP_ONEPIECE_RELEASE_DATE_ONLINE` | `"2026-05-07T17:00:00+09:00"` | (참고) |
+| `LINEUP_ONEPIECE_END_DATE` | `"2026-08-31"` | |
+| `LINEUP_ONEPIECE_OUTLETS` | `["Lawson", "bookstore", "hobby_shop", "Mugiwara_Store", "ONE_PIECE_official_shop", "ichibankuji_online"]` | |
+| `LINEUP_ONEPIECE_PRICE_JPY` | 790 | 1회 가격 |
+| `LINEUP_ONEPIECE_BOX_SIZE` | 80 | 박스 매수 (estimated) |
+| `LINEUP_ONEPIECE_BOX_SIZE_ESTIMATED` | true | "추정" 배지 |
+| `LINEUP_ONEPIECE_ASSETS_BASE_PATH` | `"monkey_d_luffy_placeholder"` | 자산 폴더 (사용자 외부 작업 대기) |
+| `LINEUP_ONEPIECE_ASSETS_AVAILABLE` | false | placeholder 미배치 (1.7.3 SVG fallback) |
+
+#### 1.4-OP.2. 등급별 매수 (count_estimated:true)
+
+| 등급 | 매수 | 종 수 | 일본어 | 한국어 |
+|---|---|---|---|---|
+| A | 1 | 1 | `モンキー・D・ルフィ 魂豪示像` | `몽키 D 루피 영혼호시상` |
+| B | 2 | 2 | `モンキー・D・ルフィ MASTERLISE` | `몽키 D 루피 MASTERLISE` |
+| C | 2 | 1 | `モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment` | `몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment` |
+| D | 3 | 1 | `モンキー・D・ルフィ ギア5 ONDIMENSION` | `몽키 D 루피 기어5 ONDIMENSION` |
+| E | 4 | 2 | `はこにわーるど` | `하코니와루도 (디오라마 박스)` |
+| F | 6 | 3 | `モンキー・D・ルフィ ミニフィギュア` | `몽키 D 루피 미니 피규어` |
+| G | 12 | 8 | `タオル` | `타올` |
+| H | 16 | 14 | `アクリルマグネット` | `아크릴 마그넷` |
+| I | 33 | 10 | `デスクアソート` | `데스크 아소트` |
+| Last One | 1 | 1 | `モンキー・D・ルフィ MASTERLISE PLUS` | `몽키 D 루피 MASTERLISE PLUS` |
+
+##### 1.4-OP.2.1. 매수 합계 검증식
+
+```
+일반 카드 합 = 1+2+2+3+4+6+12+16+33 = 79
+박스 매수 = 79 + Last One 1 = 80 = LINEUP_ONEPIECE_BOX_SIZE
+```
+
+부팅 시 본 등식 미성립 → 시뮬레이터 부팅 실패. **드래곤볼 합계 검증식과 독립**. 라인업 추가 시마다 검증식 추가 의무.
+
+#### 1.4-OP.3. Double Chance 상품
+
+| 키 | 값 | 비고 |
+|---|---|---|
+| `LINEUP_ONEPIECE_DC_PRIZE_NAME_JA` | `"TO BE CONTINUED THE GIGANT NAME"` | 35cm 거대 피규어 |
+| `LINEUP_ONEPIECE_DC_PRIZE_NAME_KO` | `"TO BE CONTINUED 거대 네임 피규어"` | |
+| `LINEUP_ONEPIECE_DC_WINNERS_TOTAL` | 100 | **드래곤볼 50과 차이** (라인업별 가변) |
+| `LINEUP_ONEPIECE_DC_PRIZE_NOTE_KO` | `"35cm 대형 피규어. winners_total은 일본 캠페인 기준"` | UI 안내 |
+
+#### 1.4-OP.4. 출처
+
+| 출처 | URL |
+|---|---|
+| 一番くじ俱楽部 공식 | https://1kuji.com/products/onep101 |
+| ONE PIECE 공식 | https://one-piece.com/news/77238/index.html |
+| 電撃 hobby | https://hobby.dengeki.com/news/2980302/ |
+| inside-games | https://www.inside-games.jp/article/2026/05/02/180800.html |
+
+상수명: `LINEUP_ONEPIECE_SOURCES = [{ name, url }, ...]` (위 표 4건). LINEUP_ONEPIECE.sources에 그대로 매핑.
+
+#### 1.4-OP.5. LINEUP_ONEPIECE 객체
+
+1.4-DB.5와 동일 구조 (1.4.0 명세 정합). 출처 = 1.4-OP.1~4.
+
+### 1.4.LINEUPS. 라인업 배열 + currentLineupId
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `LINEUPS` | `[LINEUP_DRAGONBALL, LINEUP_ONEPIECE]` | 활성 라인업 N개 (M3 = 2) |
+| `LINEUP_DEFAULT_ID` | `LINEUP_DRAGONBALL_ID` | 신규 사용자 / v3 마이그레이션 시 default |
+| `getLineupById(id)` | derive | `LINEUPS.find(l => l.id === id)`. 미발견 시 LINEUP_DEFAULT 반환 + console.warn (안전 fallback) |
+
+**`currentLineupId`**: state 영속 키 (`kuji_current_lineup_id`, 3.1 storage 명세 정합).
+
+**라인업 추가 절차** (M4+ 새 라인업 시):
+1. 1.4-XX 절 신설 (메타 + 등급 + DC + 출처 + LINEUP 객체).
+2. `LINEUPS` 배열에 추가.
+3. 매수 합계 검증식 추가 (1.4-XX.2.1).
+4. assets.js에 `LINEUP_XX_ASSETS_BASE_PATH` 추가.
+5. 단계 6 게이트 검증 룰 통과.
 
 ## 1.5. UI 표시 상수
 
@@ -134,9 +260,22 @@
 
 `BUY_FREE_INPUT_MAX` 는 박스 deck 잔여 매수로 동적 결정 (정의 키 아님).
 
-## 1.7. 상품 이미지 자산 ID 매핑 (M2 신설)
+## 1.7. 상품 이미지 자산 ID 매핑 (M2 신설 / **M3 다중 라인업 갱신**)
 
-`src/data/assets.js` 의 export 매핑. M2 1차는 메인 11종 우선 + 종별 placeholder.
+`src/data/assets.js` 의 export 매핑. M3부터 라인업별 자산 폴더 분기.
+
+### 1.7.0. 라인업별 자산 정책 (M3 신설)
+
+| 정책 | 적용 |
+|---|---|
+| 자산 base path | `lineup.assetsBasePath` 동적 조회 (1.4.0 명세). 라인업별 폴더 분리. |
+| `assetsAvailable` | `lineup.assetsAvailable` boolean. false면 1.7.3 SVG fallback 적용. |
+| 자산 미배치 라인업 | SVG fallback 우선 (사용자 결정 8.4 (A)). gray + "준비 중" 텍스트 미사용. |
+| 등급별 자산 ID | 라인업별 등급 수에 따라 동적 (드래곤볼 11 = A~J + Last One / 원피스 10 = A~I + Last One). |
+
+**라인업별 등급 매핑**: 라인업 객체의 `tiers` 배열을 순회하며 `tier.tier` 키 + `"-main"` suffix로 메인 자산 ID 도출. 종별 자산은 `${tier.tier}-${index}` (typeCount ≥ 2).
+
+### 1.7.1-DB. 라인업: 드래곤볼 (1.4-DB)
 
 | 등급 | 메인 자산 ID | 종별 자산 ID (typeCount ≥ 2) |
 |---|---|---|
@@ -152,13 +291,45 @@
 | J | `"J-main"` | `"J-0"` ~ `"J-9"` (10종) |
 | Last One | `"LastOne-main"` | (1종) |
 
-`PRODUCT_ASSETS_MAIN_PLACEHOLDER` (= true) 플래그 = M2 1차에서 종별 자산이 메인을 재사용함.
+`LINEUP_DRAGONBALL_ASSETS_BASE_PATH = "the_chronicle_of_goku_placeholder"` / `LINEUP_DRAGONBALL_ASSETS_AVAILABLE = false` (사용자 외부 작업 대기).
 
-### 1.7.1. 자산 형식 (M2.1 보강)
+### 1.7.1-OP. 라인업: 원피스 (1.4-OP) **M3 신설**
 
-A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last One의 파일 키는 `Z` (`PRODUCT_IMAGE_FILE_KEYS["Last One"] = "Z"`). G~J는 SVG 임시 자산 유지 (M3 이후 사진 교체 후보). assets.js는 `<img class="product-photo" loading="lazy" decoding="async">` 문자열을 반환. CSS는 `.last-one-image / .product-image-wrap / .hero-image`에서 `svg, img` 동치 셀렉터로 처리.
+| 등급 | 메인 자산 ID | 종별 자산 ID (typeCount ≥ 2) |
+|---|---|---|
+| A | `"A-main"` | (1종) |
+| B | `"B-main"` | `"B-0"` ~ `"B-1"` (2종) |
+| C | `"C-main"` | (1종) |
+| D | `"D-main"` | (1종) |
+| E | `"E-main"` | `"E-0"` ~ `"E-1"` (2종) |
+| F | `"F-main"` | `"F-0"` ~ `"F-2"` (3종) |
+| G | `"G-main"` | `"G-0"` ~ `"G-7"` (8종) |
+| H | `"H-main"` | `"H-0"` ~ `"H-13"` (14종) |
+| I | `"I-main"` | `"I-0"` ~ `"I-9"` (10종) |
+| Last One | `"LastOne-main"` | (1종) |
 
-### 1.7.2. github 호환 placeholder 자산 사양 (M2.1 4.13.12 신설)
+`LINEUP_ONEPIECE_ASSETS_BASE_PATH = "monkey_d_luffy_placeholder"` / `LINEUP_ONEPIECE_ASSETS_AVAILABLE = false` (placeholder 미배치).
+
+`PRODUCT_ASSETS_MAIN_PLACEHOLDER` (= true) 플래그 = M2 1차부터 종별 자산이 메인을 재사용함 (라인업 무관 적용).
+
+### 1.7.2. 자산 형식 (M2.1 보강 / **M3 다중 라인업 정합**)
+
+라인업별 base path + Last One의 파일 키 = `Z` (공통 정책. `PRODUCT_IMAGE_FILE_KEYS["Last One"] = "Z"`). assets.js는 `<img class="product-photo" loading="lazy" decoding="async">` 문자열을 반환. `lineup.assetsAvailable === false` 또는 미생성 등급의 경우 SVG fallback (1.7.3). CSS는 `.last-one-image / .product-image-wrap / .hero-image`에서 `svg, img` 동치 셀렉터로 처리.
+
+### 1.7.3. SVG fallback 정책 (**M3 신설, 사용자 결정 8.4 (A)**)
+
+`lineup.assetsAvailable === false`인 라인업 또는 자산 부재 등급은 SVG fallback 사용. M2.1에서 G~J에 사용된 SVG (`assets/svg/grade_card.svg` 등) 패턴 답습. 등급 라벨(A~J)을 골드 텍스트로 표시. 라인업 IP 표기 없음 (라이선스 안전).
+
+| 정책 | 값 |
+|---|---|
+| 폴백 SVG ID | `"grade-fallback"` (등급 라벨 + 골드 톤) |
+| 폴백 적용 조건 | `lineup.assetsAvailable === false` OR 자산 파일 404 (런타임 detection X. 빌드 타임 정합) |
+| placeholder 텍스트 | 등급 라벨만 (예: "A", "B", ..., "Last One"). 라인업 IP / 캐릭터명 표기 0건 (라이선스 회피) |
+| Last One SVG | 별도 SVG (M2.1 1차 SVG 답습 또는 단일 fallback) |
+
+### 1.7.4. github 호환 placeholder 자산 사양 (M2.1 4.13.12 신설 / **M3 다중 라인업 정합**)
+
+본 절은 드래곤볼 placeholder 사양 (M2.1 시점)을 기록. **M3에서는 라인업별 폴더로 확장** (1.7.0 / 1.4-DB.1 / 1.4-OP.1 정합). 원피스 폴더는 `monkey_d_luffy_placeholder/{A~I,Z}.webp` (10장).
 
 `the_chronicle_of_goku_img/`는 BANDAI SPIRITS 공식 자산 폴더로 `.gitignore` 유지 (라이선스 0 정책). github에서 이미지가 broken되는 문제를 해결하기 위해 별도 라이선스 클린 placeholder 폴더 `the_chronicle_of_goku_placeholder/`를 도입한다.
 
@@ -324,21 +495,34 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 
 # 3. 스토리지 (`src/data/storage.js`)
 
-## 3.1. localStorage 키
+## 3.1. localStorage 키 (M3 다중 라인업 갱신)
 
 `STORAGE_KEY_PREFIX` (1.1 `"kuji_"`) prefix.
 
+**M3 격리 정책 (사용자 결정 8.1 (A1) - 라인업별 prefix 분리)**:
+- 라인업별 격리 키 6종은 `kuji_${name}_${lineup_id}` 형식. lineup_id는 1.4 정의값 (예: `ichiban_dragonball_chronicle_2026_05`).
+- 전역 키 5종은 라인업과 무관하게 단일 키.
+
+### 3.1.1. 라인업별 격리 키 (M3 신설)
+
+| 키 패턴 | 값 형식 | 의미 |
+|---|---|---|
+| `kuji_box_round_${lineup_id}` | number | 라인업별 박스 회차 |
+| `kuji_box_state_${lineup_id}` | JSON | 라인업별 현재 박스 상태 |
+| `kuji_history_${lineup_id}` | JSON array | 라인업별 추첨 이력. 항목 = `{ time, boxId, drawIndex, tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, pickIndex (M2.1, number \| null), gridIndex (M2.1, number \| null), revealed (M2.1, deprecated B-α) }`. M2.1 B-α: history 항목은 **reveal 시점에만 append** (`revealed` 필드는 항상 true이므로 deprecated). 새로고침 복원은 `kuji_unopened_tickets_${lineup_id}[*].lockedResult` 로 처리. **`pickIndex`** = drawOne 호출 시점의 deck 잔여 인덱스. **`gridIndex`** = 사용자 격자 슬롯 위치. skip ON 시 pickIndex 0 / gridIndex null (M3 6.2.12 흡수 후 0 부여 권고). |
+| `kuji_dc_tickets_${lineup_id}` | JSON array | 라인업별 DC 응모권 |
+| `kuji_dc_results_${lineup_id}` | JSON array | 라인업별 DC 추첨 결과 |
+| `kuji_unopened_tickets_${lineup_id}` | JSON array | 라인업별 미개봉 복권 인벤토리. 항목 = `Ticket = { id, purchasedAt, lockedResult }`. **`lockedResult`** = null (= raw, 등급 미결정) 또는 DrawResult 객체 `{ tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, lastOnePrize?, pickIndex, gridIndex }`. skip ON 흐름에서는 lockedResult 미사용. |
+
+### 3.1.2. 전역 키 (라인업 무관)
+
 | 키 | 값 형식 | 의미 |
 |---|---|---|
-| `kuji_seed` | string (32비트) | 현재 시드 |
-| `kuji_box_round` | number | 박스 회차 |
-| `kuji_box_state` | JSON | 현재 박스 상태 |
-| `kuji_history` | JSON array | 추첨 이력. 항목 = `{ time, boxId, drawIndex, tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, pickIndex (M2.1, number \| null), gridIndex (M2.1, number \| null), revealed (M2.1, deprecated B-α) }`. M2.1 B-α: history 항목은 **reveal 시점에만 append** (`revealed` 필드는 항상 true이므로 deprecated). 새로고침 복원은 `kuji_unopened_tickets[*].lockedResult` 로 처리 (8.10). **`pickIndex`** = drawOne 호출 시점의 deck 잔여 인덱스. **`gridIndex`** = 사용자 격자 슬롯 위치 (B-α: 사용자 선택 순서 그대로 ticket에 매핑됨). skip ON 시 pickIndex 0 / gridIndex null. |
-| `kuji_dc_tickets` | JSON array | DC 응모권 |
-| `kuji_dc_results` | JSON array | DC 추첨 결과 |
-| `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated** - toast 폐기로 읽지 않음)) |
-| `kuji_unopened_tickets` | JSON array | **M2 신설 + M2.1 B-α 갱신** - 미개봉 복권 인벤토리. 항목 = `Ticket = { id, purchasedAt, lockedResult }`. **`lockedResult`** = null (= raw, 등급 미결정) 또는 DrawResult 객체 `{ tier, typeIndex, nameJa, nameKo, sizeLabel, isLastOne, lastOnePrize?, pickIndex, gridIndex }` (= 통 선택 "확인" 시점에 splice 결과로 부여 + reveal 전 미공개). skip ON 흐름에서는 lockedResult 미사용 (페이지플립 시점에 drawOne 즉시 호출). |
-| `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
+| `kuji_seed` | string (32비트) | 현재 시드. **사용자 결정 8.2 (A) = 라인업 공유**. 모든 라인업에서 동일 seed 사용. settings-tab seed 입력 1건. |
+| `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 라인업 무관. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
+| `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated**)) |
+| `kuji_current_lineup_id` | string | **M3 신설** - 활성 라인업 ID (1.4.LINEUPS 정합). 부팅 시 미존재면 `LINEUP_DEFAULT_ID` 부여. |
+| `kuji_schema_version` | number | **M3 신설** - 스키마 버전. v3 이전엔 `kuji_meta.schemaVersion`만 사용. v4부터 별도 키로 분리 (마이그레이션 일관성). |
 
 ## 3.2. 마이그레이션 정책
 
@@ -358,6 +542,44 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 - 본 backfill은 멱등 (이미 lockedResult 정의된 ticket에는 미적용).
 - `kuji_history`의 `revealed` 필드는 deprecated되었으나 backfill 보존 (구 데이터 호환).
 
+3.2.5. **M2.1(v3) → M3(v4) 마이그레이션 - 다중 라인업 격리 (M3 신설)**:
+
+기존 v3 사용자는 단일 라인업 (드래곤볼)을 사용했음을 가정. 본 마이그레이션은 단일 라인업 키를 라인업별 격리 키로 이전.
+
+**알고리즘**:
+```
+DETECTED_LINEUP_ID = LINEUP_DRAGONBALL_ID  // = "ichiban_dragonball_chronicle_2026_05"
+// v3 키 6종을 v4 격리 키로 이전. 멱등성 위해 source 키 존재 시에만 실행.
+KEYS_TO_MIGRATE = [
+  "kuji_history",
+  "kuji_unopened_tickets",
+  "kuji_box_state",
+  "kuji_box_round",
+  "kuji_dc_tickets",
+  "kuji_dc_results",
+]
+for key in KEYS_TO_MIGRATE:
+  source_value = localStorage.getItem(key)
+  if (source_value !== null):
+    target_key = `${key}_${DETECTED_LINEUP_ID}`
+    localStorage.setItem(target_key, source_value)
+    localStorage.removeItem(key)
+// 전역 신규 키
+localStorage.setItem("kuji_current_lineup_id", DETECTED_LINEUP_ID)
+localStorage.setItem("kuji_schema_version", "4")
+// 전역 잔존 키 (kuji_seed, kuji_settings_skip_pick, kuji_meta) 보존.
+```
+
+**멱등 정합**: `schemaVersion ≥ 4` 또는 `kuji_current_lineup_id` 존재 시 본 마이그레이션 미적용.
+
+**롤백 안전**: 키 이전 도중 실패 시 source 키 일부 잔존 가능. 다음 부팅 시 다시 v3로 인식하여 재시도. **임시 백업 키 미사용** (localStorage 용량 제약 + 마이그레이션 실패 시 사용자 데이터 영구 손실 위험은 키 이전 한 건 단위라 낮음).
+
+**테스트 의무**: `tests/suites/storage_v4.test.js` 신설 (단계 5 T19). 다음 시나리오 검증:
+- v3 fixture (단일 라인업 키 6종 + meta v3) → 마이그레이션 후 격리 키 6종 + current_lineup_id + schema_version = 4.
+- v4 fixture → 멱등 (변경 0).
+- v3 부분 키만 (예: history만 존재) → 부분 이전 정합.
+- 전역 키 (seed, skip_pick, meta) 보존 검증.
+
 # 4. 변경 이력
 
 4.1. 2026-05-02: M1 단계 2 design. placeholder 교체 + 一番くじ ドラゴンボール SSOT.
@@ -371,3 +593,4 @@ A~F + Last One은 `the_chronicle_of_goku_img/{A~F,Z}.webp` 사진 자산. Last O
 4.9. 2026-05-03: **M2.1 단계 5 implement 발견 정정**. `kuji_history` 항목 스키마에 `gridIndex (number \| null)` 필드 추가 (격자 슬롯 위치 영구 기록 = 새로고침 격자 회색 복원의 SSOT). 단계 4 plan 8.1 정책 ("격자 위치 시각 고정") 구현에 필수. 마이그레이션 3.2.3에 `gridIndex: null` backfill 추가. 단계 3 재검증 생략 (사용자 승인 후 진행).
 4.10. 2026-05-03: **M2.1 단계 5 T19 결함 정정 → 단계 2 design B-α 재정정**. (1) 3.1 `kuji_unopened_tickets` 항목 스키마에 `lockedResult` 필드 추가 (null = raw, DrawResult 객체 = 통 선택 확인 시점 결정 + reveal 전 미공개). (2) 2.2 슬롯 색에 `COLOR_PICK_SLOT_SELECTED_BG` / `COLOR_PICK_SLOT_SELECTED_BORDER` 2종 추가 (B-α normal-selected 상태). (3) 3.1 `kuji_history` 항목의 `revealed` 필드 deprecated 표기 (B-α: history는 reveal 시점에만 append → 항상 true). (4) 3.2.3 마이그레이션에 `kuji_unopened_tickets[*].lockedResult = null` backfill 추가. schemaVersion 그대로 v3.
 4.11. 2026-05-03: **M2.1 단계 3 round 4 검증 결함 정정**. C-R4-1 (1.12 `PICK_FIRST_HINT_TEXT_KO` 값을 spec 5.14.7.2 본문과 일치 = "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다."). M-R4-1 (3.2.4 신설 = B-α 재정정 in-place 마이그레이션. 기존 v3 사용자의 unopenedTickets[*].lockedResult 부재 항목에 null 부여, schemaVersion bump 없음, 멱등).
+4.12. 2026-05-08: **M3 단계 2 design - 다중 라인업**. (1) 1.1 `SCHEMA_VERSION` v3 → v4 갱신. (2) 1.4 절 전면 재구성: 1.4.0 라인업 구조 명세 신설 / 1.4-DB (드래곤볼) 절번호 시프트 (1.4.1~1.4.5 → 1.4-DB.1~5) + 상수명 prefix `LINEUP_DRAGONBALL_*` 변경 + `assetsBasePath`/`assetsAvailable` 필드 추가 / 1.4-OP (원피스) 신설 (메타 + 9등급 분포 + DC winners 100 + 출처) / 1.4.LINEUPS 배열 + `LINEUP_DEFAULT_ID` + `getLineupById`. (3) 1.7 자산 정책 라인업별 분기: 1.7.0 정책 / 1.7.1-OP 신설 / 1.7.2 자산 형식 정합 / 1.7.3 SVG fallback 신설. (4) 3.1 storage 키 라인업별 격리 (3.1.1) + 전역 (3.1.2) 분리 + `kuji_current_lineup_id` / `kuji_schema_version` 신설. (5) 3.2.5 v3→v4 마이그레이션 알고리즘 + 멱등 + 테스트 의무 (storage_v4.test.js). 사용자 결정 4건 정합 (storage A1 / seed 공유 A / 헤더 라벨 A / SVG fallback A).
