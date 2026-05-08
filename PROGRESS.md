@@ -3,38 +3,42 @@
 # 1. 현재 상태
 
 1.1. **현재 스프린트**: M2.1-pick-from-bin.
-1.2. **현재 단계**: 단계 5 implement 완료 (B-α + 자동 선택 버튼) → push. **다음 세션 진입점 = T18/T19 검증 + 단계 6/7/8 결정**.
+1.2. **현재 단계**: 단계 5 implement 완료 + 사용자 라이브 UX/UI 정정 라운드 다수 완료 → push (`549eea3`). **다음 세션 진입점 = 추가 라이브 정정 사이클 또는 M2.1 마무리 (단계 6/7/8) 결정 + 비-블로커 백로그(6.2.6~6.2.13) 흡수 시점**.
 1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03.
-1.4. **마지막 갱신**: 2026-05-03 (M2.1 단계 5 B-α + 자동 선택 + 커밋 a1392c7 push 완료. 새 세션 진입 정리).
+1.4. **마지막 갱신**: 2026-05-08 (M2.1 라이브 UX 정정 라운드 + 데이터 손실 버그 수정 + 커밋 `549eea3` push. 새 세션 진입 정리).
 
 ## 1.5. 다음 세션 즉시 작업 후보
 
-1.5.1. **T18 단위 테스트 실행** (사용자 액션):
-- http://127.0.0.1:5501/tests/test.html 또는 https://ghostjean-hash.github.io/kuji/tests/test.html
-- 기대: 모든 suite pass. fail 시 자비스 정정.
+1.5.1. **추가 라이브 UX 정정 사이클 진행** (사용자 주도):
+- http://127.0.0.1:5500/index.html (Live Server)
+- 사용자가 시각/동작 결함 발견 시 즉시 보고 → 자비스 인라인 정정.
+- 통 선택, 캐러셀, 패널, 토큰 등 어느 영역이든 가능.
 
-1.5.2. **T19 시각 / 동작 컨펌** (사용자 액션):
-- http://127.0.0.1:5501/index.html 또는 https://ghostjean-hash.github.io/kuji/
-- 핵심 시나리오:
-  - 5매 구매 → 격자 → 자동 선택 5매 → 펄스 → 확인 → 페이지플립 → 한 장씩 reveal
-  - 또는 5매 구매 → 격자 → 슬롯 5개 직접 클릭 → 확인 → 페이지플립
-  - skip ON 토글 → 격자 미진입 흐름
-  - 새로고침 복원 (lockedResult 영속)
+1.5.2. **M2.1 마무리 정식 흐름 진입 결정** (사용자 결정):
+- 단계 6 (subagent 격리 검증) → 단계 7 (QA 보고서) → 단계 8 (improve + M3 plan).
+- 또는 M2 패턴 답습: 라이브 컨펌으로 갈음 + PROGRESS 학습 흡수 후 M3 진입.
 
-1.5.3. **단계 6/7/8 정식 보고서 작성 vs 라이브 컨펌 갈음 결정** (사용자 결정):
-- 정식: subagent 격리 검증(단계 6) + QA 보고서(단계 7) + improve(단계 8). M3 깨끗한 진입.
-- 라이브: M2 패턴. PROGRESS에 학습만 흡수 후 M3 진입.
+1.5.3. **백로그 6.2.6~6.2.13 흡수**: 이번 세션의 라이브 정정에서 도출된 신규 학습 (단계 6 검증 룰에 추가 권고).
 
-1.5.4. **M3 후보** (단계 8에서 정식 plan 작성 예정):
+1.5.4. **비-블로커 정리 백로그** (이번 PR `549eea3` 코드 리뷰에서 식별):
+- `pendingPeelResult.entry` dead 필드 제거 (main.js:376).
+- `200`ms 자동 confirm 딜레이 → named const (`PICK_AUTO_CONFIRM_DELAY_MS`) 추출.
+- `requiresReceive` 변수 주석 새 흐름에 맞게 갱신 (history append 게이트 역할 종료).
+- pick-panel.js의 LAST_ONE 관련 dead branch / 미사용 const 정리.
+- `buildConsumedGridSet` + `performPickConfirm` j 검증 단위 테스트 추가 (회귀 위험 영역).
+
+1.5.5. **M3 후보** (단계 8에서 정식 plan 작성 예정):
 - 一番くじ ワンピース MONKEY.D.LUFFY 라인업 추가 (이찌방쿠지 표준 메커닉).
 - CB-1 다중 라인업 인터페이스 보강 (`core/history.tierCounts(history, lineup)`).
 - CB-2 styles/main.css 인라인 hex → tokens.css 변수화.
 - M2.1 통 선택 격자 라인업별 종횡비 hook 활성화 (P2 / 비균등 격자).
+- skip-mode 뽑기에 gridIndex 의무 기록 (placeholder 충당 한계 근본 해결).
 
 ## 1.6. 다음 세션 권장 첫 메시지 (참고)
 
-- 일반 진행: "T18/T19 결과 보고. <pass/fail 또는 시각 결함 목록>"
+- 추가 정정: "<발견한 시각/동작 결함>" 직접 보고
 - 단계 마무리 모드: "M2.1 단계 6 진입 (subagent 격리 검증)"
+- 백로그 정리 모드: "1.5.4 비-블로커 정리 진행"
 - M3 진입 모드: "M2.1 단계 8 improve로 마무리 후 M3 plan 작성"
 
 # 2. 스프린트 추적
@@ -190,6 +194,44 @@ UI / UX 사용자 명시 정정 다수. 8단계 정식 검증 대신 사용자 �
 
 4.13.12. **github 호환 placeholder 사양 수립 (사용자 명시 지시 + 권장 진행)**: 4.13.11 webp 자산이 `.gitignore`로 git 추적 0 (라이선스 0 정책). github에서 broken 상태. 옵션 비교 (가. 라이선스 위험 감수 / 나. 라이선스 클린 raster / 다. 도구 설치 후 강행) 후 **나-2 (추상화된 라이선스 클린 placeholder)** 채택. 사양은 `docs/02_data.md` 1.7.2 절에 정식 등재 (폴더 정책 / 파일 스펙 / 7장 영문 프롬프트). **다음 단계는 사용자 외부 작업 (Midjourney / DALL-E / Stable Diffusion / Firefly 등으로 7장 webp 생성)**. 사용자 배치 완료 후 자비스가 코드 경로 수정 (`PRODUCT_IMAGE_BASE_PATH` → `"the_chronicle_of_goku_placeholder"`) + commit + push로 마무리.
 
+## 4.14. 2026-05-08 - M2.1 라이브 UX 정정 라운드 (사용자 명시 진행) → 커밋 `549eea3` push
+
+UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 대신 사용자 라이브 시각 컨펌 흐름. 9개 파일 수정 + 1개 삭제 (375 insertions / 354 deletions).
+
+4.14.1. **복권 영역 임의 안내 문구 / 토스트 제거**: peel-card 빨간 안내 (`상단 상품에서 "받기"를 먼저 눌러주세요`) + pick-hint-toast (첫 진입 안내) 모두 제거. spec 5.14.7에 명시되어 있어도 사용자 거부 의사 우선. `src/render/pick-hint-toast.js` 파일 삭제.
+
+4.14.2. **자세히 갤러리 위치 이동**: 자세히 토글 펼침 시 갤러리를 minor-meta-row 아래로 (이전: hero/minor row와 buy/peel/pick 패널 사이).
+
+4.14.3. **영역 6 패널 통일 (buy/peel/pick)**: 가로 폭 + 세로 높이 + 외곽 보더/그림자 사양 동일화. `--draw-panel-h: 320px` 토큰 신설. pick-panel은 `min/max-height` 동일로 정확히 320px, 내부 grid `flex: 1; overflow-y: auto`로 스크롤. 패널들 외곽 모양/크기 일관성 확보.
+
+4.14.4. **pick-panel 헤더 컴팩트화 + 동적 N 바인딩**: 제목 + 진행상태(선택/잔여)를 한 줄 flex로 결합. "통에서 N매..."의 `N`을 `${rawCount}` 실제 값으로 바인딩. 자동 선택 버튼 padding/font 축소. 그리드 영역 확보.
+
+4.14.5. **pick "확인" 버튼 제거 + N매 자동 전이**: `selectedSet.size === rawCount`이면 즉시 `confirm_pick` 트리거. UX 200ms 시각 확인 딜레이 + 재귀 dispatch 제거(인라인 `performPickConfirm` 헬퍼). 사용자가 N번째 슬롯 강조를 잠깐 보고 자연 전이.
+
+4.14.6. **silent failure 버그 수정 (5번째 선택 안 됨)**: 이전 `toggle_pick_select`에서 N매 채워지면 `dispatch({type:'confirm_pick'})` 재귀 호출. confirm 가드 early-return 시 rerender 누락 → state.selectedGridIndices는 N매로 mutate됐지만 UI는 (N-1)매 표시. 다음 클릭이 toggle off로 인식. **fix**: 인라인 호출 + 항상 rerender + 실패 시 selectedGridIndices 리셋.
+
+4.14.7. **drawOne pickIndex 범위 위반 throw 수정 (`buildConsumedGridSet` 신설)**: skip-mode 뽑기는 `gridIndex: null`로 history 기록 → 추적된 consumedSet < 실제 deck 소진 매수. gi→pickIndex 변환 시 `j > deck.length - 1`로 throw. **fix**: main.js에 `buildConsumedGridSet(state)` 헬퍼 신설 (history.gridIndex + lockedResult.gridIndex 추적분 + 부족분 lowest gi placeholder 충당). 렌더(pick-panel)와 confirm(performPickConfirm) 양쪽 동일 로직 사용 (단일 진실원). performPickConfirm은 모든 j값 사전 검증 후 실제 mutation 수행 (트랜잭션식).
+
+4.14.8. **추첨 history 손실 버그 수정 (D賞 누락 등)**: 이전 A~F (count=1, requiresReceive)는 peel 시점 대신 receive_confirm에서 history append. 사용자가 받기 팝업 dismiss(overlay click/Esc) 또는 새로고침 시 `pendingPeelResult`(메모리 only) 손실 → entry 영영 누락. **fix**: peel 시점에 무조건 `appendHistory` 호출. receive_confirm은 순수 UI 게이트(`receivedConfirmed` 플래그)만 담당. 새 박스부터는 100% 정합 (기존 누락분은 복구 불가).
+
+4.14.9. **hero-card 프레임 클리핑 + dim 시 collapse 해소**: 당첨 강조의 `transform: scale 1.06→1.18`, `::after` conic-gradient halo(`inset: -12px`), 카드 위 `★ 축 당첨 ★` 배지(`top: -18px`)가 `overflow-x: auto` 트랙에 클립됐었음. **fix**: scale 애니메이션 / 외부 halo / 외부 배지 모두 제거. 하이라이트는 인셋 글로우 + 보더 펄스(`justDrawnGlow` 키프레임 재작성) + 우상단 코너 배지로 카드 내부에 한정. `--hero-card-h: 160px` 토큰으로 카드 fixed height (이전: `min-height: 100px`만 있었으나 `hero-image .product-image-wrap`의 `aspect-ratio: 1/1` 때문에 자연 높이가 ~200px → dim 시 image/info `display:none`으로 100px 떨어짐).
+
+4.14.10. **`is-just-drawn` ↔ `is-drawn` 클래스 충돌 해소**: `receive_confirm` 후 hero-card에 두 클래스 동시 부여 → `.hero-card.is-drawn::after` 어두운 오버레이가 강조 카드 위 겹쳐 dim되어 보임 (`!important`로 opacity/filter는 덮지만 `::after`는 미덮음). **fix**: hero-carousel.js에서 `isJustDrawn` 활성 시 `is-drawn` 클래스 미부여. peel_confirm으로 `lastDrawnTier=null` 다음 사이클에서 자연 전환. (`.minor-row-item`/`.last-one-row`는 CSS에서 `.is-just-drawn::after { display: none !important }`로 동일 회피 중 — hero-card만 누락이었음.)
+
+4.14.11. **팝업 confirm 후 강조 카드 중앙 복원**: `receive_confirm` 후 `rerender`로 `hero-carousel-track` DOM 재생성 + `scrollLeft` 리셋 → 직전 `scrollToTier`의 중앙 위치 사라짐. **fix**: `receive_confirm`에서 rerender 직후 `scrollToTier(state.lastDrawnTier)` 재호출. `scrollToTier`는 `block: "nearest", inline: "center"`로 가로 중앙 + 세로 최소이동 (기존 `block: "start"`에서 변경). `.hero-card[data-tier]`/`.minor-row-item[data-tier]`/`.last-one-row[data-tier]` 셀렉터 한정으로 모달 내부 `data-tier` 매칭 회피.
+
+4.14.12. **마진/갭 단일 진실원**: 인터섹션 갭은 `--draw-tab gap`만으로 결정되도록 배경 없는 섹션(`hero-carousel`, `hero-carousel-track`, `minor-row`)의 vertical padding 제거. 이전엔 padding이 inter-section 갭처럼 보여 섹션마다 갭이 다르게 측정됐음. 결과: 섹션 간 8px 일관 / 헤더-첫상품 12px (1.5×) / 마지막섹션-하단 12px (1.5×).
+
+4.14.13. **디자인 토큰 정리**: 보더 두께 1.5px/2px 혼재 → 모두 `1px solid --border-subtle` 통일. `.hero-card` 1.5px → 1px. `.last-one-row` 2px gold → 1px subtle + `--gold-edge-soft` 배경 틴트로 강조 표현 변경 (여전히 LAST ONE 賞 텍스트 빨강·골드는 유지). `.product-item.is-last-one`도 동일. `.buy-quick-button` 1.5px → 1px.
+
+4.14.14. **통 시각 메타포 강화 (격자 → 산개)**: 통 슬롯을 `display: grid`에서 **`position: absolute`**로 전환. `slotPosition(seedKey, gi)` 신설 — fnv1a 시드 해시로 5%~95% 범위 (x, y) 좌표. `slotJitter` 회전 ±5° → ±18° → **±36°**. 슬롯에 종이 그라디언트 배경 + box-shadow 깊이감. z-index 시드 기반 차등(0~15) + 선택 +30 가중. **L1 슬롯 통에서 비노출** (last-one-row에 별도 표시되므로 중복).
+
+4.14.15. **이미 뽑은 슬롯 통에서 제거**: 렌더 루프에서 `if (drawnSet.has(gi)) continue` — 통 더미가 사용자가 뽑을 때마다 줄어드는 자연스러운 메타포. (drawnSet은 4.14.7의 `buildConsumedGridSet`로 산출.)
+
+4.14.16. **구매 quick 버튼 잔여 동적 치환**: deckRemaining이 quick 옵션[1, 3, 5, 10]에 정확히 일치 안 할 때, 첫 번째 ">잔여" 옵션을 `${deckRemaining}매` 버튼으로 치환. 더 큰 옵션은 disabled. 예: 잔여 8 → [1, 3, 5, **8**] / 잔여 4 → [1, 3, **4**, 10(d)] / 잔여 2 → [1, **2**, 5(d), 10(d)].
+
+4.14.17. **커밋 + 푸시**: `549eea3` (`feat(kuji): 통 선택 UX 재설계 + 영역 6 통일 + 추첨 history 손실 수정`) — `https://github.com/ghostjean-hash/kuji.git` `main` 정상 push.
+
 # 5. 운영 결정 (default)
 
 5.1. 작업 단위: 혼합 (스프린트 + 기능 단위).
@@ -213,6 +255,14 @@ UI / UX 사용자 명시 정정 다수. 8단계 정식 검증 대신 사용자 �
 6.2.3. **분기 조건 state 의존성**: draw-tab.js의 6번 영역 분기가 `unopenedTickets.length`만 보고 `pendingPeelResult` 무시 사고. state 변수 매트릭스 검증.
 6.2.4. **자동 진행 vs 사용자 명시**: dispatch.peel 자동 setTimeout 흐름 → 사용자 명시 확인 흐름으로 재설계.
 6.2.5. **시각 효과 우선순위**: is-just-drawn vs is-drawn CSS 우선순위 충돌. !important + display:none + content:none 조합 룰화.
+6.2.6. **재귀 dispatch 금지 / always-rerender 패턴**: `dispatch({type:'X'})` 내부 분기에서 `dispatch({type:'Y'})` 재귀 시, Y가 가드 early-return하면 rerender 누락 → state-UI 불일치. 재귀 대신 인라인 헬퍼 호출 + 호출처가 항상 rerender + 실패 시 메모리 상태 리셋. (이번 세션 toggle_pick_select → confirm_pick 재귀에서 발견.)
+6.2.7. **persist되는 mutation과 메모리 only 분리**: 영속 mutation(deck splice, ticket 제거)은 그 시점에 history append를 동반해야 함. 메모리 only(`pendingPeelResult`) 의존 후속 영속화는 새로고침/팝업 dismiss로 entry 손실 위험. 이번 세션 D賞 누락 버그 근본 원인. 단계 6 검증 룰에 "persist 시점 = history commit 시점 정합" 항목 추가.
+6.2.8. **자식 aspect-ratio가 부모 height에 미치는 영향**: `.hero-card` `min-height: 100px`이지만 자식 `aspect-ratio: 1/1`로 자연 높이 ~200px. dim 시 `display: none`으로 100px 떨어짐. min-height만으로 collapse 방지 불가 — fixed height 토큰 필요. CSS layout 검증 시 자식 aspect-ratio도 매트릭스에 포함.
+6.2.9. **scroll position과 rerender 정합**: `rerender()`가 `rootEl.innerHTML = ""`로 DOM 전체 destroy → scroll 위치 모두 리셋. scroll 보존이 필요한 액션(receive_confirm 등)은 rerender 직후 `scrollToTier` 재호출 또는 incremental update 필요.
+6.2.10. **CSS specificity 충돌 회피 — JS 클래스 분리**: `is-drawn`과 `is-just-drawn` 같은 상호배타 의도지만 동시 부여 가능한 클래스는 JS에서 하나만 부여하는 게 안전. CSS `!important`나 `::after` override보다 클래스 충돌 방지가 깔끔.
+6.2.11. **시드 기반 결정론적 시각 무작위화**: 시드 + 식별자 해시(fnv1a)로 셔플/회전/위치 산출하면 같은 박스 동안 시각 일관성 + 박스마다 새로움. CSS 변수로 주입(`--jitter-rotate`, `--slot-x` 등)하면 hover/active 상태와 합성 가능.
+6.2.12. **데이터 truth value vs 시각 메타포**: skip-mode 뽑기는 deck head pop으로 gridIndex 추적 안 됨. placeholder 충당으로 시각 정합은 맞췄지만, 사용자 멘탈 모델("내가 클릭한 슬롯")과 시각 위치는 분리. 모든 draw 경로에 gridIndex 의무 기록하는 리팩터로만 근본 해결 (M3 후보).
+6.2.13. **사용자 QA 민감도 / 보고 흐름**: 사용자는 작업 완료 후 사전 시각/상태 매트릭스 검수를 강하게 요구. dim/scroll/state 전이 정합 누락이 반복되면 신뢰 큰 손상. 시각 변경 시 `peel → receive_confirm → peel_confirm` 같은 상태 단계마다 일별 검수 후 보고 의무화.
 
 ## 6.3. M3 후보 (M2.1 단계 8에서 정식 plan 작성)
 
