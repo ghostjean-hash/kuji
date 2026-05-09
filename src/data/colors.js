@@ -63,3 +63,9 @@ export const COLOR_GOLD_LIGHT = "#FFD966";
 export const COLOR_NIGHT_GRAD_FROM = "#1A1A2E";
 export const COLOR_NIGHT_GRAD_TO = "#2D2A4E";
 export const COLOR_GOLD_DEEP = "#B89651";
+
+// M3.2 신설 (02_data 2.2): tier_class 시각 색 토큰
+export const COLOR_TIER_CLASS_HERO_BG_TINT = "#FFF8E7";  // hero 카드 배경 옅은 골드 틴트
+export const COLOR_TIER_CLASS_HERO_GLOW_RGBA = "rgba(201, 169, 97, 0.25)";  // hero 카드 정적 글로우 골드 (HERO_STATIC_GLOW_ALPHA 정합)
+export const COLOR_TIER_CLASS_MAIN_BG_TINT = "#FFFFFF";  // main 카드 배경 (= bg-card 동일)
+export const COLOR_TIER_CLASS_GOODS_BG_TINT = "#F3EDE0";  // goods 카드 배경 (= bg-elevated 동일)

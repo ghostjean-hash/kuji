@@ -2,8 +2,8 @@
 
 # 1. 현재 상태
 
-1.1. **현재 스프린트**: **M3-second-lineup** (2026-05-08 시작).
-1.2. **현재 단계**: **M3 8단계 모두 통과 (2026-05-08 종료)**. 단계 6 round 2 통과 + 단계 7/8 정식 보고서. 사용자 명시 룰 (feedback_no_cutting_corners) 정합 - 라이브 정정 갈음 0건. 다음 = 사용자 외부 작업 (placeholder 자산 17장) OR M4 진입.
+1.1. **현재 스프린트**: **M3.3-tier-class-extended** (2026-05-09 시작/종료).
+1.2. **현재 단계**: **M3.1 / M3.2 / M3.3 8단계 모두 자비스 진행 완료**. M3.3 단계 6 round 2 통과 (round 1 P0 1 = tier-grid dead 모듈 오결정 → product-gallery.js 정정) + 단계 7 자비스 정적 정합 + 단계 8 종료. **다음 = M3.1/M3.2/M3.3 사용자 라이브 검수 일괄 + 차기 사이클 결정 (M3.4-tidy 정리 / M4 메이저)**.
 1.3. **시작**: 2026-05-02 (M0 기점). M2.1: 2026-05-03 ~ 2026-05-08 (5일). M3: 2026-05-08 ~.
 1.4. **마지막 갱신**: 2026-05-08 (M3 단계 1 plan 작성 + 사용자 결정 3건 선행 합의: 전환 UI A / 격리 정책 A / 정리 라운드 A. 추정 4.0일).
 
@@ -401,3 +401,119 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 6.4.1. コトブキヤくじ XENOGLOSSIA (30연 S賞 천장 룰).
 6.4.2. Happyくじ PIXAR / SEGA 럭키쿠지 / フリューくじ.
+
+# 7. M3.1 lineup-presentation (2026-05-08)
+
+## 7.1. 사이클 메타
+
+7.1.1. 스프린트 ID = M3.1-lineup-presentation. 8단계 파이프라인 정식 진행.
+7.1.2. 스코프 = (1) 라인업 진입 로비 신설 (state.view = lobby/main) + (2) tier_class 3단계 분류 (hero/main/goods).
+7.1.3. 사용자 결정 5건 박제 (단계 1 plan 9.1~9.5).
+
+## 7.2. 단계별 산출물
+
+7.2.1. 단계 1 plan: [docs/pipeline/M3.1-lineup-presentation/01_plan.md](docs/pipeline/M3.1-lineup-presentation/01_plan.md). 사용자 승인.
+7.2.2. 단계 2 design: 02_data.md + 01_spec.md M3.1 갱신. 매직 넘버 0개 통과.
+7.2.3. 단계 3 design_review: round 1 P0 0 / P1 1 / P2 6 → 통과. [03_design_review.md](docs/pipeline/M3.1-lineup-presentation/03_design_review.md).
+7.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M3.1-lineup-presentation/04_impl_plan.md) + 03_architecture.md M3.1 갱신. T1~T10 분할.
+7.2.5. 단계 5 implement: T1~T10 모두 적용 (numbers.js / storage.js / core/lobby-preview.js / render/lobby.js / render/main.js / header.js / settings-tab.js / 3개 테스트 suite + runner.js + PROGRESS).
+7.2.6. 단계 6 impl_review: [06_impl_review.md](docs/pipeline/M3.1-lineup-presentation/06_impl_review.md). round 1 P0 0/P1 0/P2 3 → 통과. P2 3건 차기 사이클 백로그.
+7.2.7. 단계 7 QA: [07_qa.md](docs/pipeline/M3.1-lineup-presentation/07_qa.md). 자비스 정적 시나리오 10건 + 단위 테스트 커버리지 모두 통과. 사용자 라이브 검수 의무 별도 분리 (4장).
+7.2.8. 단계 8 improve: [08_improve.md](docs/pipeline/M3.1-lineup-presentation/08_improve.md). 사용자 결정 5건 박제 정합 + design_review 이월 8건 답 정합 + 차기 사이클 후보 등재.
+
+## 7.3. 단계 6 P2 결함 처리 결정
+
+7.3.1. P2-1 storage_v5.test.js v3 chain 통합 시나리오 부재 → 차기 사이클 백로그.
+7.3.2. P2-2 createElement("main") 인라인 → 정정 불요 (HTML 태그명).
+7.3.3. P2-3 lobby-preview "Last One" 인라인 → LAST_ONE_TIER_NAME 상수화 정리 라운드 백로그.
+
+## 7.4. 차기 사이클 후보 (M3.1 비목표 + 단계 6 P2)
+
+7.4.1. 본편 화면(추첨/기록/DC)의 tier_class 시각 적용 (5.13.B.8.3).
+7.4.2. storage_v5.test.js v3 fixture chain 시나리오 추가.
+7.4.3. LAST_ONE_TIER_NAME 상수화.
+7.4.4. **M4 메이저 = コトブキヤくじ アイドルマスター XENOGLOSSIA 30연 천장 룰** (확장 로드맵 M3, 첫 메커닉 분기).
+7.4.5. 라인업별 IP 액센트 색 토큰 (라인업 N≥3 도달 시).
+7.4.6. assetsAvailable=true 전환 (사용자 외부 작업, lobby_hero.webp 배치).
+
+# 8. M3.2 tier-class-visual (2026-05-09)
+
+## 8.1. 사이클 메타
+
+8.1.1. 스프린트 ID = M3.2-tier-class-visual. 8단계 파이프라인 정식 진행.
+8.1.2. 스코프 = (1) 추첨 탭 hero-carousel/minor-row data-tier-class 액센트 + (2) 결과 reveal hero 등장 특별 모션 (페이지플립 카드 + DC 모달). 갤러리/history/IP 액센트는 비목표.
+8.1.3. 사용자 결정 4건 박제 (단계 1 plan 9.1~9.4): DC 모달도 hero / minor-row 속성만 / 약한 골드 글로우 / lookup 헬퍼 신설.
+
+## 8.2. 단계별 산출물
+
+8.2.1. 단계 1 plan: [docs/pipeline/M3.2-tier-class-visual/01_plan.md](docs/pipeline/M3.2-tier-class-visual/01_plan.md). 사용자 승인.
+8.2.2. 단계 2 design: 02_data 1.4.A.5 헬퍼 + 1.5 HERO_* 4종 + 2.2 색 4종 + **2.3 CSS 변수 ↔ JS 상수 매핑 표 신설**. spec 5.13.C 신설.
+8.2.3. 단계 3 design_review: round 1 P0 1/P1 3/P2 4 미통과 → round 2 P0 0/P1 1/P2 1 → 통과. [03_design_review.md](docs/pipeline/M3.2-tier-class-visual/03_design_review.md). 자동 재시도 1회 정정.
+8.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M3.2-tier-class-visual/04_impl_plan.md) + 03_architecture 5.16 게이트 신설. design_review 이월 4건 답 박제.
+8.2.5. **단계 5 implement (2026-05-09)**:
+- T1 numbers.js: HERO_POP_SCALE_PEAK=1.18 / HERO_GLOW_DURATION_MS=1200 / HERO_STATIC_GLOW_BLUR_PX=12 / HERO_STATIC_GLOW_ALPHA=0.25 + getTierClassForTier 헬퍼 export. colors.js: COLOR_TIER_CLASS_HERO_BG_TINT/HERO_GLOW_RGBA/MAIN_BG_TINT/GOODS_BG_TINT 4종.
+- T2 tokens.css: 8종 CSS 변수 + 3종 모션.
+- T3 hero-carousel + minor-row: data-tier-class 부착 + main.css 셀렉터 (hero 정적 글로우 + 배경 틴트 / minor-row는 보더 등급 색 유지 + 배경 토큰).
+- T4 peel-card hero 분기 + peel-panel lineup 전달 + main.css hero-result-pop 키프레임.
+- T5 dc-result-modal hero 분기 (당첨 시 modalClassName="is-hero-result"). modal.js에 modalClassName 옵션 추가.
+- T6 tier_class_lookup.test.js (드래곤볼/원피스 모든 등급 + hero 분기 식 시뮬레이션).
+- T7 doc 정리 (5.13.C.4.4 cross-link) + PROGRESS M3.2 절 신설 + runner.js 등록.
+
+## 8.3. 단계 5 종료 게이트 (단계 6 진입 조건)
+
+8.3.1. 모든 T 완료 (T1~T7).
+8.3.2. tests/test.html 모든 suite ALL PASS - **사용자 라이브 검증 의무**.
+8.3.3. 단계 6 impl_review subagent 격리 검증 통과 의무 (5.16 grep / 매직 넘버 0 / CSS 변수 ↔ JS 상수 1:1 / 결정론 회귀 0).
+
+## 8.4. 단계 6/7/8 산출물
+
+8.4.1. 단계 6 impl_review: [06_impl_review.md](docs/pipeline/M3.2-tier-class-visual/06_impl_review.md). round 1 P0 0/P1 2/P2 3 → 통과. P1 2건 = 표현/도메인 차이 trade-off (단계 8 (b) 채택).
+8.4.2. 단계 7 QA: [07_qa.md](docs/pipeline/M3.2-tier-class-visual/07_qa.md). 자비스 정적 시나리오 통과 + 사용자 라이브 검수 14건 의무.
+8.4.3. 단계 8 improve: [08_improve.md](docs/pipeline/M3.2-tier-class-visual/08_improve.md). 8단계 모두 종료 + P1 2건 (b) 채택 즉시 정정 (03_arch 5.16 + 02_data 1.4.A.5 표현). P2 3건 차기 사이클 백로그.
+
+## 8.5. 차기 사이클 후보 (M3.2 라이브 검수 결함 0 보고 후)
+
+8.5.1. 상품 갤러리 클래스 그룹화 (M3.1/M3.2 비목표).
+8.5.2. history 탭 클래스별 통계.
+8.5.3. 라인업별 IP 액센트 색 (라인업 N≥3 시).
+8.5.4. modalSlide + hero-result-pop 자연 합성 (P2-1 라이브 검수 결과).
+8.5.5. peel-card hero scale delay (P2-2).
+8.5.6. LAST_ONE_TIER_NAME 상수화 (M3.1 P2-3 잔존).
+8.5.7. storage_v5.test.js v3 chain 통합 시나리오 (M3.1 P2-1 잔존).
+8.5.8. **M4 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰** (확장 로드맵 원래의 M3, 첫 메커닉 분기).
+
+# 9. M3.3 tier-class-extended (2026-05-09)
+
+## 9.1. 사이클 메타
+
+9.1.1. 스프린트 ID = M3.3-tier-class-extended. 8단계 파이프라인 정식.
+9.1.2. 스코프 = 갤러리 그룹화 (hero → main → goods + Last One hero 마지막) + history 탭 상단 대시보드 (4개 카운터 카드).
+9.1.3. 사용자 결정 5건 (plan 9.1~9.5): "메인 등급/표준 등급/굿즈" 라벨 / 2x2 모바일 그리드 / hero→main→goods 정렬 / Last One hero 마지막 / 통합 카운트.
+
+## 9.2. 단계별 산출물
+
+9.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M3.3-tier-class-extended/01_plan.md). 사용자 승인.
+9.2.2. 단계 2 design: 02_data 1.4.A.6 TIER_CLASS_LABEL_KO + 1.5 HISTORY_DASHBOARD_* 3종 / 1.4.A.5 호출처 표 확장 / spec 5.13.D 신설.
+9.2.3. 단계 3 design_review: round 1 P0 0/P1 1/P2 5 → 통과. [03_design_review.md](docs/pipeline/M3.3-tier-class-extended/03_design_review.md).
+9.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M3.3-tier-class-extended/04_impl_plan.md) + 03_arch 5.17 게이트 + 6.10 변경 이력. design_review 이월 6건 답 박제.
+9.2.5. **단계 5 implement (2026-05-09)**:
+- T1 numbers.js: TIER_CLASS_LABEL_KO + HISTORY_DASHBOARD_COLS_MOBILE/TABLET + HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX export.
+- T2 core/history.js: tierClassCounts(history, lineup) export. 미존재 tier 가드.
+- T3 render/history-tab.js: 상단 대시보드 4개 카운터 카드 (전체 / 메인 등급 / 표준 등급 / 굿즈).
+- T4 render/tier-grid.js: hero/main/goods 그룹화 + 섹션 헤더. Last One은 hero 그룹 마지막. 박스 등급 순서 보존.
+- T5 styles/main.css: .history-dashboard / .history-dashboard-card 반응형(2x2/4열) + .tier-grid-section / .tier-grid-section-header 좌측 색 막대 토큰 재사용.
+- T6 tests/suites/tier_class_counts.test.js: 6건 (빈 history / 드래곤볼 / 원피스 / 미존재 tier 가드 / 결정론 / lineup 부재 throw).
+- T7 tests/runner.js 등록.
+- T8 plan 7.1 total=5 정정 + 본 PROGRESS 절 추가.
+
+## 9.3. 단계 6/7/8 산출물
+
+9.3.1. 단계 6 impl_review: [06_impl_review.md](docs/pipeline/M3.3-tier-class-extended/06_impl_review.md). round 1 P0 1 미통과 → round 2 P0 0 통과. round 1 P0 = T4 그룹화 적용 모듈 오결정 (tier-grid는 dead 모듈, 실제는 product-gallery.js). 자동 재시도 1회 정정.
+9.3.2. 단계 7 QA: [07_qa.md](docs/pipeline/M3.3-tier-class-extended/07_qa.md). 자비스 정적 정합 통과 + 사용자 라이브 검수 11건 의무.
+9.3.3. 단계 8 improve: [08_improve.md](docs/pipeline/M3.3-tier-class-extended/08_improve.md). 8단계 종료 + 단계 6 P2 2건 (tier-grid dead 정리 / 인라인 정책) 차기 정리 라운드 백로그.
+
+## 9.4. 차기 사이클 후보 (M3.3 라이브 검수 결함 0 보고 후)
+
+9.4.1. **M3.4-tidy 정리 라운드** (소): tier-grid.js dead 모듈 폐기 + LAST_ONE_TIER_NAME 상수화 + storage_v5.test.js v3 chain + "전체" 라벨 / CSS 인라인 px 정책 통일.
+9.4.2. **M3 series 라이브 검수 결과 보정** (M3.2 P2-1/P2-2/P2-3 + M3.1/M3.3 라이브 결함 발견 시).
+9.4.3. **M4 메이저 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰** (확장 로드맵 원래의 M3, 첫 메커닉 분기).

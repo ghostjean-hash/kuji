@@ -8,6 +8,7 @@ export function showModal({
   confirmLabel = "확인",
   showCancel = false,
   cancelLabel = "취소",
+  modalClassName = "",  // M3.2: hero 분기 등 추가 클래스
 }) {
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
@@ -16,7 +17,7 @@ export function showModal({
   });
 
   const modal = document.createElement("div");
-  modal.className = "modal";
+  modal.className = "modal" + (modalClassName ? " " + modalClassName : "");
   if (title) {
     const h = document.createElement("h2");
     h.className = "modal-title";

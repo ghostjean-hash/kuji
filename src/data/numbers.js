@@ -5,7 +5,30 @@
 export const STORAGE_KEY_PREFIX = "kuji_";
 export const DEFAULT_SEED_FALLBACK_BITS = 32;
 export const BOX_ROUND_INITIAL = 1;
-export const SCHEMA_VERSION = 4;  // M3: 다중 라인업 격리 (라인업별 prefix 키 + kuji_current_lineup_id + kuji_schema_version 신설)
+export const SCHEMA_VERSION = 5;  // M3.1: 라인업 로비 도입 (kuji_lobby_acked 신설). M3 v4 = 다중 라인업 격리.
+
+// 02_data 1.4.A 등급 클래스 (M3.1 신설) - hero/main/goods 3단계 분류
+export const TIER_CLASS_HERO = "hero";
+export const TIER_CLASS_MAIN = "main";
+export const TIER_CLASS_GOODS = "goods";
+export const TIER_CLASS_VALUES = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS];
+
+// 02_data 1.4.A.6 tier_class 한국어 라벨 (M3.3 신설) - 갤러리 섹션 헤더 + history 대시보드 카운터
+export const TIER_CLASS_LABEL_KO = {
+  hero: "메인 등급",
+  main: "표준 등급",
+  goods: "굿즈",
+};
+
+// 02_data 1.4.B view 상수 (M3.1 신설) - state.view 모델
+export const STATE_VIEW_LOBBY = "lobby";
+export const STATE_VIEW_MAIN = "main";
+export const STATE_VIEW_VALUES = [STATE_VIEW_LOBBY, STATE_VIEW_MAIN];
+export const STATE_VIEW_DEFAULT = STATE_VIEW_MAIN;
+
+// 02_data 1.4.B dispatch type 상수 (M3.1 신설)
+export const DISPATCH_TYPE_OPEN_LOBBY = "open_lobby";
+export const DISPATCH_TYPE_ENTER_LINEUP = "enter_lineup";
 
 // 02_data 1.2 PRNG
 export const PRNG_NAME = "Mulberry32";
@@ -36,19 +59,19 @@ export const LINEUP_DRAGONBALL_BOX_SIZE_ESTIMATED = true;
 export const LINEUP_DRAGONBALL_ASSETS_BASE_PATH = "the_chronicle_of_goku_placeholder";
 export const LINEUP_DRAGONBALL_ASSETS_AVAILABLE = false;  // M3: placeholder 미배치 (사용자 외부 작업 대기)
 
-// 02_data 1.4-DB.2 등급별 매수 (count_estimated:true)
+// 02_data 1.4-DB.2 등급별 매수 (count_estimated:true) + tierClass (M3.1)
 export const TIERS_DRAGONBALL = [
-  { tier: "A", count: 1, typeCount: 1, nameJa: "孫悟空 MASTERLISE", nameKo: "손오공 MASTERLISE", sizeLabel: "11cm" },
-  { tier: "B", count: 1, typeCount: 1, nameJa: "ブルマ MASTERLISE", nameKo: "부르마 MASTERLISE", sizeLabel: "21cm" },
-  { tier: "C", count: 1, typeCount: 1, nameJa: "超サイヤ人孫悟空 MASTERLISE", nameKo: "초사이어인 손오공 MASTERLISE", sizeLabel: "25cm" },
-  { tier: "D", count: 1, typeCount: 1, nameJa: "超サイヤ人2孫悟空 MASTERLISE", nameKo: "초사이어인2 손오공 MASTERLISE", sizeLabel: "25cm" },
-  { tier: "E", count: 1, typeCount: 1, nameJa: "魔人ベジータ MASTERLISE", nameKo: "마인 베지타 MASTERLISE", sizeLabel: "24cm" },
-  { tier: "F", count: 1, typeCount: 1, nameJa: "孫悟空 身勝手の極意 MASTERLISE", nameKo: "손오공 자림무도 MASTERLISE", sizeLabel: "25cm" },
-  { tier: "G", count: 8, typeCount: 8, nameJa: "引っ掛けアクリルスタンド", nameKo: "걸이형 아크릴 스탠드", sizeLabel: "7.5cm" },
-  { tier: "H", count: 8, typeCount: 8, nameJa: "ラバーチャーム", nameKo: "러버 참", sizeLabel: "6.5cm" },
-  { tier: "I", count: 24, typeCount: 10, nameJa: "クリアポスター (A3)", nameKo: "클리어 포스터 (A3)", sizeLabel: "A3" },
-  { tier: "J", count: 33, typeCount: 10, nameJa: "ジャガードミニタオル", nameKo: "자카드 미니 타올", sizeLabel: "25cm" },
-  { tier: "Last One", count: 1, typeCount: 1, nameJa: "大猿悟空 SOFVICS", nameKo: "거대 원숭이 손오공 SOFVICS", sizeLabel: "26cm" },
+  { tier: "A", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "孫悟空 MASTERLISE", nameKo: "손오공 MASTERLISE", sizeLabel: "11cm" },
+  { tier: "B", count: 1, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "ブルマ MASTERLISE", nameKo: "부르마 MASTERLISE", sizeLabel: "21cm" },
+  { tier: "C", count: 1, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "超サイヤ人孫悟空 MASTERLISE", nameKo: "초사이어인 손오공 MASTERLISE", sizeLabel: "25cm" },
+  { tier: "D", count: 1, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "超サイヤ人2孫悟空 MASTERLISE", nameKo: "초사이어인2 손오공 MASTERLISE", sizeLabel: "25cm" },
+  { tier: "E", count: 1, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "魔人ベジータ MASTERLISE", nameKo: "마인 베지타 MASTERLISE", sizeLabel: "24cm" },
+  { tier: "F", count: 1, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "孫悟空 身勝手の極意 MASTERLISE", nameKo: "손오공 자림무도 MASTERLISE", sizeLabel: "25cm" },
+  { tier: "G", count: 8, typeCount: 8, tierClass: TIER_CLASS_GOODS, nameJa: "引っ掛けアクリルスタンド", nameKo: "걸이형 아크릴 스탠드", sizeLabel: "7.5cm" },
+  { tier: "H", count: 8, typeCount: 8, tierClass: TIER_CLASS_GOODS, nameJa: "ラバーチャーム", nameKo: "러버 참", sizeLabel: "6.5cm" },
+  { tier: "I", count: 24, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "クリアポスター (A3)", nameKo: "클리어 포스터 (A3)", sizeLabel: "A3" },
+  { tier: "J", count: 33, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "ジャガードミニタオル", nameKo: "자카드 미니 타올", sizeLabel: "25cm" },
+  { tier: "Last One", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "大猿悟空 SOFVICS", nameKo: "거대 원숭이 손오공 SOFVICS", sizeLabel: "26cm" },
 ];
 export const TIERS_DRAGONBALL_COUNT_ESTIMATED = true;
 
@@ -57,6 +80,8 @@ export const LINEUP_DRAGONBALL_DC_PRIZE_NAME_JA = "大猿悟空 SOFVICS";
 export const LINEUP_DRAGONBALL_DC_PRIZE_NAME_KO = "거대 원숭이 손오공 SOFVICS";
 export const LINEUP_DRAGONBALL_DC_WINNERS_TOTAL = 50;
 export const LINEUP_DRAGONBALL_DC_PRIZE_NOTE_KO = "ラストワン賞과 동일 상품. winners_total은 일본 캠페인 기준";
+export const LINEUP_DRAGONBALL_DC_TIER_CLASS = TIER_CLASS_HERO;  // M3.1: 1.4.A.3 검증식 정합
+export const LINEUP_DRAGONBALL_LOBBY_HERO_ASSET_PATH = "the_chronicle_of_goku_placeholder/lobby_hero.webp";  // M3.1: 로비 카드 메인 이미지 (assetsAvailable=false면 placeholder gray fallback)
 
 // 02_data 1.4-DB.4 출처
 export const LINEUP_DRAGONBALL_SOURCES = [
@@ -87,10 +112,12 @@ export const LINEUP_DRAGONBALL = {
     prizeNameJa: LINEUP_DRAGONBALL_DC_PRIZE_NAME_JA,
     prizeNameKo: LINEUP_DRAGONBALL_DC_PRIZE_NAME_KO,
     prizeNoteKo: LINEUP_DRAGONBALL_DC_PRIZE_NOTE_KO,
+    tierClass: LINEUP_DRAGONBALL_DC_TIER_CLASS,  // M3.1
   },
   sources: LINEUP_DRAGONBALL_SOURCES,
   assetsBasePath: LINEUP_DRAGONBALL_ASSETS_BASE_PATH,
   assetsAvailable: LINEUP_DRAGONBALL_ASSETS_AVAILABLE,
+  lobbyHeroAssetPath: LINEUP_DRAGONBALL_LOBBY_HERO_ASSET_PATH,  // M3.1
 };
 
 // =====================================================================
@@ -112,18 +139,18 @@ export const LINEUP_ONEPIECE_BOX_SIZE_ESTIMATED = true;
 export const LINEUP_ONEPIECE_ASSETS_BASE_PATH = "monkey_d_luffy_placeholder";
 export const LINEUP_ONEPIECE_ASSETS_AVAILABLE = false;  // M3: placeholder 미배치
 
-// 02_data 1.4-OP.2 등급별 매수 (count_estimated:true)
+// 02_data 1.4-OP.2 등급별 매수 (count_estimated:true) + tierClass (M3.1)
 export const TIERS_ONEPIECE = [
-  { tier: "A", count: 1, typeCount: 1, nameJa: "モンキー・D・ルフィ 魂豪示像", nameKo: "몽키 D 루피 영혼호시상", sizeLabel: "" },
-  { tier: "B", count: 2, typeCount: 2, nameJa: "モンキー・D・ルフィ MASTERLISE", nameKo: "몽키 D 루피 MASTERLISE", sizeLabel: "" },
-  { tier: "C", count: 2, typeCount: 1, nameJa: "モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment", nameKo: "몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment", sizeLabel: "" },
-  { tier: "D", count: 3, typeCount: 1, nameJa: "モンキー・D・ルフィ ギア5 ONDIMENSION", nameKo: "몽키 D 루피 기어5 ONDIMENSION", sizeLabel: "" },
-  { tier: "E", count: 4, typeCount: 2, nameJa: "はこにわーるど", nameKo: "하코니와루도 (디오라마 박스)", sizeLabel: "" },
-  { tier: "F", count: 6, typeCount: 3, nameJa: "モンキー・D・ルフィ ミニフィギュア", nameKo: "몽키 D 루피 미니 피규어", sizeLabel: "" },
-  { tier: "G", count: 12, typeCount: 8, nameJa: "タオル", nameKo: "타올", sizeLabel: "" },
-  { tier: "H", count: 16, typeCount: 14, nameJa: "アクリルマグネット", nameKo: "아크릴 마그넷", sizeLabel: "" },
-  { tier: "I", count: 33, typeCount: 10, nameJa: "デスクアソート", nameKo: "데스크 아소트", sizeLabel: "" },
-  { tier: "Last One", count: 1, typeCount: 1, nameJa: "モンキー・D・ルフィ MASTERLISE PLUS", nameKo: "몽키 D 루피 MASTERLISE PLUS", sizeLabel: "" },
+  { tier: "A", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "モンキー・D・ルフィ 魂豪示像", nameKo: "몽키 D 루피 영혼호시상", sizeLabel: "" },
+  { tier: "B", count: 2, typeCount: 2, tierClass: TIER_CLASS_MAIN, nameJa: "モンキー・D・ルフィ MASTERLISE", nameKo: "몽키 D 루피 MASTERLISE", sizeLabel: "" },
+  { tier: "C", count: 2, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment", nameKo: "몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment", sizeLabel: "" },
+  { tier: "D", count: 3, typeCount: 1, tierClass: TIER_CLASS_MAIN, nameJa: "モンキー・D・ルフィ ギア5 ONDIMENSION", nameKo: "몽키 D 루피 기어5 ONDIMENSION", sizeLabel: "" },
+  { tier: "E", count: 4, typeCount: 2, tierClass: TIER_CLASS_MAIN, nameJa: "はこにわーるど", nameKo: "하코니와루도 (디오라마 박스)", sizeLabel: "" },
+  { tier: "F", count: 6, typeCount: 3, tierClass: TIER_CLASS_MAIN, nameJa: "モンキー・D・ルフィ ミニフィギュア", nameKo: "몽키 D 루피 미니 피규어", sizeLabel: "" },
+  { tier: "G", count: 12, typeCount: 8, tierClass: TIER_CLASS_GOODS, nameJa: "タオル", nameKo: "타올", sizeLabel: "" },
+  { tier: "H", count: 16, typeCount: 14, tierClass: TIER_CLASS_GOODS, nameJa: "アクリルマグネット", nameKo: "아크릴 마그넷", sizeLabel: "" },
+  { tier: "I", count: 33, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "デスクアソート", nameKo: "데스크 아소트", sizeLabel: "" },
+  { tier: "Last One", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "モンキー・D・ルフィ MASTERLISE PLUS", nameKo: "몽키 D 루피 MASTERLISE PLUS", sizeLabel: "" },
 ];
 export const TIERS_ONEPIECE_COUNT_ESTIMATED = true;
 
@@ -132,6 +159,8 @@ export const LINEUP_ONEPIECE_DC_PRIZE_NAME_JA = "TO BE CONTINUED THE GIGANT NAME
 export const LINEUP_ONEPIECE_DC_PRIZE_NAME_KO = "TO BE CONTINUED 거대 네임 피규어";
 export const LINEUP_ONEPIECE_DC_WINNERS_TOTAL = 100;  // 드래곤볼 50과 차이
 export const LINEUP_ONEPIECE_DC_PRIZE_NOTE_KO = "35cm 대형 피규어. winners_total은 일본 캠페인 기준";
+export const LINEUP_ONEPIECE_DC_TIER_CLASS = TIER_CLASS_HERO;  // M3.1: 1.4.A.3 검증식 정합
+export const LINEUP_ONEPIECE_LOBBY_HERO_ASSET_PATH = "monkey_d_luffy_placeholder/lobby_hero.webp";  // M3.1: 로비 카드 메인 이미지
 
 // 02_data 1.4-OP.4 출처
 export const LINEUP_ONEPIECE_SOURCES = [
@@ -162,10 +191,12 @@ export const LINEUP_ONEPIECE = {
     prizeNameJa: LINEUP_ONEPIECE_DC_PRIZE_NAME_JA,
     prizeNameKo: LINEUP_ONEPIECE_DC_PRIZE_NAME_KO,
     prizeNoteKo: LINEUP_ONEPIECE_DC_PRIZE_NOTE_KO,
+    tierClass: LINEUP_ONEPIECE_DC_TIER_CLASS,  // M3.1
   },
   sources: LINEUP_ONEPIECE_SOURCES,
   assetsBasePath: LINEUP_ONEPIECE_ASSETS_BASE_PATH,
   assetsAvailable: LINEUP_ONEPIECE_ASSETS_AVAILABLE,
+  lobbyHeroAssetPath: LINEUP_ONEPIECE_LOBBY_HERO_ASSET_PATH,  // M3.1
 };
 
 // =====================================================================
@@ -185,6 +216,14 @@ export function getLineupById(id) {
   return LINEUP_DRAGONBALL;
 }
 
+// M3.2 신설: tierClass lookup 헬퍼 (02_data 1.4.A.5).
+// 입력: lineup 객체 + tier 라벨 (예: "A", "Last One").
+// 출력: tierClass 문자열 (TIER_CLASS_VALUES 중 하나) | null (해당 tier 없을 시).
+export function getTierClassForTier(lineup, tier) {
+  const found = lineup.tiers.find((t) => t.tier === tier);
+  return found ? found.tierClass : null;
+}
+
 // =====================================================================
 // 02_data 1.5 UI 표시 상수
 // =====================================================================
@@ -192,6 +231,22 @@ export function getLineupById(id) {
 export const HISTORY_RECENT_LIMIT = 50;
 export const PERCENT_DISPLAY_DECIMALS = 2;
 export const PERCENT_BASE = 100;
+
+// 02_data 1.5 라인업 로비 (M3.1 신설)
+export const LOBBY_GRID_COLS_MOBILE = 1;
+export const LOBBY_GRID_COLS_TABLET = 2;
+export const LOBBY_TABLET_BREAKPOINT_PX = 768;
+
+// 02_data 1.5 tier_class 시각 (M3.2 신설) - 5.13.C 정합
+export const HERO_POP_SCALE_PEAK = 1.18;
+export const HERO_GLOW_DURATION_MS = 1200;
+export const HERO_STATIC_GLOW_BLUR_PX = 12;
+export const HERO_STATIC_GLOW_ALPHA = 0.25;
+
+// 02_data 1.5 history 대시보드 (M3.3 신설) - 5.13.D.3 정합
+export const HISTORY_DASHBOARD_COLS_MOBILE = 2;
+export const HISTORY_DASHBOARD_COLS_TABLET = 4;
+export const HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX = 768;
 
 // 02_data 1.6 구매 옵션 (M2 + M2.1)
 export const BUY_QUICK_OPTIONS = [1, 3, 5, 10];
@@ -264,6 +319,34 @@ function _validateLineupTierSum(lineup) {
   }
 }
 LINEUPS.forEach(_validateLineupTierSum);
+
+// 02_data 1.4.A.3 tierClass 검증식 (M3.1 신설). 라인업당 hero/main/goods 각 ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES + DC.tierClass ∈ TIER_CLASS_VALUES.
+function _validateLineupTierClass(lineup) {
+  // 1) 모든 tier에 tierClass 존재 + TIER_CLASS_VALUES 안에 있음
+  for (const t of lineup.tiers) {
+    if (!TIER_CLASS_VALUES.includes(t.tierClass)) {
+      throw new Error(
+        `[numbers.js] 라인업 "${lineup.id}" tier "${t.tier}" tierClass "${t.tierClass}" ∉ TIER_CLASS_VALUES. 02_data 1.4.A.3 위반.`
+      );
+    }
+  }
+  // 2) DC.tierClass 정합
+  if (!TIER_CLASS_VALUES.includes(lineup.dc.tierClass)) {
+    throw new Error(
+      `[numbers.js] 라인업 "${lineup.id}" dc.tierClass "${lineup.dc.tierClass}" ∉ TIER_CLASS_VALUES. 02_data 1.4.A.3 위반.`
+    );
+  }
+  // 3) hero / main / goods 각 ≥ 1
+  for (const required of TIER_CLASS_VALUES) {
+    const hasOne = lineup.tiers.some((t) => t.tierClass === required);
+    if (!hasOne) {
+      throw new Error(
+        `[numbers.js] 라인업 "${lineup.id}" tierClass "${required}" 등급 부재. 02_data 1.4.A.3 위반 (각 클래스 ≥ 1 의무).`
+      );
+    }
+  }
+}
+LINEUPS.forEach(_validateLineupTierClass);
 
 // =====================================================================
 // 호환 alias (M2.1 코드 점진 마이그레이션용. M4+에서 완전 제거 후보)

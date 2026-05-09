@@ -1,6 +1,7 @@
 // 설정 탭. M3: Lineup dropdown 신설 (사용자 결정 8.3 (A) settings-tab dropdown).
+// M3.1: "라인업 선택 화면으로" 버튼 추가 (5.13.A.4.5 / 5.13.B.5.1).
 
-import { LINEUPS, getLineupById } from "../data/numbers.js";
+import { LINEUPS, getLineupById, DISPATCH_TYPE_OPEN_LOBBY } from "../data/numbers.js";
 
 export function renderSettingsTab(state, dispatch) {
   const lineup = getLineupById(state.currentLineupId);
@@ -36,6 +37,16 @@ export function renderSettingsTab(state, dispatch) {
   lineupHelp.className = "settings-help";
   lineupHelp.textContent = "라인업 전환 시 현재 라인업의 박스 / 인벤토리 / 이력 / DC는 보존되며, 다음 전환 시 복원됩니다.";
   lineupSection.appendChild(lineupHelp);
+
+  // M3.1 신설 (5.13.A.4.5): "라인업 선택 화면으로" 버튼
+  const lobbyBtn = document.createElement("button");
+  lobbyBtn.type = "button";
+  lobbyBtn.className = "settings-lobby-button";
+  lobbyBtn.textContent = "라인업 선택 화면으로";
+  lobbyBtn.addEventListener("click", () => {
+    dispatch({ type: DISPATCH_TYPE_OPEN_LOBBY });
+  });
+  lineupSection.appendChild(lobbyBtn);
   el.appendChild(lineupSection);
 
   // 시드 (라인업 공유 - 사용자 결정 8.2 (A))

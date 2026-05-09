@@ -10,6 +10,10 @@ import {
   getLineupById,
   PEEL_DURATION_MS,
   PICK_AUTO_CONFIRM_DELAY_MS,
+  STATE_VIEW_LOBBY,
+  STATE_VIEW_MAIN,
+  DISPATCH_TYPE_OPEN_LOBBY,
+  DISPATCH_TYPE_ENTER_LINEUP,
 } from "../data/numbers.js";
 import { initBox } from "../core/box.js";
 import { drawOne } from "../core/draw.js";
@@ -26,6 +30,7 @@ import { renderDrawTab } from "./draw-tab.js";
 import { renderHistoryTab } from "./history-tab.js";
 import { renderDcTab } from "./dc-tab.js";
 import { renderSettingsTab } from "./settings-tab.js";
+import { renderLobby } from "./lobby.js";  // M3.1
 import { showDcResultModal } from "./dc-result-modal.js";
 import { showConfirmModal } from "./confirm-modal.js";
 import { showDisclaimerSheet } from "./disclaimer-sheet.js";
@@ -76,6 +81,7 @@ function persist() {
   saveState({
     seed: state.seed,
     currentLineupId: state.currentLineupId,
+    lobbyAcked: state.lobbyAcked,  // M3.1
     boxRound: state.boxRound,
     boxState: state.boxState,
     history: state.history,
@@ -153,6 +159,11 @@ function performPickConfirm() {
 
 function rerender() {
   rootEl.innerHTML = "";
+  // M3.1: view 라우팅. lobby view = 4탭 + 헤더 미렌더, 본편(= main view)만 4탭 모델.
+  if (state.view === STATE_VIEW_LOBBY) {
+    rootEl.appendChild(renderLobby(state, dispatch));
+    return;
+  }
   rootEl.appendChild(renderHeader(state, dispatch));
   const main = document.createElement("main");
   main.className = "tab-content";
@@ -392,6 +403,42 @@ function dispatch(action) {
       rerender();
       break;
     }
+    case DISPATCH_TYPE_OPEN_LOBBY: {
+      // M3.1 신설 (3.19): main → lobby view 전환. 메모리 only state 보존.
+      if (state.view === STATE_VIEW_LOBBY) return;  // no-op
+      state.view = STATE_VIEW_LOBBY;
+      rerender();
+      break;
+    }
+    case DISPATCH_TYPE_ENTER_LINEUP: {
+      // M3.1 신설 (3.20). 분기 A: 동일 라인업 = view 전환만 + 메모리 보존.
+      // 분기 B: 다른 라인업 = 라인업 전환 + 메모리 폐기 + 새 라인업 공간 로드.
+      const newLineupId = action.lineupId;
+      if (!newLineupId) return;
+      const newLineup = getLineupById(newLineupId);
+      if (!newLineup || newLineup.id !== newLineupId) return;  // fallback 차단
+
+      if (newLineupId === state.currentLineupId) {
+        // 분기 A: view 전환만 + lobbyAcked 부족 시 갱신 (메모리 보존)
+        state.view = STATE_VIEW_MAIN;
+        if (state.lobbyAcked !== true) {
+          state.lobbyAcked = true;
+          saveState({ lobbyAcked: true });
+        }
+        rerender();
+      } else {
+        // 분기 B: 라인업 전환 + 메모리 폐기
+        persist();  // 현재 라인업 영속
+        state.currentLineupId = newLineupId;
+        state.lobbyAcked = true;
+        saveState({ currentLineupId: newLineupId, lobbyAcked: true });
+        state = bootstrapState(loadState());
+        state.view = STATE_VIEW_MAIN;  // bootstrapState가 view 결정하지만 enter_lineup은 명시 강제
+        persist();
+        rerender();
+      }
+      break;
+    }
     case "set_current_lineup": {
       // M3 신설: 라인업 전환 (사용자 결정 8.3 (A) settings-tab dropdown).
       // P0 2.1 정정 (단계 6 round 1): currentLineupId 전환을 storage에 명시 영속해야
@@ -528,6 +575,9 @@ function bootstrapState(loaded) {
   }
   if (!Array.isArray(s.unopenedTickets)) s.unopenedTickets = [];
   if (typeof s.settingsSkipPick !== "boolean") s.settingsSkipPick = false;
+  // M3.1: lobbyAcked + view 결정 (03_architecture 4.M3.1 / 4.M3.1.B)
+  if (typeof s.lobbyAcked !== "boolean") s.lobbyAcked = false;
+  s.view = s.lobbyAcked ? STATE_VIEW_MAIN : STATE_VIEW_LOBBY;
   ensureBoxState(s);
   return s;
 }

@@ -15,6 +15,11 @@ import "./suites/buy.test.js";
 import "./suites/build_consumed_grid_set.test.js";  // M2.1 / 4.14.7
 import "./suites/storage_v4.test.js";  // M3
 import "./suites/lineup_isolation.test.js";  // M3
+import "./suites/tier_class.test.js";  // M3.1
+import "./suites/storage_v5.test.js";  // M3.1
+import "./suites/lobby_flow.test.js";  // M3.1
+import "./suites/tier_class_lookup.test.js";  // M3.2
+import "./suites/tier_class_counts.test.js";  // M3.3
 
 const rootEl = document.getElementById("root");
 runAll(rootEl).then(({ passCount, failCount }) => {

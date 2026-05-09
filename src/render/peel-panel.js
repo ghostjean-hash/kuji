@@ -3,9 +3,10 @@
 // 없으면 일반 인벤토리 카드 스택 (좌측 드래그/클릭으로 뜯기).
 
 import { renderPeelCard } from "./peel-card.js";
-import { PEEL_STACK_VISIBLE_LIMIT, PEEL_STACK_OFFSET_PX, PEEL_STACK_SCALE_DELTA } from "../data/numbers.js";
+import { PEEL_STACK_VISIBLE_LIMIT, PEEL_STACK_OFFSET_PX, PEEL_STACK_SCALE_DELTA, getLineupById } from "../data/numbers.js";
 
 export function renderPeelPanel(state, dispatch) {
+  const lineup = getLineupById(state.currentLineupId);  // M3.2: hero 분기용
   const el = document.createElement("section");
   el.className = "peel-panel";
 
@@ -52,6 +53,7 @@ export function renderPeelPanel(state, dispatch) {
       revealedResult: state.pendingPeelResult,
       onConfirm: () => dispatch({ type: "peel_confirm" }),
       isConfirmDisabled: isReceivePending,
+      lineup,  // M3.2
     });
     stack.appendChild(card);
     return el;
@@ -66,6 +68,7 @@ export function renderPeelPanel(state, dispatch) {
         dispatch({ type: "peel", ticketId: ticket.id, applyResult });
       },
       onConfirm: () => dispatch({ type: "peel_confirm" }),
+      lineup,  // M3.2
     });
     card.style.zIndex = String(visible.length - i);
     card.style.transform = `translateY(${i * PEEL_STACK_OFFSET_PX}px) scale(${1 - i * PEEL_STACK_SCALE_DELTA})`;

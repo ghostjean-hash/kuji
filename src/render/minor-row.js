@@ -1,6 +1,6 @@
 // 마이너 row (M2 재설계, 4장 영역 3). G~J 다수 등급 4종 가로 스크롤 1줄.
 
-import { PERCENT_BASE, getLineupById } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById, getTierClassForTier } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
@@ -32,6 +32,8 @@ export function renderMinorRow(state, dispatch) {
       + (isJustDrawn ? " is-just-drawn" : "")
       + (isExhausted ? " is-exhausted" : "");
     item.dataset.tier = t.tier;
+    // M3.2: tier_class 시각 적용 (5.13.C.2.1). 현재 minor-row 등급은 모두 goods 클래스. 차기 사이클 hook.
+    item.dataset.tierClass = getTierClassForTier(lineup, t.tier) || "";
     item.style.setProperty("--tier-color", TIER_COLORS[t.tier]);
     item.innerHTML = `
       <div class="minor-image">

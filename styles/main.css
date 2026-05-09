@@ -1282,3 +1282,387 @@ html, body {
   margin: var(--space-sm) 0 0 0;
   line-height: 1.5;
 }
+
+
+/* ============================================================
+ * M3.1 라인업 로비 (spec 5.13.B / 02_data 1.5)
+ * ============================================================ */
+
+.lobby {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg);
+  background: var(--bg-paper);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.lobby-header {
+  text-align: center;
+  margin-bottom: var(--space-xxl);
+}
+
+.lobby-title {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  color: var(--ink-primary);
+  font-family: var(--font-body-ko);
+}
+
+.lobby-sub {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--ink-secondary);
+}
+
+.lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);  /* LOBBY_GRID_COLS_MOBILE */
+  gap: var(--space-xl);
+}
+
+@media (min-width: 768px) {  /* LOBBY_TABLET_BREAKPOINT_PX (numbers.js 정합) */
+  .lobby-grid {
+    grid-template-columns: repeat(2, 1fr);  /* LOBBY_GRID_COLS_TABLET */
+  }
+}
+
+.lobby-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  cursor: pointer;
+  transition: transform var(--motion-modal-ms) ease, box-shadow var(--motion-modal-ms) ease, border-color var(--motion-modal-ms) ease;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.lobby-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--gold-edge-soft);
+}
+
+.lobby-card.is-current {
+  border-color: var(--frame-red);
+  box-shadow: var(--shadow-red-glow);
+}
+
+.lobby-card-hero {
+  position: relative;
+  aspect-ratio: var(--card-aspect);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lobby-card-hero.is-placeholder {
+  background: var(--paper-gray);
+  border: 1px dashed var(--paper-gray-border);
+}
+
+.lobby-card-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lobby-card-hero-placeholder-ip {
+  font-family: var(--font-tier-display);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+}
+
+.lobby-card-current-badge {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  background: var(--frame-red);
+  color: var(--text-on-red);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.lobby-card-title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  color: var(--ink-primary);
+  line-height: 1.4;
+}
+
+.lobby-card-ip {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--frame-red);
+  letter-spacing: 0.04em;
+}
+
+.lobby-card-meta {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--ink-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+
+.lobby-card-meta-sep {
+  color: var(--ink-muted);
+}
+
+.lobby-card-meta-estimated {
+  margin-left: var(--space-sm);
+  background: var(--badge-estimated);
+  color: var(--text-on-red);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding: 1px var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.lobby-card-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.lobby-card-preview-tier {
+  font-family: var(--font-tier-display);
+  font-size: var(--font-size-md);
+  font-weight: 900;
+  border: 2px solid;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.lobby-card-preview-name {
+  font-size: var(--font-size-sm);
+  color: var(--ink-secondary);
+  line-height: 1.3;
+}
+
+.lobby-card-cta {
+  margin-top: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--frame-red);
+  color: var(--text-on-red);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--motion-modal-ms) ease, transform var(--motion-modal-ms) ease;
+}
+
+.lobby-card-cta:hover {
+  background: var(--frame-red-dark);
+  transform: translateY(-1px);
+}
+
+.lobby-card-cta:active {
+  background: var(--frame-red-deeper);
+  transform: translateY(0);
+}
+
+/* 헤더 라인업 라벨 클릭 활성 (M3.1 5.13.A.3.2) */
+.app-lineup-ip {
+  cursor: pointer;
+  transition: color var(--motion-modal-ms) ease;
+}
+
+.app-lineup-ip::after {
+  content: " \203A";  /* 꺾쇠 아이콘 */
+  margin-left: var(--space-xs);
+  color: var(--ink-muted);
+}
+
+.app-lineup-ip:hover {
+  color: var(--frame-red);
+}
+
+
+
+/* M3.1: 설정 탭 "라인업 선택 화면으로" 버튼 */
+.settings-lobby-button {
+  margin-top: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  color: var(--frame-red);
+  border: 1.5px solid var(--frame-red);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--motion-modal-ms) ease, color var(--motion-modal-ms) ease;
+}
+.settings-lobby-button:hover {
+  background: var(--frame-red);
+  color: var(--text-on-red);
+}
+
+
+
+/* ============================================================
+ * M3.2 tier_class 시각 적용 (spec 5.13.C / 02_data 1.4.A.5 / 2.3)
+ * ============================================================ */
+
+/* hero-card 클래스별 액센트 (5.13.C.2.2 매트릭스) */
+.hero-card[data-tier-class="hero"] {
+  background: var(--tier-class-hero-bg-tint);
+  border-color: var(--tier-class-hero-border);
+  box-shadow: 0 0 var(--hero-static-glow-blur-px) var(--tier-class-hero-glow-rgba);
+}
+.hero-card[data-tier-class="main"] {
+  background: var(--tier-class-main-bg-tint);
+  /* main = 무변형. 보더는 기존 .hero-card 보더 토큰 유지. */
+}
+.hero-card[data-tier-class="goods"] {
+  background: var(--tier-class-goods-bg-tint);
+}
+
+/* minor-row 카드: 보더는 기존 등급 색 유지 (5.13.C.2.4 + design_review P2 2.7 결정). 배경만 토큰 적용. */
+.minor-row-item[data-tier-class="goods"] {
+  background: var(--tier-class-goods-bg-tint);
+}
+.minor-row-item[data-tier-class="main"] {
+  background: var(--tier-class-main-bg-tint);
+}
+.minor-row-item[data-tier-class="hero"] {
+  background: var(--tier-class-hero-bg-tint);
+  /* 현재 minor-row에 hero 등급 0이지만 차기 사이클 hook */
+}
+
+/* peel-card hero 분기 (페이지플립 인플레이스) + DC 모달 hero 분기 (5.13.C.3) */
+.peel-card.is-revealed.is-hero-result,
+.modal.is-hero-result {
+  /* hero scale 피크 + 골드 글로우 펄스 */
+  animation: hero-result-pop var(--motion-hero-glow-ms) ease-out forwards;
+}
+@keyframes hero-result-pop {
+  0%   { transform: scale(1); box-shadow: var(--shadow-card); }
+  40%  { transform: scale(var(--motion-hero-pop-peak)); box-shadow: var(--shadow-gold-glow); }
+  100% { transform: scale(1); box-shadow: var(--shadow-card); }
+}
+
+
+
+/* ============================================================
+ * M3.3 tier_class 확장 (spec 5.13.D / 02_data 1.4.A.6 / 1.5)
+ * ============================================================ */
+
+/* history 탭 상단 대시보드 (5.13.D.3) */
+.history-dashboard {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);  /* HISTORY_DASHBOARD_COLS_MOBILE */
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+@media (min-width: 768px) {  /* HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX */
+  .history-dashboard {
+    grid-template-columns: repeat(4, 1fr);  /* HISTORY_DASHBOARD_COLS_TABLET */
+  }
+}
+
+.history-dashboard-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  box-shadow: var(--shadow-card);
+}
+
+.history-dashboard-card.is-total {
+  border-width: 2px;
+  border-color: var(--gold-edge-soft);  /* 전체 카드 = 보더 액센트로 시각 분리 (P2 4.2) */
+}
+
+.history-dashboard-card.is-hero {
+  background: var(--tier-class-hero-bg-tint);
+  border-color: var(--tier-class-hero-border);
+}
+
+.history-dashboard-card.is-main {
+  background: var(--tier-class-main-bg-tint);
+  /* 무변형 */
+}
+
+.history-dashboard-card.is-goods {
+  background: var(--tier-class-goods-bg-tint);
+}
+
+.history-dashboard-card-value {
+  font-family: var(--font-tier-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  color: var(--ink-primary);
+  line-height: 1;
+}
+
+.history-dashboard-card-label {
+  font-size: var(--font-size-xs);
+  color: var(--ink-secondary);
+  font-weight: 700;
+}
+
+/* 갤러리 / tier-grid 그룹화 (5.13.D.2). product-gallery는 실제 렌더 모듈, tier-grid는 dead 모듈이지만 양쪽 모두 동일 셀렉터 적용 */
+.product-gallery-section,
+.tier-grid-section {
+  margin-top: var(--space-lg);
+}
+
+.product-gallery-section:first-of-type,
+.tier-grid-section:first-of-type {
+  margin-top: var(--space-md);
+}
+
+.product-gallery-section-header,
+.tier-grid-section-header {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--ink-secondary);
+  margin: 0 0 var(--space-sm) 0;
+  padding-left: var(--space-sm);
+  border-left: 4px solid var(--border-subtle);
+}
+
+.product-gallery-section[data-tier-class="hero"] .product-gallery-section-header,
+.tier-grid-section[data-tier-class="hero"] .tier-grid-section-header {
+  border-left-color: var(--tier-class-hero-border);
+  color: var(--ink-primary);
+}
+
+.product-gallery-section[data-tier-class="main"] .product-gallery-section-header,
+.tier-grid-section[data-tier-class="main"] .tier-grid-section-header {
+  border-left-color: var(--tier-class-main-border);
+}
+
+.product-gallery-section[data-tier-class="goods"] .product-gallery-section-header,
+.tier-grid-section[data-tier-class="goods"] .tier-grid-section-header {
+  border-left-color: var(--tier-class-goods-border);
+}
+

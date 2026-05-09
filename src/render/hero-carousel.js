@@ -1,6 +1,6 @@
 // 메인 캐러셀 (M2 재설계, 4장 영역 2). A~F 1매 등급 6종을 가로 드래그 캐러셀로 표시.
 
-import { PERCENT_BASE, getLineupById } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById, getTierClassForTier } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
@@ -34,6 +34,8 @@ export function renderHeroCarousel(state, dispatch) {
     card.className = "hero-card"
       + (isJustDrawn ? " is-just-drawn" : (isDrawn ? " is-drawn" : ""));
     card.dataset.tier = t.tier;
+    // M3.2: tier_class 시각 적용 (5.13.C.2.1). data-tier-class 속성 부착 → CSS 셀렉터 액센트.
+    card.dataset.tierClass = getTierClassForTier(lineup, t.tier) || "";
     card.style.setProperty("--tier-color", TIER_COLORS[t.tier]);
     card.innerHTML = `
       <div class="hero-tier-badge">${t.tier}賞</div>

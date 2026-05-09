@@ -116,6 +116,20 @@
   --pick-slot-min-tap: 24px;
   --pick-slot-gap: -4px;  /* (구) 격자 갭 — 절대 위치 전환 후 미사용 */
   --pick-slot-size: 38px;  /* 절대 위치 슬롯 고정 사이즈 */
+
+  /* M3.2 신설: tier_class 시각 토큰 (02_data 2.3) */
+  --tier-class-hero-bg-tint: #FFF8E7;        /* COLOR_TIER_CLASS_HERO_BG_TINT */
+  --tier-class-hero-glow-rgba: rgba(201, 169, 97, 0.25);  /* COLOR_TIER_CLASS_HERO_GLOW_RGBA */
+  --tier-class-hero-border: var(--gold-edge);  /* COLOR_GOLD_EDGE 재사용 */
+  --tier-class-main-bg-tint: var(--bg-card);   /* COLOR_TIER_CLASS_MAIN_BG_TINT (= #FFFFFF) */
+  --tier-class-main-border: var(--border-subtle);
+  --tier-class-goods-bg-tint: var(--bg-elevated);  /* COLOR_TIER_CLASS_GOODS_BG_TINT (= #F3EDE0) */
+  --tier-class-goods-border: var(--border-subtle);
+
+  /* M3.2 신설: hero 모션 토큰 */
+  --motion-hero-pop-peak: 1.18;        /* HERO_POP_SCALE_PEAK */
+  --motion-hero-glow-ms: 1200ms;        /* HERO_GLOW_DURATION_MS */
+  --hero-static-glow-blur-px: 12px;     /* HERO_STATIC_GLOW_BLUR_PX */
 }
 
 @font-face {

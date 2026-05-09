@@ -13,7 +13,7 @@
 | `STORAGE_KEY_PREFIX` | `"kuji_"` | localStorage 키 prefix |
 | `DEFAULT_SEED_FALLBACK_BITS` | 32 | 시드 기본값 (`Date.now()`) 변환 비트 |
 | `BOX_ROUND_INITIAL` | 1 | 박스 회차 초기값 |
-| `SCHEMA_VERSION` | 4 | localStorage 스키마 버전 (M3: 다중 라인업 격리로 v4 증가. 라인업별 키 prefix + 전역 `kuji_current_lineup_id` + `kuji_schema_version` 신설) |
+| `SCHEMA_VERSION` | 5 | localStorage 스키마 버전. **M3.1 갱신 (2026-05-08)**: 라인업 로비 도입으로 v5 증가 (전역 키 `kuji_lobby_acked` 신설). M3 v4 = 다중 라인업 격리 (라인업별 키 prefix + `kuji_current_lineup_id` + `kuji_schema_version` 신설). |
 
 ## 1.2. PRNG
 
@@ -31,7 +31,7 @@
 | `DC_POOL_SIZE_DEFAULT` | 5000 | DC 응모권 풀 추정 크기 |
 | `DC_POOL_SIZE_NOTE_KO` | `"단순화 가정. 실제 응모권 풀은 라인업 인기에 따라 천 ~ 수만 단위 변동"` | UI 안내 |
 
-## 1.4. 라인업 (다중 라인업 - **M3 갱신 2026-05-08**)
+## 1.4. 라인업 (다중 라인업 - **M3 갱신 2026-05-08 / M3.1 tier_class 갱신 2026-05-08**)
 
 ### 1.4.0. 라인업 구조 명세
 
@@ -48,12 +48,103 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `priceJpy` | number | 1회 가격 (엔) |
 | `boxSize` / `boxSizeEstimated` | number / boolean | 박스 매수 + 추정 플래그 |
 | `gridCols` | number? | 통 격자 열 수 (옵셔널, 미정의 시 `PICK_GRID_COLS_DEFAULT = 10`. M2.1 hook) |
-| `tiers` | TierDef[] | 등급별 정의 배열 (1.4-DB.2 / 1.4-OP.2 / 1.4-XX.2 형식) |
+| `tiers` | TierDef[] | 등급별 정의 배열 (1.4-DB.2 / 1.4-OP.2 / 1.4-XX.2 형식). **M3.1 신설**: 각 TierDef에 `tierClass` 필드 필수 (1.4.A 정의) |
 | `tiersCountEstimated` | boolean | 등급별 매수 추정 플래그 |
-| `dc` | DCDef | Double Chance 정의 (`winnersTotal` / `poolSizeDefault` / `prizeNameJa` / `prizeNameKo` / `prizeNoteKo`) |
+| `dc` | DCDef | Double Chance 정의 (`winnersTotal` / `poolSizeDefault` / `prizeNameJa` / `prizeNameKo` / `prizeNoteKo` / **M3.1 신설** `tierClass`) |
 | `sources` | SourceDef[] | 출처 배열 (`name` / `url`) |
 | `assetsBasePath` | string | **M3 신설** - 자산 폴더 base path (예: `"the_chronicle_of_goku_placeholder"`) |
 | `assetsAvailable` | boolean | **M3 신설** - 자산 배치 완료 여부. false면 SVG fallback (1.7.3) |
+| `lobbyHeroAssetPath` | string | **M3.1 신설** - 라인업 로비 카드 메인 이미지 경로 (assetsAvailable=false면 placeholder gray fallback) |
+
+### 1.4.A. 등급 클래스 (TIER_CLASS_VALUES) - **M3.1 신설**
+
+#### 1.4.A.1. 정의
+
+등급의 위상을 코드 차원에서 인지하기 위한 3단계 분류.
+
+| 클래스 | 의미 | 자산 표현 우선순위 |
+|---|---|---|
+| `"hero"` | 라인업 대표 / 최상급 메인 피규어 / Last One / DC 보너스. 로비 카드 미리보기 슬롯 / 본편 강조 후보 | 최상 |
+| `"main"` | 표준 메인 피규어 / 디오라마 / 미니 피규어 등 조형물 | 중 |
+| `"goods"` | 굿즈 / 잡화 (타올 / 마그넷 / 포스터 / 데스크 아소트 등) | 하 |
+
+#### 1.4.A.2. 상수
+
+```
+TIER_CLASS_HERO  = "hero"
+TIER_CLASS_MAIN  = "main"
+TIER_CLASS_GOODS = "goods"
+TIER_CLASS_VALUES = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS]
+```
+
+`src/data/numbers.js` 정의. 02_data 1.4-XX.2 (각 라인업 등급 표) + 1.4-XX.3 (DC) + 검증식이 본 상수 참조.
+
+#### 1.4.A.3. 검증식 (라인업 단위)
+
+각 라인업 LINEUP에 대해 다음 모두 성립.
+
+```
+1) 모든 t in LINEUP.tiers: t.tierClass ∈ TIER_CLASS_VALUES
+2) LINEUP.dc.tierClass ∈ TIER_CLASS_VALUES
+3) ∃ t1 in LINEUP.tiers: t1.tierClass === "hero"
+4) ∃ t2 in LINEUP.tiers: t2.tierClass === "main"
+5) ∃ t3 in LINEUP.tiers: t3.tierClass === "goods"
+```
+
+부팅 시(numbers.js import 시점) 본 검증 미성립 → 시뮬레이터 부팅 실패 (throw + console.error). 1.4.B.2의 등급 매수 합 검증과 동일 게이트.
+
+#### 1.4.A.4. 분류 정책 (M3.1 합의)
+
+본 사이클에서는 다음 휴리스틱으로 라인업 등급별 tierClass 부여.
+
+- **hero**: 라인업 첫 등급(A) + Last One + DC 보너스. 또는 라인업 메타에 명시된 "최상급" 상품(예: 魂豪示像 시리즈, MASTERLISE PLUS).
+- **main**: A 외 피규어 시리즈(MASTERLISE / Revible Moment / ONDIMENSION 등) + 디오라마 / 미니 피규어.
+- **goods**: 타올 / 마그넷 / 클리어 포스터 / 데스크 아소트 / 러버 참 등 굿즈.
+
+**경계 분쟁 발생 시**: 본 사이클은 main/goods 경계의 mid 도입을 거부 (plan 8.2.3 리스크 동결). 새 사이클로 분리.
+
+#### 1.4.A.5. tierClass lookup 헬퍼 (M3.2 신설)
+
+본 사이클에서 본편 화면(추첨/결과)이 tier 라벨을 받아 tierClass를 동적 lookup. 호출처 단순화 위해 numbers.js에 헬퍼 함수 신설.
+
+```js
+// numbers.js
+// 입력: lineup 객체 + tier 라벨 (예: "A", "Last One").
+// 출력: tierClass 문자열 (TIER_CLASS_VALUES 중 하나) | null (해당 tier 없을 시).
+export function getTierClassForTier(lineup, tier) {
+  const found = lineup.tiers.find((t) => t.tier === tier);
+  return found ? found.tierClass : null;
+}
+```
+
+호출처:
+- `render/hero-carousel.js`: `data-tier-class` 속성 부착 시.
+- `render/minor-row.js`: `data-tier-class` 속성 부착 시 (현재 G/H/I/J 모두 goods).
+- `render/peel-card.js`: 추첨 결과 reveal 시 `isHero` 분기 (M2 K-1 정합 - 결과 모달 폐기, 페이지플립 인플레이스).
+- `render/dc-result-modal.js`: hero 모션 적용 시 사실 박제 (DC.tierClass=hero 1.4.A 검증식 정합. DC 결과 객체에 `tier` 필드 부재이므로 헬퍼 호출 부적절. `result.isWin`만 분기). M3.2 단계 6 P1-1 (b) 결정.
+- `render/tier-grid.js` 또는 `render/product-gallery.js`: **M3.3 신설** - 갤러리 펼침 시 lineup.tiers를 hero/main/goods 그룹화 (5.13.D.2).
+- `core/history.js` `tierClassCounts(history, lineup)`: **M3.3 신설** - history 항목별 tier → tierClass lookup → 통계 산출 (5.13.D.3).
+
+#### 1.4.A.6. tier_class 한국어 라벨 (M3.3 신설)
+
+본 클래스의 사용자 노출 한국어 라벨. 갤러리 섹션 헤더 + history 대시보드 카운터 라벨에 사용. 02_data 1.4.A.4 분류 정책 정합.
+
+| 키 | 값 |
+|---|---|
+| `TIER_CLASS_LABEL_KO[TIER_CLASS_HERO]` | `"메인 등급"` |
+| `TIER_CLASS_LABEL_KO[TIER_CLASS_MAIN]` | `"표준 등급"` |
+| `TIER_CLASS_LABEL_KO[TIER_CLASS_GOODS]` | `"굿즈"` |
+
+상수 명세:
+```js
+export const TIER_CLASS_LABEL_KO = {
+  [TIER_CLASS_HERO]: "메인 등급",
+  [TIER_CLASS_MAIN]: "표준 등급",
+  [TIER_CLASS_GOODS]: "굿즈",
+};
+```
+
+호출처는 5.13.D.2 (갤러리 섹션 헤더) + 5.13.D.3 (history 대시보드 카운터 라벨).
 
 **라인업별 차이를 흡수해야 하는 영역**:
 - 등급 수 (드래곤볼 10등급 A~J vs 원피스 9등급 A~I).
@@ -87,19 +178,21 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 
 #### 1.4-DB.2. 등급별 매수 (count_estimated:true)
 
-| 등급 | 매수 | 종 수 | 일본어 | 한국어 | 사이즈 |
-|---|---|---|---|---|---|
-| A | 1 | 1 | `孫悟空 MASTERLISE` | `손오공 MASTERLISE` | `11cm` |
-| B | 1 | 1 | `ブルマ MASTERLISE` | `부르마 MASTERLISE` | `21cm` |
-| C | 1 | 1 | `超サイヤ人孫悟空 MASTERLISE` | `초사이어인 손오공 MASTERLISE` | `25cm` |
-| D | 1 | 1 | `超サイヤ人2孫悟空 MASTERLISE` | `초사이어인2 손오공 MASTERLISE` | `25cm` |
-| E | 1 | 1 | `魔人ベジータ MASTERLISE` | `마인 베지타 MASTERLISE` | `24cm` |
-| F | 1 | 1 | `孫悟空 身勝手の極意 MASTERLISE` | `손오공 자림무도 MASTERLISE` | `25cm` |
-| G | 8 | 8 | `引っ掛けアクリルスタンド` | `걸이형 아크릴 스탠드` | `7.5cm` |
-| H | 8 | 8 | `ラバーチャーム` | `러버 참` | `6.5cm` |
-| I | 24 | 10 | `クリアポスター (A3)` | `클리어 포스터 (A3)` | `A3` |
-| J | 33 | 10 | `ジャガードミニタオル` | `자카드 미니 타올` | `25cm` |
-| Last One | 1 | 1 | `大猿悟空 SOFVICS` | `거대 원숭이 손오공 SOFVICS` | `26cm` |
+| 등급 | 매수 | 종 수 | tierClass | 일본어 | 한국어 | 사이즈 |
+|---|---|---|---|---|---|---|
+| A | 1 | 1 | `hero` | `孫悟空 MASTERLISE` | `손오공 MASTERLISE` | `11cm` |
+| B | 1 | 1 | `main` | `ブルマ MASTERLISE` | `부르마 MASTERLISE` | `21cm` |
+| C | 1 | 1 | `main` | `超サイヤ人孫悟空 MASTERLISE` | `초사이어인 손오공 MASTERLISE` | `25cm` |
+| D | 1 | 1 | `main` | `超サイヤ人2孫悟空 MASTERLISE` | `초사이어인2 손오공 MASTERLISE` | `25cm` |
+| E | 1 | 1 | `main` | `魔人ベジータ MASTERLISE` | `마인 베지타 MASTERLISE` | `24cm` |
+| F | 1 | 1 | `main` | `孫悟空 身勝手の極意 MASTERLISE` | `손오공 자림무도 MASTERLISE` | `25cm` |
+| G | 8 | 8 | `goods` | `引っ掛けアクリルスタンド` | `걸이형 아크릴 스탠드` | `7.5cm` |
+| H | 8 | 8 | `goods` | `ラバーチャーム` | `러버 참` | `6.5cm` |
+| I | 24 | 10 | `goods` | `クリアポスター (A3)` | `클리어 포스터 (A3)` | `A3` |
+| J | 33 | 10 | `goods` | `ジャガードミニタオル` | `자카드 미니 타올` | `25cm` |
+| Last One | 1 | 1 | `hero` | `大猿悟空 SOFVICS` | `거대 원숭이 손오공 SOFVICS` | `26cm` |
+
+**M3.1 분류 근거**: A상은 라인업 대표 MASTERLISE. B~F는 표준 MASTERLISE 시리즈(피규어). G~J는 굿즈/잡화. Last One = hero (DC와 동일 상품 구조).
 
 ##### 1.4-DB.2.1. 매수 합계 검증식
 
@@ -118,6 +211,7 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `LINEUP_DRAGONBALL_DC_PRIZE_NAME_KO` | `"거대 원숭이 손오공 SOFVICS"` | |
 | `LINEUP_DRAGONBALL_DC_WINNERS_TOTAL` | 50 | 일본 캠페인 당첨자 수 |
 | `LINEUP_DRAGONBALL_DC_PRIZE_NOTE_KO` | `"ラストワン賞과 동일 상품. winners_total은 일본 캠페인 기준"` | UI 안내 |
+| `LINEUP_DRAGONBALL_DC_TIER_CLASS` | `"hero"` | **M3.1 신설** - 1.4.A.3 검증식 정합 |
 
 #### 1.4-DB.4. 출처
 
@@ -152,9 +246,11 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `dc.winnersTotal` | `LINEUP_DRAGONBALL_DC_WINNERS_TOTAL` | 1.4-DB.3 |
 | `dc.poolSizeDefault` | `DC_POOL_SIZE_DEFAULT` | 1.3 (라인업 공유) |
 | `dc.prizeNameJa` / `prizeNameKo` / `prizeNoteKo` | 1.4-DB.3 | 1.4-DB.3 |
+| `dc.tierClass` | `LINEUP_DRAGONBALL_DC_TIER_CLASS` (= `"hero"`) | **M3.1 신설** 1.4-DB.3 |
 | `sources` | `LINEUP_DRAGONBALL_SOURCES` | 1.4-DB.4 |
 | `assetsBasePath` | `LINEUP_DRAGONBALL_ASSETS_BASE_PATH` | 1.4-DB.1 |
 | `assetsAvailable` | `LINEUP_DRAGONBALL_ASSETS_AVAILABLE` | 1.4-DB.1 |
+| `lobbyHeroAssetPath` | `LINEUP_DRAGONBALL_LOBBY_HERO_ASSET_PATH` (= `"the_chronicle_of_goku_placeholder/lobby_hero.webp"`) | **M3.1 신설** 1.4-DB.1 + 1.7 |
 
 ### 1.4-OP. 라인업: 一番くじ ワンピース MONKEY.D.LUFFY-冒険の記憶と未来への航路- (**M3 신설**)
 
@@ -176,21 +272,24 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `LINEUP_ONEPIECE_BOX_SIZE_ESTIMATED` | true | "추정" 배지 |
 | `LINEUP_ONEPIECE_ASSETS_BASE_PATH` | `"monkey_d_luffy_placeholder"` | 자산 폴더 (사용자 외부 작업 대기) |
 | `LINEUP_ONEPIECE_ASSETS_AVAILABLE` | false | placeholder 미배치 (1.7.3 SVG fallback) |
+| `LINEUP_ONEPIECE_LOBBY_HERO_ASSET_PATH` | `"monkey_d_luffy_placeholder/lobby_hero.webp"` | **M3.1 신설** - 로비 카드 메인 이미지 (assetsAvailable=false면 placeholder gray fallback) |
 
 #### 1.4-OP.2. 등급별 매수 (count_estimated:true)
 
-| 등급 | 매수 | 종 수 | 일본어 | 한국어 |
-|---|---|---|---|---|
-| A | 1 | 1 | `モンキー・D・ルフィ 魂豪示像` | `몽키 D 루피 영혼호시상` |
-| B | 2 | 2 | `モンキー・D・ルフィ MASTERLISE` | `몽키 D 루피 MASTERLISE` |
-| C | 2 | 1 | `モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment` | `몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment` |
-| D | 3 | 1 | `モンキー・D・ルフィ ギア5 ONDIMENSION` | `몽키 D 루피 기어5 ONDIMENSION` |
-| E | 4 | 2 | `はこにわーるど` | `하코니와루도 (디오라마 박스)` |
-| F | 6 | 3 | `モンキー・D・ルフィ ミニフィギュア` | `몽키 D 루피 미니 피규어` |
-| G | 12 | 8 | `タオル` | `타올` |
-| H | 16 | 14 | `アクリルマグネット` | `아크릴 마그넷` |
-| I | 33 | 10 | `デスクアソート` | `데스크 아소트` |
-| Last One | 1 | 1 | `モンキー・D・ルフィ MASTERLISE PLUS` | `몽키 D 루피 MASTERLISE PLUS` |
+| 등급 | 매수 | 종 수 | tierClass | 일본어 | 한국어 |
+|---|---|---|---|---|---|
+| A | 1 | 1 | `hero` | `モンキー・D・ルフィ 魂豪示像` | `몽키 D 루피 영혼호시상` |
+| B | 2 | 2 | `main` | `モンキー・D・ルフィ MASTERLISE` | `몽키 D 루피 MASTERLISE` |
+| C | 2 | 1 | `main` | `モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment` | `몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment` |
+| D | 3 | 1 | `main` | `モンキー・D・ルフィ ギア5 ONDIMENSION` | `몽키 D 루피 기어5 ONDIMENSION` |
+| E | 4 | 2 | `main` | `はこにわーるど` | `하코니와루도 (디오라마 박스)` |
+| F | 6 | 3 | `main` | `モンキー・D・ルフィ ミニフィギュア` | `몽키 D 루피 미니 피규어` |
+| G | 12 | 8 | `goods` | `タオル` | `타올` |
+| H | 16 | 14 | `goods` | `アクリルマグネット` | `아크릴 마그넷` |
+| I | 33 | 10 | `goods` | `デスクアソート` | `데스크 아소트` |
+| Last One | 1 | 1 | `hero` | `モンキー・D・ルフィ MASTERLISE PLUS` | `몽키 D 루피 MASTERLISE PLUS` |
+
+**M3.1 분류 근거**: A상 魂豪示像은 BANDAI SPIRITS 최상급 도색 라인. B~D는 MASTERLISE/Revible Moment/ONDIMENSION 시리즈. E(디오라마 박스), F(미니 피규어)도 조형물이라 main. G~I 굿즈. Last One = MASTERLISE PLUS 강화판으로 hero.
 
 ##### 1.4-OP.2.1. 매수 합계 검증식
 
@@ -209,6 +308,7 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `LINEUP_ONEPIECE_DC_PRIZE_NAME_KO` | `"TO BE CONTINUED 거대 네임 피규어"` | |
 | `LINEUP_ONEPIECE_DC_WINNERS_TOTAL` | 100 | **드래곤볼 50과 차이** (라인업별 가변) |
 | `LINEUP_ONEPIECE_DC_PRIZE_NOTE_KO` | `"35cm 대형 피규어. winners_total은 일본 캠페인 기준"` | UI 안내 |
+| `LINEUP_ONEPIECE_DC_TIER_CLASS` | `"hero"` | **M3.1 신설** - 1.4.A.3 검증식 정합 |
 
 #### 1.4-OP.4. 출처
 
@@ -223,7 +323,12 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 
 #### 1.4-OP.5. LINEUP_ONEPIECE 객체
 
-1.4-DB.5와 동일 구조 (1.4.0 명세 정합). 출처 = 1.4-OP.1~4.
+1.4-DB.5와 동일 구조 (1.4.0 명세 정합). 출처 = 1.4-OP.1~4. **M3.1 추가 매핑**:
+
+| 키 | 값 | 출처 |
+|---|---|---|
+| `dc.tierClass` | `LINEUP_ONEPIECE_DC_TIER_CLASS` (= `"hero"`) | 1.4-OP.3 |
+| `lobbyHeroAssetPath` | `LINEUP_ONEPIECE_LOBBY_HERO_ASSET_PATH` | 1.4-OP.1 + 1.7 |
 
 ### 1.4.LINEUPS. 라인업 배열 + currentLineupId
 
@@ -239,8 +344,31 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 1. 1.4-XX 절 신설 (메타 + 등급 + DC + 출처 + LINEUP 객체).
 2. `LINEUPS` 배열에 추가.
 3. 매수 합계 검증식 추가 (1.4-XX.2.1).
-4. assets.js에 `LINEUP_XX_ASSETS_BASE_PATH` 추가.
-5. 단계 6 게이트 검증 룰 통과.
+4. **M3.1 추가**: 등급별 `tierClass` 부여 (1.4.A.4 분류 정책 정합) + DC `tierClass` 부여.
+5. **M3.1 추가**: `lobbyHeroAssetPath` 정의 (assets.js 매핑 + 1.7 자산 정책 정합).
+6. assets.js에 `LINEUP_XX_ASSETS_BASE_PATH` 추가.
+7. 1.4.A.3 검증식 통과 (hero ≥ 1 + main ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES).
+8. 단계 6 게이트 검증 룰 통과.
+
+## 1.4.B. View 상수 (M3.1 신설)
+
+라인업 로비 도입으로 view 모델 추가. spec 5.13.B.2 정합.
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `STATE_VIEW_LOBBY` | `"lobby"` | 라인업 선택 화면 (5.13.B) |
+| `STATE_VIEW_MAIN` | `"main"` | 본편 4탭 모델 (5.13.A 외) |
+| `STATE_VIEW_VALUES` | `[STATE_VIEW_LOBBY, STATE_VIEW_MAIN]` | 검증식용 enum |
+| `STATE_VIEW_DEFAULT` | `STATE_VIEW_MAIN` | lobbyAcked=true 시 부팅 default. lobbyAcked=false 시 main.js bootstrap에서 LOBBY 강제 |
+
+**dispatch type 상수** (M3.1 신설, 03_architecture에서 정확한 dispatch 모델 정의):
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `DISPATCH_TYPE_OPEN_LOBBY` | `"open_lobby"` | 5.13.B.6.1 |
+| `DISPATCH_TYPE_ENTER_LINEUP` | `"enter_lineup"` | 5.13.B.6.2 |
+
+기존 `set_current_lineup` (M3) / 기타 dispatch type 상수화는 단계 4 impl_plan에서 일괄 검토 (별도 사이클 후보). M3.1 본 사이클은 신규 2종만 상수화.
 
 ## 1.5. UI 표시 상수
 
@@ -249,6 +377,16 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `HISTORY_RECENT_LIMIT` | 50 | 전적 탭 최근 추첨 표시 한도 |
 | `PERCENT_BASE` | 100 | 분수→백분율 환산 |
 | `PERCENT_DISPLAY_DECIMALS` | 2 | 백분율 소숫점 자릿수 |
+| `LOBBY_GRID_COLS_MOBILE` | 1 | **M3.1 신설** - 로비 카드 그리드 열 수 (모바일, 5.13.B.4.1) |
+| `LOBBY_GRID_COLS_TABLET` | 2 | **M3.1 신설** - 로비 카드 그리드 열 수 (태블릿 이상, 5.13.B.4.1) |
+| `LOBBY_TABLET_BREAKPOINT_PX` | 768 | **M3.1 신설** - 태블릿 breakpoint (CSS media query, 5.13.B.4.1) |
+| `HERO_POP_SCALE_PEAK` | 1.18 | **M3.2 신설** - 결과 reveal hero 등급 등장 시 transform scale 피크 (페이지플립 카드 + DC 모달 공통). `RESULT_POP_SCALE_PEAK = 1.1` 대비 강화 (5.13.C.3) |
+| `HERO_GLOW_DURATION_MS` | 1200 | **M3.2 신설** - 결과 reveal hero 골드 글로우 펄스 1회 사이클 ms (페이지플립 카드 + DC 모달 공통) |
+| `HERO_STATIC_GLOW_BLUR_PX` | 12 | **M3.2 신설** - 추첨 탭 hero 카드 정적 글로우 박스 그림자 blur (5.13.C.2) |
+| `HERO_STATIC_GLOW_ALPHA` | 0.25 | **M3.2 신설** - 추첨 탭 hero 카드 정적 글로우 골드 알파 (PEEL_REVEAL_VIEW_MS 글로우 충돌 회피용 약한 강도) |
+| `HISTORY_DASHBOARD_COLS_MOBILE` | 2 | **M3.3 신설** - history 대시보드 모바일 그리드 열 수 (2x2). 사용자 결정 9.2 |
+| `HISTORY_DASHBOARD_COLS_TABLET` | 4 | **M3.3 신설** - history 대시보드 태블릿 이상 그리드 열 수 (전체+hero+main+goods 가로 정렬) |
+| `HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX` | 768 | **M3.3 신설** - 대시보드 breakpoint (LOBBY와 동일. 통일성 위해 동일 값 유지하나 별도 상수 - 변경 시 영향 격리) |
 
 ## 1.6. 구매 옵션 (M2 신설 + M2.1 보강)
 
@@ -501,6 +639,40 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `COLOR_NIGHT_GRAD_FROM` | `#1A1A2E` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - DC 패널 어두운 야간 그라디언트 시작 |
 | `COLOR_NIGHT_GRAD_TO` | `#2D2A4E` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - DC 패널 어두운 야간 그라디언트 끝 |
 | `COLOR_GOLD_DEEP` | `#B89651` | **2026-05-08 신설 (M3 단계 6 P0 2.3)** - 골드 그라디언트 중간 |
+| `COLOR_TIER_CLASS_HERO_BG_TINT` | `#FFF8E7` | **M3.2 신설** - hero 카드 배경 옅은 골드 틴트 (5.13.C.2) |
+| `COLOR_TIER_CLASS_HERO_GLOW_RGBA` | `"rgba(201, 169, 97, 0.25)"` | **M3.2 신설** - hero 카드 정적 글로우 골드 (HERO_STATIC_GLOW_ALPHA 정합) |
+| `COLOR_TIER_CLASS_MAIN_BG_TINT` | `#FFFFFF` | **M3.2 신설** - main 카드 배경 (= bg-card 동일, 시각 무변형) |
+| `COLOR_TIER_CLASS_GOODS_BG_TINT` | `#F3EDE0` | **M3.2 신설** - goods 카드 배경 옅은 회색 톤 (= bg-elevated 동일) |
+
+## 2.3. CSS 변수 ↔ JS 상수 매핑 (M3.2 신설, M3 단계 6 P0 2.4 / 2.5 학습 답습)
+
+styles/tokens.css의 CSS 변수와 numbers.js / colors.js 상수의 1:1 매핑. 단계 6 게이트 grep 의무.
+
+### 2.3.1. tier_class 색 토큰 (M3.2 신설)
+
+| CSS 변수 | 매핑 상수 (또는 hex) | 의미 |
+|---|---|---|
+| `--tier-class-hero-bg-tint` | `COLOR_TIER_CLASS_HERO_BG_TINT` (= `#FFF8E7`) | hero 카드 배경 |
+| `--tier-class-hero-glow-rgba` | `COLOR_TIER_CLASS_HERO_GLOW_RGBA` (= `rgba(201, 169, 97, 0.25)`) | hero 카드 정적 글로우 |
+| `--tier-class-hero-border` | `COLOR_GOLD_EDGE` (= `#C9A961`, 기존 재사용) | hero 카드 보더 |
+| `--tier-class-main-bg-tint` | `COLOR_TIER_CLASS_MAIN_BG_TINT` (= `#FFFFFF`, = `--bg-card`) | main 카드 배경 (무변형) |
+| `--tier-class-main-border` | `COLOR_BORDER_SUBTLE` (= `#E8DECF`, 기존 재사용) | main 카드 보더 (= `--border-subtle`) |
+| `--tier-class-goods-bg-tint` | `COLOR_TIER_CLASS_GOODS_BG_TINT` (= `#F3EDE0`, = `--bg-elevated`) | goods 카드 배경 |
+| `--tier-class-goods-border` | `COLOR_BORDER_SUBTLE` (기존 재사용) | goods 카드 보더 |
+
+### 2.3.2. hero 모션 토큰 (M3.2 신설)
+
+| CSS 변수 | 매핑 상수 | 의미 |
+|---|---|---|
+| `--motion-hero-pop-peak` | `HERO_POP_SCALE_PEAK` (= `1.18`) | hero reveal transform scale 피크 (1.5) |
+| `--motion-hero-glow-ms` | `HERO_GLOW_DURATION_MS` (= `1200ms`) | hero 글로우 펄스 사이클 (1.5) |
+| `--hero-static-glow-blur-px` | `HERO_STATIC_GLOW_BLUR_PX` (= `12px`) | hero 카드 정적 글로우 box-shadow blur (1.5) |
+
+### 2.3.3. 단계 6 게이트 grep (03_architecture 5.16, M3.2 신설)
+
+- styles/tokens.css 신규 변수 8종이 모두 본 표에 박제됨.
+- src/render/* CSS 셀렉터에서 `var(--tier-class-*)` / `var(--motion-hero-*)` / `var(--hero-static-glow-*)` 사용.
+- styles/main.css 인라인 hex / rgba / 수치 0건 (본 토큰 8종 + 기존 토큰 var() 경유 의무).
 
 # 3. 스토리지 (`src/data/storage.js`)
 
@@ -531,7 +703,8 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 라인업 무관. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
 | `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated**)) |
 | `kuji_current_lineup_id` | string | **M3 신설** - 활성 라인업 ID (1.4.LINEUPS 정합). 부팅 시 미존재면 `LINEUP_DEFAULT_ID` 부여. |
-| `kuji_schema_version` | number | **M3 신설** - 스키마 버전. v3 이전엔 `kuji_meta.schemaVersion`만 사용. v4부터 별도 키로 분리 (마이그레이션 일관성). |
+| `kuji_lobby_acked` | boolean | **M3.1 신설** - 라인업 로비 진입 완료 플래그. false = 첫 방문 (로비 노출). true = 마지막 라인업 자동 진입. spec 5.13.B (라인업 로비) 정합. |
+| `kuji_schema_version` | number | **M3 신설** - 스키마 버전. v3 이전엔 `kuji_meta.schemaVersion`만 사용. v4부터 별도 키로 분리 (마이그레이션 일관성). M3.1 v5. |
 
 ## 3.2. 마이그레이션 정책
 
@@ -589,6 +762,39 @@ localStorage.setItem("kuji_schema_version", "4")
 - v3 부분 키만 (예: history만 존재) → 부분 이전 정합.
 - 전역 키 (seed, skip_pick, meta) 보존 검증.
 
+3.2.6. **M3(v4) → M3.1(v5) 마이그레이션 - 라인업 로비 (M3.1 신설)**:
+
+기존 v4 사용자(이미 라인업을 사용 중)는 로비 재노출 없이 마지막 라인업으로 자동 진입. 첫 방문(빈 storage)만 로비 노출.
+
+**알고리즘**:
+```
+// 멱등 게이트: schemaVersion ≥ 5 또는 kuji_lobby_acked 키 존재 시 skip
+if (schemaVersion >= 5 || localStorage.getItem("kuji_lobby_acked") !== null):
+  return  // already migrated
+
+// v4 사용자 추론: kuji_current_lineup_id 존재 = 이미 라인업 사용 중
+existingLineupId = localStorage.getItem("kuji_current_lineup_id")
+if (existingLineupId !== null):
+  // 기존 사용자 → 로비 재노출 안 함
+  localStorage.setItem("kuji_lobby_acked", "true")
+else:
+  // 첫 방문자 또는 v4 미진입 사용자 → 로비 노출
+  localStorage.setItem("kuji_lobby_acked", "false")
+
+// schemaVersion bump
+localStorage.setItem("kuji_schema_version", "5")
+```
+
+**멱등 정합**: `schemaVersion ≥ 5` 또는 `kuji_lobby_acked` 키 존재 시 skip.
+
+**의존성**: 3.2.5 (v3→v4)가 선행. v3 사용자는 v3→v4→v5 순차 적용. loadState() 안에서 schemaVersion 비교로 자동 chain.
+
+**테스트 의무**: `tests/suites/storage_v5.test.js` 신설. 다음 시나리오 검증:
+- 빈 storage (첫 방문) → schemaVersion=5 + lobbyAcked=false.
+- v4 fixture (currentLineupId 존재) → schemaVersion=5 + lobbyAcked=true (재노출 안 함).
+- v3 fixture → v3→v4→v5 chain 적용 후 lobbyAcked=true.
+- v5 fixture → 멱등 (변경 0).
+
 # 4. 변경 이력
 
 4.1. 2026-05-02: M1 단계 2 design. placeholder 교체 + 一番くじ ドラゴンボール SSOT.
@@ -603,3 +809,6 @@ localStorage.setItem("kuji_schema_version", "4")
 4.10. 2026-05-03: **M2.1 단계 5 T19 결함 정정 → 단계 2 design B-α 재정정**. (1) 3.1 `kuji_unopened_tickets` 항목 스키마에 `lockedResult` 필드 추가 (null = raw, DrawResult 객체 = 통 선택 확인 시점 결정 + reveal 전 미공개). (2) 2.2 슬롯 색에 `COLOR_PICK_SLOT_SELECTED_BG` / `COLOR_PICK_SLOT_SELECTED_BORDER` 2종 추가 (B-α normal-selected 상태). (3) 3.1 `kuji_history` 항목의 `revealed` 필드 deprecated 표기 (B-α: history는 reveal 시점에만 append → 항상 true). (4) 3.2.3 마이그레이션에 `kuji_unopened_tickets[*].lockedResult = null` backfill 추가. schemaVersion 그대로 v3.
 4.11. 2026-05-03: **M2.1 단계 3 round 4 검증 결함 정정**. C-R4-1 (1.12 `PICK_FIRST_HINT_TEXT_KO` 값을 spec 5.14.7.2 본문과 일치 = "N매 모두 골라 확인 버튼을 눌러주세요. 결과는 시드와 슬롯 선택 순서로 결정됩니다."). M-R4-1 (3.2.4 신설 = B-α 재정정 in-place 마이그레이션. 기존 v3 사용자의 unopenedTickets[*].lockedResult 부재 항목에 null 부여, schemaVersion bump 없음, 멱등).
 4.12. 2026-05-08: **M3 단계 2 design - 다중 라인업**. (1) 1.1 `SCHEMA_VERSION` v3 → v4 갱신. (2) 1.4 절 전면 재구성: 1.4.0 라인업 구조 명세 신설 / 1.4-DB (드래곤볼) 절번호 시프트 (1.4.1~1.4.5 → 1.4-DB.1~5) + 상수명 prefix `LINEUP_DRAGONBALL_*` 변경 + `assetsBasePath`/`assetsAvailable` 필드 추가 / 1.4-OP (원피스) 신설 (메타 + 9등급 분포 + DC winners 100 + 출처) / 1.4.LINEUPS 배열 + `LINEUP_DEFAULT_ID` + `getLineupById`. (3) 1.7 자산 정책 라인업별 분기: 1.7.0 정책 / 1.7.1-OP 신설 / 1.7.2 자산 형식 정합 / 1.7.3 SVG fallback 신설. (4) 3.1 storage 키 라인업별 격리 (3.1.1) + 전역 (3.1.2) 분리 + `kuji_current_lineup_id` / `kuji_schema_version` 신설. (5) 3.2.5 v3→v4 마이그레이션 알고리즘 + 멱등 + 테스트 의무 (storage_v4.test.js). 사용자 결정 4건 정합 (storage A1 / seed 공유 A / 헤더 라벨 A / SVG fallback A).
+4.13. 2026-05-08: **M3.1 단계 2 design - 라인업 로비 + tier_class**. (1) 1.1 `SCHEMA_VERSION` v4 → v5 갱신. (2) 1.4.0 라인업 구조에 `lobbyHeroAssetPath` 필드 + `dc.tierClass` 필수 + `tiers[*].tierClass` 필수 추가. (3) 1.4.A 절 신설 = `TIER_CLASS_VALUES` 3단계 (hero/main/goods) + 검증식 (라인업당 hero/main/goods 각 ≥ 1) + 분류 정책. (4) 1.4-DB.2 / 1.4-OP.2 등급표에 `tierClass` 컬럼 추가 + DB.3 / OP.3 DC에 `_DC_TIER_CLASS = "hero"` 상수 추가 + DB.5 / OP.5 LINEUP 객체에 `dc.tierClass` / `lobbyHeroAssetPath` 매핑. (5) 라인업 추가 절차 8단계로 확장 (4 / 5 = M3.1 신규 항목). (6) 3.1.2 전역 키에 `kuji_lobby_acked` 추가. (7) 3.2.6 v4→v5 마이그레이션 알고리즘 + 멱등 + 테스트 의무 (storage_v5.test.js). 사용자 결정 5건 정합 (전체 화면 view / 드롭다운 quick-switch 유지 / 토글 미도입 / hero 1개 미리보기 / 헤더 라벨 클릭 활성).
+4.14. 2026-05-09: **M3.2 단계 2 design - tier_class 시각 적용 (round 1 정정 흡수)**.
+4.15. 2026-05-09: **M3.3 단계 2 design - tier_class 갤러리 그룹화 + history 대시보드**. (1) 1.4.A.5 호출처 표 확장 (tier-grid 또는 product-gallery + core/history.tierClassCounts 추가). (2) **1.4.A.6 절 신설** - TIER_CLASS_LABEL_KO 한국어 라벨 ("메인 등급" / "표준 등급" / "굿즈"). (3) 1.5에 HISTORY_DASHBOARD_COLS_MOBILE=2 / HISTORY_DASHBOARD_COLS_TABLET=4 / HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX=768 3종 신설. 사용자 결정 5건 정합 (한국어 라벨 / 2x2 그리드 / hero→main→goods / Last One hero 마지막 / 통합 카운트). (1) 1.4.A.5 절 신설 - `getTierClassForTier(lineup, tier)` 헬퍼 함수 명세 (사용자 결정 9.4). (2) 1.5에 HERO_POP_SCALE_PEAK=1.18 / HERO_GLOW_DURATION_MS=1200 / HERO_STATIC_GLOW_BLUR_PX=12 / HERO_STATIC_GLOW_ALPHA=0.25 4종 신설. (3) 2.2에 COLOR_TIER_CLASS_HERO_BG_TINT / HERO_GLOW_RGBA / MAIN_BG_TINT / GOODS_BG_TINT 4종 신설. (4) **2.3 절 신설** - CSS 변수 ↔ JS 상수 매핑 표 (round 1 P1 3.1 흡수, M3 단계 6 P0 2.4 / 2.5 학습 답습). (5) **round 1 P0 2.1 정정** - "결과 모달" 표현을 "결과 reveal" / 페이지플립 인플레이스 (`peel-card.js`)로 교체 (M2 K-1 정합). 1.4.A.5 호출처 4번째 항목 result-modal.js → peel-card.js. 1.5 HERO_POP/GLOW 의미문 정정. (6) **round 1 P1 3.2 흡수** - spec 5.13.C.3.1에 lookup 주체 = 결과 표시 영역 명기. (7) **round 1 P2 4.1 흡수** - OR 중복 의도 박제 (Last One redundant + lookup 실패 fallback). 사용자 결정 4건 정합 (DC 모달도 hero / minor-row 속성만 / 약한 골드 글로우 / 헬퍼 신설).

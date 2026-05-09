@@ -1,6 +1,7 @@
 // 상품 갤러리 (M2 재설계, 4장 영역 5). 디폴트 접힘 + 펼침 토글. 펼치면 11종 모두 자세히.
+// M3.3 갱신 (5.13.D.2): tier_class 그룹화 (hero → main → goods + Last One hero 마지막).
 
-import { getLineupById } from "../data/numbers.js";
+import { getLineupById, TIER_CLASS_LABEL_KO, TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS, getTierClassForTier } from "../data/numbers.js";
 import { renderProductItem } from "./product-item.js";
 
 export function renderProductGallery(state, dispatch) {
@@ -26,21 +27,48 @@ export function renderProductGallery(state, dispatch) {
 
   const isLastDrawAhead = state.boxState.deck.length === 1;
 
-  const list = document.createElement("div");
-  list.className = "product-gallery-list";
+  // M3.3: tier_class 그룹화. 박스 등급 순서 보존 + Last One은 hero 마지막.
+  const groups = {
+    [TIER_CLASS_HERO]: [],
+    [TIER_CLASS_MAIN]: [],
+    [TIER_CLASS_GOODS]: [],
+  };
   for (const t of lineup.tiers) {
-    const item = renderProductItem({
-      tierMeta: t,
-      drawnCount: drawnByTier[t.tier],
-      drawnTypeIndices: drawnTypesByTier[t.tier],
-      isLastOnePulsing: t.tier === "Last One" && isLastDrawAhead && drawnByTier["Last One"] === 0,
-      isJustDrawn: state.lastDrawnTier === t.tier,
-      isExpanded: state.expandedTier === t.tier,
-      onToggle: (tier) => dispatch({ type: "toggle_tier", tier }),
-    });
-    list.appendChild(item);
+    if (t.tier === "Last One") continue;
+    const tc = getTierClassForTier(lineup, t.tier);
+    if (tc && groups[tc]) groups[tc].push(t);
   }
-  el.appendChild(list);
+  const lastOne = lineup.tiers.find((t) => t.tier === "Last One");
+  if (lastOne) groups[TIER_CLASS_HERO].push(lastOne);
+
+  const orderedClasses = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS];
+  for (const tc of orderedClasses) {
+    const items = groups[tc];
+    if (items.length === 0) continue;  // 빈 그룹 헤더 미표시 (5.13.D.2.6)
+    const section = document.createElement("div");
+    section.className = "product-gallery-section";
+    section.dataset.tierClass = tc;
+    const sectionHeader = document.createElement("h3");
+    sectionHeader.className = "product-gallery-section-header";
+    sectionHeader.textContent = TIER_CLASS_LABEL_KO[tc];
+    section.appendChild(sectionHeader);
+    const list = document.createElement("div");
+    list.className = "product-gallery-list";
+    for (const t of items) {
+      const item = renderProductItem({
+        tierMeta: t,
+        drawnCount: drawnByTier[t.tier],
+        drawnTypeIndices: drawnTypesByTier[t.tier],
+        isLastOnePulsing: t.tier === "Last One" && isLastDrawAhead && drawnByTier["Last One"] === 0,
+        isJustDrawn: state.lastDrawnTier === t.tier,
+        isExpanded: state.expandedTier === t.tier,
+        onToggle: (tier) => dispatch({ type: "toggle_tier", tier }),
+      });
+      list.appendChild(item);
+    }
+    section.appendChild(list);
+    el.appendChild(section);
+  }
 
   return el;
 }

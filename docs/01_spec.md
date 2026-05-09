@@ -23,13 +23,27 @@
 3.3. 마우스는 데스크톱에서 터치와 동일 동작.
 3.4. 뜯기 동작은 좌측 가장자리 드래그 임계값 (`02_data` 1.8 `PEEL_DRAG_THRESHOLD_RATIO`) 또는 카드 클릭(보조).
 
-# 4. 화면 흐름 - 4탭 모델 (M2 재설계, 위→아래 우선순위)
+# 4. 화면 흐름 - 4탭 모델 (M2 재설계, 위→아래 우선순위) + **로비 view (M3.1 신설)**
 
 화면 위쪽 우선순위 정책: 모바일에서 스크롤 부담 최소화하도록 핵심 정보를 위에서부터 7단 배치.
 
+**view 모델 (M3.1 신설)**: `state.view ∈ {"lobby", "main"}`. lobby 상태면 4탭 미노출, 라인업 선택 카드 그리드만 노출. main 상태가 기본 탭 모델 (아래 [추첨 탭] 등). 5.13.B 정합.
+
 ```
+[로비 view] (M3.1 신설, 5.13.B)
+  1. 헤더: 시뮬레이터 타이틀 + 면책 보조 라벨 (1줄)
+  2. 라인업 카드 그리드 (N개 카드, 모바일 1열 / 태블릿 2열)
+     각 카드:
+       ├─ lobby_hero 이미지 (assetsAvailable=false면 placeholder gray + IP 라벨)
+       ├─ 한국어 제목 (titleKo)
+       ├─ IP 라벨 + 발매일 + 가격/매수
+       ├─ 메인 상품 미리보기 슬롯 (tier_class=hero 1개 = A상, 5.13.B.4)
+       └─ "이 라인업으로 진입" 버튼
+  3. 푸터: schemaVersion + 빌드 메타
+
+[main view = 기본 4탭 모델]
 [추첨 탭] (기본)
-  1. 헤더 (압축): 라인업 타이틀 + 가격 + 추정 배지 + **라인업 IP 라벨 (M3 신설, 5.13.A.3 "DRAGONBALL"/"ONE PIECE"/...)** (1줄)
+  1. 헤더 (압축): 라인업 타이틀 + 가격 + 추정 배지 + **라인업 IP 라벨 (M3 신설, 5.13.A.3 "DRAGONBALL"/"ONE PIECE"/...). M3.1 갱신: 클릭 = 로비 복귀 (5.13.B.5)** (1줄)
   2. 메인 캐러셀 (A~F, 1매 등급 6개): 가로 드래그.
      ├─ 중심 카드 = 큰 상품 이미지 + 등급 배지 + 1/1
      ├─ 좌우 미리보기 (peek)
@@ -54,7 +68,7 @@
 
 [전적 탭] (M1 그대로 + 새 디자인 언어)
 [Double Chance 탭] (M1 그대로 + 새 디자인 언어)
-[설정 탭] (M1 그대로 + 새 디자인 언어 + M2.1 "통에서 선택 건너뛰기" 체크박스 + **M3 'Lineup' 섹션 dropdown (5.13.A.4)**)
+[설정 탭] (M1 그대로 + 새 디자인 언어 + M2.1 "통에서 선택 건너뛰기" 체크박스 + **M3 'Lineup' 섹션 dropdown (5.13.A.4) + M3.1 "라인업 선택 화면으로" 버튼 (5.13.B.5)**)
 
 [하단 탭 바] 4탭 SVG 아이콘 (추첨 / 전적 / DC / 설정, 02_data 1.10)
 
@@ -66,9 +80,10 @@
   └─ 추정 출처
 ```
 
-4.1. **첫 진입**: 면책 안내 → 추첨 탭 → 구매 씬.
-4.2. **이후 진입**: 인벤토리 잔존 시 뜯기 씬, 0매면 구매 씬.
+4.1. **첫 진입 (M3.1 갱신)**: 면책 안내 → **로비 view (lobbyAcked=false 시, 5.13.B)** → 라인업 선택 → 추첨 탭 → 구매 씬.
+4.2. **이후 진입**: 인벤토리 잔존 시 뜯기 씬, 0매면 구매 씬. lobbyAcked=true이므로 마지막 라인업 자동 진입.
 4.3. **탭 전환**: 하단 탭 클릭 → `state.currentTab` 갱신 → 본문만 다시 렌더.
+4.4. **로비 ↔ main view 전환 (M3.1 신설, 5.13.B.5)**: 헤더 라인업 라벨 클릭 또는 설정 탭 "라인업 선택 화면으로" 버튼 → `dispatch({type: 'open_lobby'})` → state.view = 'lobby'. 로비 카드 클릭 → `dispatch({type: 'enter_lineup', lineupId})` → state.currentLineupId 갱신 + state.lobbyAcked = true + state.view = 'main'.
 
 # 5. 메커닉 상세
 
@@ -234,17 +249,18 @@
 5.13.A.2.2. **전역 키 (라인업 무관)**: `kuji_seed` (사용자 결정 8.2 (A) = 라인업 공유) / `kuji_settings_skip_pick` / `kuji_meta` / `kuji_current_lineup_id` / `kuji_schema_version`. 02_data 3.1.2 정합.
 5.13.A.2.3. **격리 효과**: 라인업 A에서 박스 N매 진행 → 라인업 B 전환 → 라인업 A 복귀 시 박스 + 인벤토리 + 이력 + DC 모두 N매 그대로 보존. 수집/완주 경험 보존.
 
-### 5.13.A.3. 헤더 라인업 라벨 (사용자 결정 8.3 (A))
+### 5.13.A.3. 헤더 라인업 라벨 (사용자 결정 8.3 (A) → **M3.1 갱신**)
 
-5.13.A.3.1. 헤더에 활성 라인업 짧은 라벨 (`lineup.ip`, 예: `"DRAGONBALL"` / `"ONE PIECE"`) 정보성 표시.
-5.13.A.3.2. 클릭 인터랙션 없음 (M3 보수적 스코프). 라인업 변경은 5.13.A.4 설정 탭에서.
+5.13.A.3.1. 헤더에 활성 라인업 짧은 라벨 (`lineup.ip`, 예: `"DRAGONBALL"` / `"ONE PIECE"`) 표시.
+5.13.A.3.2. **M3.1 갱신 (사용자 결정 9.5)**: 클릭 = 로비 view 복귀 (`dispatch({type: 'open_lobby'})`). 5.13.B.5.2 정합. 클릭 affordance는 라벨 우측에 꺾쇠 아이콘 (`›`) 또는 "변경" 텍스트 보강. M3 시점의 "클릭 인터랙션 없음" 정책은 폐기.
 
-### 5.13.A.4. 설정 탭 'Lineup' 섹션
+### 5.13.A.4. 설정 탭 'Lineup' 섹션 (**M3.1 갱신** - quick-switch 보조 경로로 위상 변경, 사용자 결정 9.2)
 
-5.13.A.4.1. 설정 탭 상단에 'Lineup' 섹션 신설. 현재 라인업 표시 + dropdown (또는 라디오 리스트).
+5.13.A.4.1. 설정 탭 상단에 'Lineup' 섹션. 현재 라인업 표시 + dropdown (또는 라디오 리스트). **M3.1**: 라인업 전환의 메인 경로는 5.13.B 로비 화면. 본 섹션은 이미 라인업을 인지한 사용자의 **빠른 전환** 경로로 유지.
 5.13.A.4.2. 사용자가 다른 라인업 선택 → **확인 모달**: "라인업을 전환합니다. 현재 라인업 데이터(박스 / 인벤토리 / 이력 / DC)는 보존됩니다. 진행 중인 reveal / 격자 선택은 폐기됩니다."
-5.13.A.4.3. 확인 시 `dispatch({type: 'set_current_lineup', lineupId})` → main.js가 새 라인업 공간 로드 + rerender.
+5.13.A.4.3. 확인 시 `dispatch({type: 'set_current_lineup', lineupId})` → main.js가 새 라인업 공간 로드 + rerender. **M3.1**: lobbyAcked는 true 그대로 유지 (재방문자가 quick-switch한 경우는 로비 재노출 안 함).
 5.13.A.4.4. **라인업 전환 시 폐기되는 메모리 only state**: `pendingPeelResult` (메모리 전용 reveal 상태) / `selectedGridIndices` (B-α 격자 선택 메모리). 영속 데이터(history / inventory / DC / box) 0건 손실.
+5.13.A.4.5. **M3.1 신설**: 본 섹션 아래에 "라인업 선택 화면으로" 버튼 (5.13.B.5.1 보조 진입 경로). 클릭 = `dispatch({type: 'open_lobby'})`.
 
 ### 5.13.A.5. 자산 fallback (사용자 결정 8.4 (A))
 
@@ -257,6 +273,183 @@
 5.13.A.6.1. 02_data 1.4-XX 절 신설 (메타 + 등급 + DC + 출처 + LINEUP 객체 + 검증식).
 5.13.A.6.2. `LINEUPS` 배열 추가 + 02_data 1.7.1-XX 자산 매핑 추가.
 5.13.A.6.3. 단계 6 게이트 검증 (라인업 격리 + 등급 수 가변성 + box.id 충돌 0).
+5.13.A.6.4. **M3.1 추가**: 등급별 `tierClass` 부여 (02_data 1.4.A.4) + DC `tierClass` + `lobbyHeroAssetPath` 정의 + 1.4.A.3 검증식 통과.
+
+## 5.13.B. 라인업 로비 (M3.1 신설)
+
+### 5.13.B.1. 목적
+
+설정 탭에 묻혀있던 라인업 전환을 메인 흐름으로 승격. 첫 방문자에게 IP 선택을 의식 행위로 만들고, 라인업 N개 (M3.1=2, M4+=3+) 확장에 자연스러운 진입 흐름을 제공.
+
+### 5.13.B.2. view 모델 (사용자 결정 9.1)
+
+5.13.B.2.1. `state.view ∈ {"lobby", "main"}` (M3.1 신설).
+5.13.B.2.2. 옵션 X1 채택 (전체 화면). 시트/모달 오버레이가 아닌 본편과 동등한 view 단위.
+5.13.B.2.3. lobby view 시 4탭 바 미노출. 본편 컴포넌트(헤더 / 캐러셀 / 마이너 row 등) 미렌더.
+
+### 5.13.B.3. 진입 흐름 (사용자 결정 9.3 - 토글 미도입)
+
+5.13.B.3.1. **첫 방문자**: storage `kuji_lobby_acked === false` (또는 키 부재) → 면책 모달 dismiss 후 lobby view 자동 진입.
+5.13.B.3.2. **재방문자**: storage `kuji_lobby_acked === true` → main view 자동 진입 (마지막 라인업으로). 로비 재노출 없음.
+5.13.B.3.3. 1회 ack 흐름. "다음부터 이 라인업으로 시작" 토글 미도입 (사용자 결정 9.3).
+5.13.B.3.4. 5.13.B.5 보조 진입 경로로 언제든 lobby view 복귀 가능.
+
+### 5.13.B.4. 카드 구성 (사용자 결정 9.4 - hero 1개 미리보기)
+
+5.13.B.4.1. 라인업 카드 N개를 그리드 레이아웃으로 노출. 모바일 1열 / 태블릿 이상 2열 (반응형).
+5.13.B.4.2. 카드 구성 요소 (위→아래 순서):
+
+| # | 영역 | 내용 | 자산 부재 시 fallback |
+|---|---|---|---|
+| 1 | lobby hero 이미지 | `lineup.lobbyHeroAssetPath` (예: `the_chronicle_of_goku_placeholder/lobby_hero.webp`) | placeholder gray + 라인업 IP 라벨 (가운데 정렬) |
+| 2 | 한국어 제목 | `lineup.titleKo` | - |
+| 3 | IP 라벨 | `lineup.ip` (예: `"DRAGONBALL"`) | - |
+| 4 | 메타 한 줄 | 발매일 + 가격(엔) + 박스 매수 + 추정 배지 (boxSizeEstimated 시) | - |
+| 5 | 메인 상품 미리보기 | tier_class === "hero" 등급 중 박스 등급 첫 항목 1개 (= 보통 A상) 썸네일 + 등급 라벨 + 한국어 상품명 | SVG fallback (1.7.3) + 등급 색 보더 |
+| 6 | "이 라인업으로 진입" 버튼 | 풀 폭 버튼. CTA 색 = 라인업 IP 액센트 또는 브랜드 빨강 | - |
+
+5.13.B.4.3. **메인 상품 미리보기 산출식** (1.4.A 정합):
+```
+heroTiers = lineup.tiers.filter(t => t.tierClass === "hero" && t.tier !== "Last One")
+preview = heroTiers[0]   // 통상 A상
+```
+Last One도 hero지만 미리보기 슬롯에서는 A상 우선. 박스 등급 첫 hero를 라인업 대표로 채택. heroTiers 배열이 비어있으면 1.4.A.3 검증식 위반이라 부팅 실패 (선조건).
+
+5.13.B.4.4. 활성 라인업(`state.currentLineupId`와 일치하는 카드)에는 "현재" 배지 + 카드 보더 강조.
+
+### 5.13.B.5. 보조 진입 경로 (사용자 결정 9.5 - 헤더 라벨 클릭 활성)
+
+5.13.B.5.1. 설정 탭 'Lineup' 섹션 하단 "라인업 선택 화면으로" 버튼 → `dispatch({type: 'open_lobby'})`.
+5.13.B.5.2. 헤더 라인업 라벨 클릭 (5.13.A.3 갱신) → `dispatch({type: 'open_lobby'})`. 클릭 affordance 시각 보강 (꺾쇠 아이콘).
+
+### 5.13.B.6. dispatch 신규
+
+5.13.B.6.1. **`dispatch({type: 'open_lobby'})`**: state.view = 'lobby'. currentLineupId / lobbyAcked 보존. main view에서만 호출 가능 (lobby에서 호출 시 no-op).
+5.13.B.6.2. **`dispatch({type: 'enter_lineup', lineupId})`**:
+- state.currentLineupId = lineupId (변경 시 라인업 공간 재로드).
+- state.lobbyAcked = true.
+- state.view = 'main'.
+- saveState(currentLineupId, lobbyAcked: true).
+- 메모리 only state(`pendingPeelResult` / `selectedGridIndices`) 폐기 (5.13.A.4.4 정합).
+- rerender (lobby → main 전환).
+
+5.13.B.6.3. **기존 `set_current_lineup` 유지** (5.13.A.4.3): 설정 탭 quick-switch 전용. lobbyAcked 변경 안 함. enter_lineup과 의도 분리.
+
+### 5.13.B.7. 자산 정책
+
+5.13.B.7.1. `lobbyHeroAssetPath`는 라인업별 `assetsBasePath` 하위 `lobby_hero.webp`. assetsAvailable=false면 placeholder gray + IP 라벨로 fallback (5.13.A.5 정책 답습).
+5.13.B.7.2. 라이선스 안전 정책 (5.13.A.5.2): 자산 부재 시 placeholder는 라인업 IP 텍스트만 표기, IP 비주얼/캐릭터 비표기.
+
+### 5.13.B.8. 비목표 (M3.1 한정)
+
+5.13.B.8.1. 카드 swipe / 디테일 시트 / 영상 미리보기 등 풍부한 인터랙션 - 차기 사이클.
+5.13.B.8.2. 라인업 추천 / 정렬 (인기순, 발매일순 등) - N=2 시점 의미 약함.
+5.13.B.8.3. 본편 화면(추첨/기록/DC)의 tier_class 시각 적용 - **M3.2에서 흡수**.
+5.13.B.8.4. 로비 다국어 - 한국어/일본어만 (현행 정책).
+
+## 5.13.C. tier_class 시각 적용 (M3.2 신설)
+
+### 5.13.C.1. 목적
+
+M3.1에서 데이터 메타로 도입한 tier_class(hero/main/goods)를 본편 화면 시각으로 흘려보냄. 등급 위상의 "느낌"을 사용자 시각에 전달. 등급 색(A=골드, B=실버 ...)은 그대로 유지하고, 클래스는 **카드 보더/배경 톤** + **결과 reveal 등장 모션** (추첨 = 페이지플립 인플레이스 / DC = 결과 모달)으로 표현.
+
+**M2 K-1 정합 (8.8)**: 추첨 결과는 모달 미사용. 페이지플립 카드(`peel-card.js`) 내부 면 + 4장 영역 2/3/4 인플레이스 갱신. DC 결과는 별도 모달 유지(`dc-result-modal.js`).
+
+### 5.13.C.2. 추첨 탭 hero-carousel / minor-row 액센트 (사용자 결정 M3.2 9.1~9.3)
+
+5.13.C.2.1. **카드 속성 부착**: hero-card / minor-row-item 모두 `data-tier-class` 속성 부착. 값 = `getTierClassForTier(lineup, tier)` (02_data 1.4.A.5).
+
+5.13.C.2.2. **CSS 셀렉터 적용** (styles/main.css 신설):
+
+| tier_class | 카드 보더 | 카드 배경 | 글로우 |
+|---|---|---|---|
+| `hero` | `var(--gold-edge)` | `var(--tier-class-hero-bg-tint)` | 약한 정적 골드 박스 그림자 (`HERO_STATIC_GLOW_BLUR_PX` blur + `HERO_STATIC_GLOW_ALPHA` 알파) |
+| `main` | `var(--border-subtle)` (기존) | `var(--tier-class-main-bg-tint)` (= bg-card, 무변형) | 없음 |
+| `goods` | `var(--border-subtle)` | `var(--tier-class-goods-bg-tint)` (= bg-elevated, 옅은 회색) | 없음 |
+
+5.13.C.2.3. **PEEL_REVEAL_VIEW_MS 글로우와의 충돌 회피**: hero 정적 글로우는 약한 강도(알파 0.25)로 PEEL 뽑힌 직후 강한 글로우와 시각 분리. PEEL 글로우는 reveal 직후 1.5초 동안 강한 효과 → 페이드 → 정적 hero 글로우 잔존.
+
+5.13.C.2.4. **minor-row 시각 차이**: 현재 minor-row 등급(드래곤볼 G/H/I/J + 원피스 G/H/I)은 모두 goods 클래스. data-tier-class 속성만 부착(차기 사이클 hook). 시각 변화는 미세(보더 그대로 + 배경 옅은 회색 톤).
+
+### 5.13.C.3. 결과 reveal hero 등장 특별 모션 (사용자 결정 M3.2 9.1)
+
+**적용 영역**: 추첨 결과 = 페이지플립 카드 인플레이스 (`peel-card.js`, M2 K-1 정합). DC 결과 = `dc-result-modal.js`.
+
+5.13.C.3.1. **분기 조건**: `result.isLastOne === true` 또는 `getTierClassForTier(lineup, result.tier) === TIER_CLASS_HERO`. lookup 주체는 결과 표시 영역(렌더 모듈). main.js dispatch는 `result` + `lineup` 인자만 전달, 클래스 판정은 1.4.A.5 헬퍼.
+
+  **OR 중복 의도**: Last One의 tier_class도 hero (1.4-DB.2 / 1.4-OP.2). 따라서 둘째 항만으로 충분하나 첫째 항을 명시적으로 둠 = result 객체에 "Last One" tier 라벨 미부여 흐름(5.10.6) + tierClass lookup 실패 안전 fallback. 의도적 redundant.
+
+5.13.C.3.2. **hero 모션 적용 효과** (페이지플립 카드 / DC 모달 공통):
+- 카드(또는 모달 카드) transform scale 피크 = `HERO_POP_SCALE_PEAK` (= 1.18, 02_data 1.5).
+- 결과 텍스트 골드 글로우 1회 펄스 (`HERO_GLOW_DURATION_MS` = 1200ms 동안 페이드 인 → 아웃).
+- 등급 색은 기존 `TIER_COLORS` 유지.
+
+5.13.C.3.3. **분기 외 (main / goods)**: 기존 `RESULT_POP_SCALE_PEAK = 1.1` 모션 유지. 회귀 위험 0.
+
+5.13.C.3.4. **DC 결과 모달 정합**: DC.tierClass === hero (1.4-DB.3 / 1.4-OP.3). dc-result-modal.js도 5.13.C.3.2와 동일 hero 모션 적용. 사용자가 DC 당첨을 "특별한 느낌"으로 인지.
+
+### 5.13.C.4. 비목표 (M3.2 한정)
+
+5.13.C.4.1. **상품 갤러리 클래스 그룹화** - 차기 사이클.
+5.13.C.4.2. **history 탭 클래스별 통계** - 차기 사이클.
+5.13.C.4.3. **라인업별 IP 액센트 색** - 라인업 N≥3 도달 시 재검토.
+5.13.C.4.4. **mid 클래스 도입** (4분류) - M3.1 plan 8.2.3 동결 정책 유지 (02_data 1.4.A.4 분류 정책 정합).
+
+## 5.13.D. tier_class 확장 시각 (M3.3 신설) - 갤러리 그룹화 + history 대시보드
+
+### 5.13.D.1. 목적
+
+M3.2에서 추첨 탭 + 결과 reveal에 적용한 tier_class를 갤러리 / history 영역으로 확장. 사용자가 "수집 진행도"를 직관적으로 인지하도록 hero/main/goods 단위로 시각 분할.
+
+### 5.13.D.2. 상품 갤러리 클래스 그룹화 (사용자 결정 9.1 / 9.3 / 9.4)
+
+5.13.D.2.1. **펼침 상태(`galleryExpanded === true`)에서만 그룹화 적용**. 접힘 상태는 기존 흐름 그대로 (회귀 위험 0).
+
+5.13.D.2.2. **그룹 정렬 순서** (사용자 결정 9.3): hero → main → goods (위상 내림차순). 박스 등급 순서(A → B → ...)는 각 그룹 내부에서 보존.
+
+5.13.D.2.3. **Last One 위치** (사용자 결정 9.4): hero 그룹의 **마지막 자리**. 박스 등급 첫 자리 hero(통상 A상)부터 순서대로 + 마지막에 Last One.
+
+5.13.D.2.4. **섹션 헤더**: 각 그룹 위에 한국어 라벨 (`TIER_CLASS_LABEL_KO`, 02_data 1.4.A.6).
+- hero → "메인 등급"
+- main → "표준 등급"
+- goods → "굿즈"
+
+5.13.D.2.5. **섹션 헤더 시각**: 작은 헤딩(`<h3>` 등) + tier_class 색 톤 액센트(예: 좌측 색 막대, 라인업 IP 액센트는 비목표 유지).
+
+5.13.D.2.6. **빈 그룹 처리**: 라인업에 해당 클래스 등급이 0개일 경우 그룹 헤더 미표시(현재 모든 라인업이 hero/main/goods 각 ≥ 1이므로 실제로는 미발생, 1.4.A.3 검증식 정합).
+
+### 5.13.D.3. history 탭 상단 대시보드 (사용자 결정 9.2 / 9.5)
+
+5.13.D.3.1. **위치**: history 탭 진입 시 가장 먼저 노출(상단). 기존 history 리스트는 대시보드 아래 그대로 유지(회귀 위험 0).
+
+5.13.D.3.2. **카운터 카드 4개**: 전체 / hero / main / goods. 각 카드 = 큰 숫자 + tier_class 색 톤 + 한국어 라벨.
+
+5.13.D.3.3. **레이아웃** (사용자 결정 9.2):
+- 모바일(`< HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX`): 2x2 그리드 (`HISTORY_DASHBOARD_COLS_MOBILE = 2`).
+- 태블릿 이상: 4열 가로 (`HISTORY_DASHBOARD_COLS_TABLET = 4`).
+
+5.13.D.3.4. **카운터 산출 (M3.3 신설)**: `core/history.tierClassCounts(state.history, lineup)` 호출. 활성 라인업 전체 history (라인업별 격리, 사용자 결정 9.4) → `{ hero, main, goods, total }` 반환.
+
+5.13.D.3.5. **카드 시각 매트릭스**:
+
+| 카드 | 라벨 | 배경 | 강조 |
+|---|---|---|---|
+| 전체 | "전체" | `var(--bg-card)` | 큰 숫자 |
+| hero | `TIER_CLASS_LABEL_KO[hero]` (= "메인 등급") | `var(--tier-class-hero-bg-tint)` | 골드 액센트 |
+| main | `TIER_CLASS_LABEL_KO[main]` (= "표준 등급") | `var(--tier-class-main-bg-tint)` | 무변형 |
+| goods | `TIER_CLASS_LABEL_KO[goods]` (= "굿즈") | `var(--tier-class-goods-bg-tint)` | 옅은 회색 |
+
+5.13.D.3.6. **빈 history 시**: 대시보드는 표시하되 모든 카운터 0. 빈 상태 안내 문구는 기존 흐름 그대로 (대시보드 아래 history 리스트 영역).
+
+5.13.D.3.7. **받은/미받은 분리 미도입** (사용자 결정 9.5): hero 카운터는 통합 카운트만(reveal 완료 history 항목 그대로 카운트). M2 requiresReceive 플래그와 본 카운터는 무관.
+
+### 5.13.D.4. 비목표 (M3.3 한정)
+
+5.13.D.4.1. 박스별 분리 통계 - 활성 라인업 전체 이력만.
+5.13.D.4.2. 그래프 / 차트 UI - 단순 카운트만.
+5.13.D.4.3. 라인업별 IP 액센트 색 - M3.1 / M3.2 비목표 유지.
+5.13.D.4.4. mid 클래스 도입 - M3.1 동결 정책 유지.
+5.13.D.4.5. M4 천장 룰 - 별도 사이클.
 
 ## 5.14. 통 선택 (Pick from Bin) - M2.1 신설 + B-α 재정정 (단계 5 T19 결함 정정)
 
@@ -395,3 +588,6 @@
 8.11. 2026-05-03: **M2.1 단계 3 round 4 검증 결함 정정 (자동 재시도 1회)**. C-R4-1 (5.14.7.2 spec 본문 vs 02_data 1.12 PICK_FIRST_HINT_TEXT_KO 값 일치 - 02_data + src/data/numbers.js 동시 갱신). C-R4-2 (5.14.4.5 Last One 슬롯 회색화 시점 - 격자 닫힘 시점 후 다음 사이클 격자 재진입 시 시각 분리 정합 명확화). M-R4-1 (02_data 3.2.4 신설 - 기존 v3 사용자의 unopenedTickets[*].lockedResult in-place backfill 정책 추가, schemaVersion bump 없음).
 8.12. 2026-05-03: **M2.1 B-α 보강 - 자동 선택 버튼 (사용자 명시 승인)**. 5.14.4.8 신설 = 격자 패널 하단 "자동 선택 N매" 버튼 (잔여 일반 슬롯 중 격자 인덱스 오름차순 첫 N개를 selected로 일괄 설정. 메모리 토글만. PRNG / drawOne 호출 0. 결정론 영향 0). 사용자가 자동 선택 후 변경 가능. skip ON과의 차이 명시.
 8.13. 2026-05-08: **M3 단계 2 design**. (1) 5.13.A **다중 라인업 절 신설** (5.13.A.1 활성 라인업 / 5.13.A.2 격리 정책 / 5.13.A.3 헤더 라벨 / 5.13.A.4 설정 탭 dropdown / 5.13.A.5 자산 fallback / 5.13.A.6 라인업 추가 절차). (2) 4장 헤더에 라인업 IP 라벨 추가 + 설정 탭에 'Lineup' 섹션 추가. (3) 7.15~7.18 엣지 케이스 신설 (전환 시 진행 중 reveal / 새로고침 / 마이그레이션 실패 / 라인업 가변성). 사용자 결정 4건 정합 (전환 UI A / 격리 정책 A1 / 정리 라운드 A / kuji_seed 공유 A / 헤더 라벨만 A / 자산 SVG fallback A).
+8.14. 2026-05-08: **M3.1 단계 2 design - 라인업 로비 + tier_class**. (1) 4장 view 모델 신설 (state.view ∈ {'lobby', 'main'}) + [로비 view] 화면 구성 추가 + 4.1 첫 진입 흐름 갱신 (면책 → 로비 → 라인업 선택 → 추첨) + 4.4 view 전환 dispatch 신설. (2) 5.13.A.3 헤더 라벨 클릭 활성 (M3 보수 정책 폐기, 로비 복귀 진입). (3) 5.13.A.4 설정 탭 dropdown 위상 변경 = quick-switch 보조 경로. 5.13.A.4.5 "라인업 선택 화면으로" 버튼 추가. (4) 5.13.A.6.4 라인업 추가 절차에 tier_class + lobbyHeroAssetPath 항목 추가. (5) **5.13.B 라인업 로비 절 신설** (5.13.B.1 목적 / 5.13.B.2 view 모델 / 5.13.B.3 진입 흐름 / 5.13.B.4 카드 구성 + 메인 상품 미리보기 산출식 / 5.13.B.5 보조 진입 경로 / 5.13.B.6 dispatch 신규 (open_lobby / enter_lineup) / 5.13.B.7 자산 정책 / 5.13.B.8 비목표). 사용자 결정 5건 정합 (전체 화면 view / 드롭다운 quick-switch 유지 / 토글 미도입 / hero 1개 미리보기 / 헤더 라벨 클릭 활성).
+8.15. 2026-05-09: **M3.2 단계 2 design - tier_class 시각 적용 (round 1 정정 흡수)**. (1) 5.13.C 절 신설 (5.13.C.1 목적 / 5.13.C.2 추첨 탭 액센트 + CSS 셀렉터 매트릭스 + PEEL 글로우 충돌 회피 / 5.13.C.3 결과 reveal hero 모션 분기 + DC 모달 정합 / 5.13.C.4 비목표). (2) 5.13.B.8.3 "본편 tier_class 시각 적용 → M3.2에서 흡수" 갱신. (3) **round 1 P0 2.1 정정** - "결과 모달" 표현 → "결과 reveal" / 페이지플립 인플레이스 (`peel-card.js`, 5.13.C.1 + 5.13.C.3). M2 K-1 정합 (8.8). DC 결과 모달은 그대로 유지(`dc-result-modal.js`, 4장 모달 목록). (4) 5.13.C.3.1 OR 분기 의도(Last One redundant) 박제. lookup 주체 = 결과 표시 영역 명시. 사용자 결정 4건 정합 (DC 모달도 hero / minor-row 속성만 / 약한 골드 글로우 / lookup 헬퍼).
+8.16. 2026-05-09: **M3.3 단계 2 design - tier_class 갤러리 그룹화 + history 대시보드**. (1) 5.13.D 절 신설 (5.13.D.1 목적 / 5.13.D.2 갤러리 섹션 헤더 + 정렬 + Last One 위치 / 5.13.D.3 history 대시보드 + 카드 시각 매트릭스 / 5.13.D.4 비목표). 사용자 결정 5건 정합 ("메인 등급/표준 등급/굿즈" 라벨 / 2x2 모바일 그리드 / hero→main→goods 정렬 / Last One hero 마지막 / 통합 카운트).
