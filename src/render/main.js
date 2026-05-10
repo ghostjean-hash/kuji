@@ -1,5 +1,5 @@
-// 진입 + state + dispatch + 3탭 라우팅 (M4 갱신).
-// M2: 구매 / 뜯기 메커닉. M2.1: 통 선택 (B-α). M3: 다중 라인업. M4: 메뉴 재설계 (홈 격상 + 4탭 → 3탭).
+// 진입 + state + dispatch + 4탭 라우팅 (M4.1 갱신).
+// M2: 구매 / 뜯기 메커닉. M2.1: 통 선택 (B-α). M3: 다중 라인업. M4: 메뉴 재설계. M4.1: 진입 정책 보정 (홈 = 1급 entry 탭 + view 모델 폐기).
 
 import { loadState, saveState, clearAll } from "../data/storage.js";
 import {
@@ -10,12 +10,12 @@ import {
   getLineupById,
   PEEL_DURATION_MS,
   PICK_AUTO_CONFIRM_DELAY_MS,
-  STATE_VIEW_HOME,
-  STATE_VIEW_MAIN,
+  STATE_TAB_HOME,
   STATE_TAB_DRAW,
   STATE_TAB_PRODUCTS_HISTORY,
   STATE_TAB_SETTINGS,
   STATE_TAB_DEFAULT,
+  STATE_TAB_VALUES,
   DISPATCH_TYPE_OPEN_HOME,
   DISPATCH_TYPE_ENTER_LINEUP,
   DISPATCH_TYPE_SET_ACTIVE_TAB,
@@ -80,7 +80,8 @@ function persist() {
   saveState({
     seed: state.seed,
     currentLineupId: state.currentLineupId,
-    homeAcked: state.homeAcked,  // M3.1 lobbyAcked → M4 homeAcked
+    homeAcked: state.homeAcked,  // M3.1 lobbyAcked → M4 homeAcked / M4.1 의미 = 면책 동의 표시
+    activeTab: state.activeTab,  // M4.1 영속 채택
     boxRound: state.boxRound,
     boxState: state.boxState,
     history: state.history,
@@ -158,20 +159,21 @@ function performPickConfirm() {
 
 function rerender() {
   rootEl.innerHTML = "";
-  // M4: view 라우팅. home view = 헤더 미렌더 + 3탭 미렌더. main view만 3탭 모델 (draw / products_history / settings).
-  if (state.view === STATE_VIEW_HOME) {
-    rootEl.appendChild(renderHome(state, dispatch));
-    return;
-  }
+  // M4.1: state.view 모델 폐기. activeTab 단일 라우팅. 헤더 / 하단 탭 바는 모든 탭 공통 노출 (M4의 home view 미노출 정책 폐기).
   rootEl.appendChild(renderHeader(state, dispatch));
   const main = document.createElement("main");
   main.className = "tab-content";
-  if (state.activeTab === STATE_TAB_DRAW) {
+  if (state.activeTab === STATE_TAB_HOME) {
+    main.appendChild(renderHome(state, dispatch));
+  } else if (state.activeTab === STATE_TAB_DRAW) {
     main.appendChild(renderDrawTab(state, dispatch));
   } else if (state.activeTab === STATE_TAB_PRODUCTS_HISTORY) {
     main.appendChild(renderProductsHistoryTab(state, dispatch));
   } else if (state.activeTab === STATE_TAB_SETTINGS) {
     main.appendChild(renderSettingsTab(state, dispatch));
+  } else {
+    // unknown activeTab fallback (방어)
+    main.appendChild(renderHome(state, dispatch));
   }
   rootEl.appendChild(main);
   rootEl.appendChild(renderBottomTabs(state, dispatch));
@@ -180,7 +182,11 @@ function rerender() {
 function dispatch(action) {
   switch (action.type) {
     case DISPATCH_TYPE_SET_ACTIVE_TAB: {
+      // M4.1: STATE_TAB_VALUES 검증 + 영속.
+      if (!STATE_TAB_VALUES.includes(action.tab)) return;
+      if (state.activeTab === action.tab) return;  // no-op
       state.activeTab = action.tab;
+      saveState({ activeTab: action.tab });
       rerender();
       break;
     }
@@ -401,14 +407,16 @@ function dispatch(action) {
       break;
     }
     case DISPATCH_TYPE_OPEN_HOME: {
-      // M3.1 → M4 갱신: main → home view 전환. 메모리 only state 보존.
-      if (state.view === STATE_VIEW_HOME) return;  // no-op
-      state.view = STATE_VIEW_HOME;
+      // M4.1 의미 갱신: state.activeTab = STATE_TAB_HOME 강제 (view 키 폐기). 메모리 only state 보존.
+      if (state.activeTab === STATE_TAB_HOME) return;  // no-op
+      state.activeTab = STATE_TAB_HOME;
+      saveState({ activeTab: STATE_TAB_HOME });
       rerender();
       break;
     }
     case DISPATCH_TYPE_ENTER_LINEUP: {
-      // M3.1 신설 (3.20) / M4 갱신 (homeAcked). 분기 A: 동일 라인업 = view 전환만 + 메모리 보존.
+      // M4.1 의미 갱신: activeTab = STATE_TAB_DRAW 강제 (view 키 폐기).
+      // 분기 A: 동일 라인업 = activeTab 전환만 + 메모리 보존.
       // 분기 B: 다른 라인업 = 라인업 전환 + 메모리 폐기 + 새 라인업 공간 로드.
       const newLineupId = action.lineupId;
       if (!newLineupId) return;
@@ -416,21 +424,21 @@ function dispatch(action) {
       if (!newLineup || newLineup.id !== newLineupId) return;  // fallback 차단
 
       if (newLineupId === state.currentLineupId) {
-        // 분기 A: view 전환만 + homeAcked 부족 시 갱신 (메모리 보존)
-        state.view = STATE_VIEW_MAIN;
+        // 분기 A: activeTab = DRAW + homeAcked 부족 시 갱신 (메모리 보존)
+        state.activeTab = STATE_TAB_DRAW;
         if (state.homeAcked !== true) {
           state.homeAcked = true;
-          saveState({ homeAcked: true });
         }
+        saveState({ activeTab: STATE_TAB_DRAW, homeAcked: true });
         rerender();
       } else {
         // 분기 B: 라인업 전환 + 메모리 폐기 (M4에서 set_current_lineup 통합)
         persist();  // 현재 라인업 영속
         state.currentLineupId = newLineupId;
         state.homeAcked = true;
-        saveState({ currentLineupId: newLineupId, homeAcked: true });
+        saveState({ currentLineupId: newLineupId, homeAcked: true, activeTab: STATE_TAB_DRAW });
         state = bootstrapState(loadState());
-        state.view = STATE_VIEW_MAIN;  // bootstrapState가 view 결정하지만 enter_lineup은 명시 강제
+        state.activeTab = STATE_TAB_DRAW;  // bootstrapState 영속 복원 후 명시 강제 (도메인 = 라인업 진입 = 추첨부터)
         persist();
         rerender();
       }
@@ -530,7 +538,8 @@ function dispatch(action) {
 function bootstrapState(loaded) {
   const s = {
     ...loaded,
-    activeTab: STATE_TAB_DEFAULT,  // M4 갱신 (M3.5까지 currentTab)
+    // M4.1: activeTab 영속 복원 우선. loaded.activeTab이 STATE_TAB_VALUES이면 보존, 미존재면 STATE_TAB_DEFAULT.
+    activeTab: STATE_TAB_VALUES.includes(loaded.activeTab) ? loaded.activeTab : STATE_TAB_DEFAULT,
     expandedTier: null,
     galleryExpanded: false,
     lastBuyCount: null,
@@ -546,9 +555,8 @@ function bootstrapState(loaded) {
   }
   if (!Array.isArray(s.unopenedTickets)) s.unopenedTickets = [];
   if (typeof s.settingsSkipPick !== "boolean") s.settingsSkipPick = false;
-  // M3.1 / M4 갱신: homeAcked + view 결정. M3.1까지 lobbyAcked, M4에서 homeAcked 개명.
+  // M4.1: state.view 폐기. homeAcked는 면책 동의 표시 전용 (진입 흐름과 분리).
   if (typeof s.homeAcked !== "boolean") s.homeAcked = false;
-  s.view = s.homeAcked ? STATE_VIEW_MAIN : STATE_VIEW_HOME;
   ensureBoxState(s);
   return s;
 }

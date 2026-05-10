@@ -1629,19 +1629,16 @@ html, body {
   font-weight: 700;
 }
 
-/* 갤러리 / tier-grid 그룹화 (5.13.D.2). product-gallery는 실제 렌더 모듈, tier-grid는 dead 모듈이지만 양쪽 모두 동일 셀렉터 적용 */
-.product-gallery-section,
-.tier-grid-section {
+/* 갤러리 그룹화 (5.13.D.2). M4.2-tidy: tier-grid 셀렉터 폐기 (tier-grid.js 모듈 fs 삭제 정합) */
+.product-gallery-section {
   margin-top: var(--space-lg);
 }
 
-.product-gallery-section:first-of-type,
-.tier-grid-section:first-of-type {
+.product-gallery-section:first-of-type {
   margin-top: var(--space-md);
 }
 
-.product-gallery-section-header,
-.tier-grid-section-header {
+.product-gallery-section-header {
   font-size: var(--font-size-sm);
   font-weight: 700;
   color: var(--ink-secondary);
@@ -1650,19 +1647,16 @@ html, body {
   border-left: 4px solid var(--border-subtle);
 }
 
-.product-gallery-section[data-tier-class="hero"] .product-gallery-section-header,
-.tier-grid-section[data-tier-class="hero"] .tier-grid-section-header {
+.product-gallery-section[data-tier-class="hero"] .product-gallery-section-header {
   border-left-color: var(--tier-class-hero-border);
   color: var(--ink-primary);
 }
 
-.product-gallery-section[data-tier-class="main"] .product-gallery-section-header,
-.tier-grid-section[data-tier-class="main"] .tier-grid-section-header {
+.product-gallery-section[data-tier-class="main"] .product-gallery-section-header {
   border-left-color: var(--tier-class-main-border);
 }
 
-.product-gallery-section[data-tier-class="goods"] .product-gallery-section-header,
-.tier-grid-section[data-tier-class="goods"] .tier-grid-section-header {
+.product-gallery-section[data-tier-class="goods"] .product-gallery-section-header {
   border-left-color: var(--tier-class-goods-border);
 }
 

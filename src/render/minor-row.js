@@ -1,7 +1,7 @@
 // 마이너 row (M2 재설계, 4장 영역 3). 굿즈 등급(goods)을 가로 스크롤 1줄로 표시.
 // M3.5: filter 식이 count 기반 → tierClass 기반으로 변경. 드래곤볼 G/H/I/J / 원피스 G/H/I.
 
-import { PERCENT_BASE, getLineupById, getTierClassForTier, TIER_CLASS_GOODS } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById, getTierClassForTier, TIER_CLASS_GOODS, LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
@@ -11,7 +11,7 @@ export function renderMinorRow(state, dispatch) {
   // M3.5: goods 등급 (Last One 제외). 드래곤볼 G/H/I/J / 원피스 G/H/I.
   const lineup = getLineupById(state.currentLineupId);
   const MINOR_TIERS = lineup.tiers.filter(
-    (t) => t.tierClass === TIER_CLASS_GOODS && t.tier !== "Last One"
+    (t) => t.tierClass === TIER_CLASS_GOODS && t.tier !== LAST_ONE_TIER_NAME
   );
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnByTier = {};

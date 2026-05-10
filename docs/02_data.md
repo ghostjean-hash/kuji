@@ -13,7 +13,7 @@
 | `STORAGE_KEY_PREFIX` | `"kuji_"` | localStorage 키 prefix |
 | `DEFAULT_SEED_FALLBACK_BITS` | 32 | 시드 기본값 (`Date.now()`) 변환 비트 |
 | `BOX_ROUND_INITIAL` | 1 | 박스 회차 초기값 |
-| `SCHEMA_VERSION` | 6 | localStorage 스키마 버전. **M4 갱신 (2026-05-10)**: 메뉴 재설계로 v6 증가 (전역 키 `kuji_lobby_acked` → `kuji_home_acked` 개명 + 4탭 → 3탭 활성 탭 매핑, 영속 시). M3.1 v5 = 라인업 로비 도입 (전역 키 `kuji_lobby_acked` 신설). M3 v4 = 다중 라인업 격리. |
+| `SCHEMA_VERSION` | 7 | localStorage 스키마 버전. **M4.1 갱신 (2026-05-10)**: 진입 정책 보정으로 v7 증가 (`kuji_home_acked` 의미 변경 = 면책 동의 표시로만 잔존, 진입 흐름과 분리. 4탭 환원으로 영속 활성 탭 매핑은 v6 chain 보존). **M4 v6** = 메뉴 재설계 (전역 키 `kuji_lobby_acked` → `kuji_home_acked` 개명 + 4탭 → 3탭 매핑). M3.1 v5 = 라인업 로비 도입. M3 v4 = 다중 라인업 격리. |
 
 ## 1.2. PRNG
 
@@ -130,7 +130,7 @@ export function getTierClassForTier(lineup, tier) {
 - `render/minor-row.js`: `data-tier-class` 속성 부착 시 (현재 G/H/I/J 모두 goods).
 - `render/peel-card.js`: 추첨 결과 reveal 시 `isHero` 분기 (M2 K-1 정합 - 결과 모달 폐기, 페이지플립 인플레이스).
 - `render/dc-result-modal.js`: hero 모션 적용 시 사실 박제 (DC.tierClass=hero 1.4.A 검증식 정합. DC 결과 객체에 `tier` 필드 부재이므로 헬퍼 호출 부적절. `result.isWin`만 분기). M3.2 단계 6 P1-1 (b) 결정.
-- `render/tier-grid.js` 또는 `render/product-gallery.js`: **M3.3 신설** - 갤러리 펼침 시 lineup.tiers를 hero/main/goods 그룹화 (5.13.D.2).
+- `render/product-gallery.js`: **M3.3 신설** - 갤러리 펼침 시 lineup.tiers를 hero/main/goods 그룹화 (5.13.D.2). **M4.2 정정 (M3.3 P2-1 흡수)**: 본 호출은 product-gallery.js 단독 (tier-grid.js는 M4.2-tidy에서 폐기 = 호출처 0건 검증 완료).
 - `core/history.js` `tierClassCounts(history, lineup)`: **M3.3 신설** - history 항목별 tier → tierClass lookup → 통계 산출 (5.13.D.3).
 
 #### 1.4.A.6. tier_class 한국어 라벨 (M3.3 신설)
@@ -153,6 +153,30 @@ export const TIER_CLASS_LABEL_KO = {
 ```
 
 호출처는 5.13.D.2 (갤러리 섹션 헤더) + 5.13.D.3 (history 대시보드 카운터 라벨).
+
+#### 1.4.A.7. Last One 등급 식별자 (M4.2 신설 - M3.1 P2-3 흡수)
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `LAST_ONE_TIER_NAME` | `"Last One"` | Last One 등급 라벨 식별자. spec 5.2 (등급 표기 정책) 정합 |
+
+**M4.2 신설 의의**: M2까지 모듈별로 `"Last One"` 매직 문자열 또는 모듈 내 상수(`LAST_ONE_TIER_LABEL`) 잔존. M4.2-tidy 정리 라운드에서 SSOT 단일화.
+
+상수 명세:
+```js
+export const LAST_ONE_TIER_NAME = "Last One";
+```
+
+**호출처 일괄 import 의무 (단계 5 T2/T3)**:
+- `src/core/box.js`: 모듈 내 `LAST_ONE_TIER_LABEL` 폐기 → numbers.js LAST_ONE_TIER_NAME import.
+- `src/core/last_one.js`: 동일 패턴.
+- `src/core/history.js`: `"Last One"` 매직 문자열 → import.
+- `src/core/home-preview.js`: `t.tier !== "Last One"` → `t.tier !== LAST_ONE_TIER_NAME`.
+- `src/render/minor-row.js`: 동일.
+- `src/render/hero-carousel.js`: 동일.
+- 기타 grep 의무.
+
+**테스트 영향 0**: 매직 문자열 → 상수 import는 코드 동작 변경 0. 테스트 갱신 의무 0.
 
 **라인업별 차이를 흡수해야 하는 영역**:
 - 등급 수 (드래곤볼 10등급 A~J vs 원피스 9등급 A~I).
@@ -360,42 +384,45 @@ export const TIER_CLASS_LABEL_KO = {
 7. 1.4.A.3 검증식 통과 (hero ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES). **M3.5 갱신**: main ≥ 1 룰 폐기. main 등급 부재 라인업 허용.
 8. 단계 6 게이트 검증 룰 통과.
 
-## 1.4.B. View 상수 (M3.1 신설 / **M4 갱신 - lobby → home 격상**)
+## 1.4.B. 탭 상수 (M3.1 view 신설 / M4 view 갱신 / **M4.1 view 폐기 + 4탭 환원**)
 
-view 모델 + 탭 모델 정의. spec 4장 / 5.13.B 정합.
+탭 모델 정의. spec 4장 / 5.13.B 정합.
 
-**view 상수** (M3.1 신설 / M4 갱신):
+**M4.1 갱신 - view 상수 폐기**:
 
-| 키 | 값 | 의미 |
-|---|---|---|
-| `STATE_VIEW_HOME` | `"home"` (M3.1 `STATE_VIEW_LOBBY = "lobby"` 개명, **단계 4 결정**) | 라인업 선택 화면 = 쿠지 홈 (5.13.B) |
-| `STATE_VIEW_MAIN` | `"main"` | 본편 3탭 모델 (5.13.A 외) |
-| `STATE_VIEW_VALUES` | `[STATE_VIEW_HOME, STATE_VIEW_MAIN]` | 검증식용 enum |
-| `STATE_VIEW_DEFAULT` | `STATE_VIEW_MAIN` | homeAcked=true 시 부팅 default. homeAcked=false 시 HOME 강제 |
+M4까지 잔존하던 `state.view` 모델(`STATE_VIEW_HOME` / `STATE_VIEW_MAIN`)은 폐기. 본 사이클부터 라우팅은 `state.activeTab` 단일 축으로 통합. 홈 view = 탭 1로 흡수. 자비스 단계 1 결정 4.3.A 채택.
 
-**M3.1 잔존 호환 alias (단계 4 결정)**: `STATE_VIEW_LOBBY` / `STATE_VIEW_VALUES` 구 명칭 호환 alias 유지 vs 일괄 개명 + 호출처 갱신. 영속 storage 값(`"lobby"`/`"home"`)은 마이그레이션 의무.
+| 폐기 키 (구 M4) | 폐기 사유 |
+|---|---|
+| `STATE_VIEW_HOME` | activeTab = `"home"`로 흡수 |
+| `STATE_VIEW_MAIN` | view 격리 모델 폐기 = "탭바 미노출 / 본편 컴포넌트 미렌더" 정책 폐기. 모든 탭이 동등 |
+| `STATE_VIEW_VALUES` | enum 무의미 |
+| `STATE_VIEW_DEFAULT` | activeTab default로 대체 |
 
-**탭 상수 (M4 신설)**: 4탭 → 3탭 재구성. spec 4장 정합.
+**잔존 호환 alias 미생성**: 영속 storage 값에서 `state.view` 키는 v7 마이그레이션(3.2.8)에서 제거. 코드 호출처 grep + 잔존 0 의무.
 
-| 키 | 값 | 의미 |
-|---|---|---|
-| `STATE_TAB_DRAW` | `"draw"` | 추첨 탭 (탭 1, 잔존) |
-| `STATE_TAB_PRODUCTS_HISTORY` | `"products_history"` | 갤러리+기록 통합 탭 (탭 2, M4 신설) |
-| `STATE_TAB_SETTINGS` | `"settings"` | 설정 탭 (탭 3, 잔존) |
-| `STATE_TAB_VALUES` | `[STATE_TAB_DRAW, STATE_TAB_PRODUCTS_HISTORY, STATE_TAB_SETTINGS]` | 검증식 enum |
-| `STATE_TAB_DEFAULT` | `STATE_TAB_DRAW` | 라인업 진입 default |
-
-**M3.5까지 4탭 (`"draw"` / `"history"` / `"dc"` / `"settings"`) 폐기**: 단계 4 마이그레이션 + 호출처 grep + `"history"` / `"dc"` 잔존 0 의무.
-
-**dispatch type 상수** (M3.1 신설 / M4 갱신):
+**탭 상수 (M4.1 - 4탭 환원)**: M4 3탭 → **4탭** (홈 / 추첨 / 갤러리+기록 / 설정). spec 4장 정합. 자비스 단계 1 결정 3.2 (Q1 = A안) 채택.
 
 | 키 | 값 | 의미 |
 |---|---|---|
-| `DISPATCH_TYPE_OPEN_HOME` | `"open_home"` (M3.1 `OPEN_LOBBY = "open_lobby"` 개명, **단계 4 결정**) | 5.13.B.6.1 |
-| `DISPATCH_TYPE_ENTER_LINEUP` | `"enter_lineup"` | 5.13.B.6.2 |
-| `DISPATCH_TYPE_SET_ACTIVE_TAB` | `"set_active_tab"` (M4 신설) | 3탭 전환 |
+| `STATE_TAB_HOME` | `"home"` (**M4.1 신설**) | 쿠지 홈 = 라인업 선택 (탭 1, 5.13.B) |
+| `STATE_TAB_DRAW` | `"draw"` | 추첨 탭 (탭 2, 잔존) |
+| `STATE_TAB_PRODUCTS_HISTORY` | `"products_history"` | 갤러리+기록 통합 탭 (탭 3, M4 신설 잔존) |
+| `STATE_TAB_SETTINGS` | `"settings"` | 설정 탭 (탭 4, 잔존) |
+| `STATE_TAB_VALUES` | `[STATE_TAB_HOME, STATE_TAB_DRAW, STATE_TAB_PRODUCTS_HISTORY, STATE_TAB_SETTINGS]` | 검증식 enum |
+| `STATE_TAB_DEFAULT` | `STATE_TAB_HOME` (**M4.1 갱신**, M4 = `STATE_TAB_DRAW`) | 부팅 default = 홈 탭 (재방문 시도 홈 entry) |
 
-**M4 폐기**: `DISPATCH_TYPE_SET_CURRENT_LINEUP` (= `"set_current_lineup"`)는 enter_lineup으로 통합. 단계 4 호출처 grep + 단계 5 dead 제거.
+**M3.5까지 4탭 (`"draw"` / `"history"` / `"dc"` / `"settings"`) 폐기**: 단계 4 마이그레이션 + 호출처 grep + `"history"` / `"dc"` 잔존 0 의무 (v6 chain 보존).
+
+**dispatch type 상수** (M3.1 신설 / M4 / **M4.1 갱신**):
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `DISPATCH_TYPE_OPEN_HOME` | `"open_home"` | **M4.1 의미 갱신**: state.activeTab = STATE_TAB_HOME 강제. view 키 변경 없음(view 폐기). 5.13.B.6.1 |
+| `DISPATCH_TYPE_ENTER_LINEUP` | `"enter_lineup"` | **M4.1 의미 갱신**: state.activeTab = STATE_TAB_DRAW + currentLineupId 갱신 + homeAcked = true. 5.13.B.6.2 |
+| `DISPATCH_TYPE_SET_ACTIVE_TAB` | `"set_active_tab"` (M4 신설) | 4탭 전환 (M4.1 = 4탭 정합) |
+
+**M4 잔존 폐기**: `DISPATCH_TYPE_SET_CURRENT_LINEUP` 폐기는 M4에서 이미 통합 완료. M4.1 추가 폐기 없음.
 
 ## 1.5. UI 표시 상수
 
@@ -730,7 +757,8 @@ styles/tokens.css의 CSS 변수와 numbers.js / colors.js 상수의 1:1 매핑. 
 | `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 라인업 무관. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
 | `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated**)) |
 | `kuji_current_lineup_id` | string | **M3 신설** - 활성 라인업 ID (1.4.LINEUPS 정합). 부팅 시 미존재면 `LINEUP_DEFAULT_ID` 부여. |
-| `kuji_home_acked` | boolean | **M3.1 신설 (`kuji_lobby_acked`) → M4 개명**. 쿠지 홈 진입 완료 플래그. false = 첫 방문 (홈 노출). true = 마지막 라인업 자동 진입. spec 5.13.B (쿠지 홈) 정합. M4 마이그레이션 (3.2.7)에서 구 키 → 신 키 이전. |
+| `kuji_home_acked` | boolean | **M3.1 신설 (`kuji_lobby_acked`) → M4 개명 → M4.1 의미 변경**. **M4.1**: 면책 동의 표시 전용. false = 면책 모달 미dismiss (첫 방문). true = 면책 모달 dismiss 완료 (재방문). **진입 흐름과 분리** (M4까지의 "true = 마지막 라인업 자동 진입" 의미 폐기). 재방문 시도 홈 탭 자동 활성. spec 5.13.B (쿠지 홈) 정합. v7 마이그레이션 (3.2.8)에서 키 보존 + 의미만 변경. |
+| `kuji_active_tab` | string | **M4 영속 결정 보류 → M4.1 영속 채택**. 활성 탭 (`STATE_TAB_VALUES` 1.4.B). 부팅 시 미존재면 `STATE_TAB_DEFAULT = "home"` 부여 (M4.1 갱신). 사용자가 main 흐름에서 추첨/갤러리/설정 탭으로 이동한 마지막 탭 보존 → 새로고침 후에도 동일 탭. 단, `enter_lineup` dispatch는 강제로 `"draw"`로 전환 (사용자 도메인 = "라인업 진입 = 추첨부터"). |
 | `kuji_schema_version` | number | **M3 신설** - 스키마 버전. v3 이전엔 `kuji_meta.schemaVersion`만 사용. v4부터 별도 키로 분리 (마이그레이션 일관성). M3.1 v5. |
 
 ## 3.2. 마이그레이션 정책
@@ -869,6 +897,49 @@ localStorage.setItem("kuji_schema_version", "6")
 - (영속 활성 탭 시) 4탭 fixture (activeTab="history") → 3탭 매핑 ("products_history").
 - v6 fixture → 멱등 (변경 0).
 
+3.2.8. **M4(v6) → M4.1(v7) 마이그레이션 - 진입 정책 보정 (M4.1 신설)**:
+
+```
+// 멱등 게이트: schemaVersion >= 7 시 skip
+if (schemaVersion >= 7):
+  return  // 멱등
+
+// (a) state.view 영속 키 제거 (M4.1 view 모델 폐기)
+//     v6까지는 view를 메모리 only로 운용했으므로 영속 키는 부재 가정.
+//     혹시 사용자 환경에서 영속된 경우 안전 제거.
+localStorage.removeItem("kuji_view")  // 키 부재 시 no-op (브라우저 표준)
+
+// (b) home_acked 의미 변경 (키 보존 + 값 보존)
+//     v6 의미: true = 마지막 라인업 자동 진입.
+//     v7 의미: true = 면책 모달 dismiss 완료. 진입 흐름과 분리.
+//     키 / 값 변경 0건. 의미만 변경. 코드 측 라우팅 변경(arch 3.11)으로 흡수.
+
+// (c) activeTab 4탭 환원 처리
+//     v6 영속 = STATE_TAB_VALUES = ["draw", "products_history", "settings"] (3탭).
+//     v7 영속 = STATE_TAB_VALUES = ["home", "draw", "products_history", "settings"] (4탭).
+//     기존 v6 사용자의 activeTab 영속 값은 v7에서 모두 valid. 변경 0건.
+//     단, v7 신규 사용자(빈 storage) 부팅 시 STATE_TAB_DEFAULT = "home" 부여.
+
+// (d) schemaVersion bump
+const meta = JSON.parse(localStorage.getItem("kuji_meta") || "{}")
+meta.schemaVersion = 7
+localStorage.setItem("kuji_meta", JSON.stringify(meta))
+localStorage.setItem("kuji_schema_version", "7")
+```
+
+**의존성**: 3.2.7 (v5→v6)이 선행. v3/v4/v5 사용자는 v3→v4→v5→v6→v7 chain 적용. loadState() 안에서 schemaVersion 비교로 자동 chain.
+
+**멱등 정합**: `schemaVersion >= 7` 시 skip.
+
+**테스트 의무**: `tests/suites/storage_v7.test.js` 신설. 다음 시나리오 검증:
+- 빈 storage (첫 방문) → schemaVersion=7 + homeAcked=false + activeTab=home (= STATE_TAB_DEFAULT).
+- v6 fixture (homeAcked=true + activeTab="draw" 영속) → schemaVersion=7 + homeAcked=true (값 보존) + activeTab="draw" (값 보존). 의미만 변경(코드 라우팅).
+- v6 fixture (kuji_view="main" 영속 - 비표준) → schemaVersion=7 + kuji_view 키 제거.
+- v5/v4/v3 fixture → v3→v4→v5→v6→v7 chain 적용 후 schemaVersion=7 + homeAcked=true.
+- v7 fixture → 멱등 (변경 0).
+
+**M4.1 데이터 보존 정책**: history / unopenedTickets / boxState / boxRound / dcTickets / dcResults / seed / settingsSkipPick / currentLineupId 모두 보존. 본 마이그레이션은 진입 라우팅 키만 처리.
+
 # 4. 변경 이력
 
 4.1. 2026-05-02: M1 단계 2 design. placeholder 교체 + 一番くじ ドラゴンボール SSOT.
@@ -890,3 +961,5 @@ localStorage.setItem("kuji_schema_version", "6")
 4.16. 2026-05-10: **M3.5 단계 2 design - tier_class 라인업별 자율 분류 (원피스 B~F hero)**. (1) 1.4.A.3 검증식 룰 완화: `∃ t2: t2.tierClass === "main"` 룰 제거. main 등급 부재 라인업 허용 ("hero ≥ 1 + goods ≥ 1만 의무"). (2) 1.4.A.4 분류 정책 갱신: 기본 휴리스틱 권고 + 라인업별 자율 분류 명문화 + 원피스/드래곤볼 분류 차이 박제. (3) 1.4-OP.2 등급표 B/C/D/E/F tierClass main → hero 변경 (5건). M3.5 분류 근거 박제 + M3.1 구 분류 근거 폐기 표시. (4) 라인업 추가 절차 7번 항목 갱신 (main ≥ 1 룰 제거). 사용자 결정 5건 정합 (변경 의미 / 포함 범위 / DB 정합 / 검증식 / 라이브 검수 시점). 9등급 → hero 7 (A+B+C+D+E+F+LastOne) + main 0 + goods 3 (G+H+I) 분포. **round 1 P0 정정 (2026-05-10 round 2)**: hero-carousel/minor-row 분기 식이 count 기반이라 시각 자동 정합 미성립 - (b) 분기 식 변경 채택 (round 1 답 = HERO/GOODS). spec 5.13.E.3 영향 매트릭스 + arch 5.18 게이트 + plan 4.8/8.3 정합 갱신. **round 2 P0 재정정 (2026-05-10 round 3)**: round 2 채택 `tierClass===HERO` 분기가 드래곤볼 hero-carousel 6→1 회귀 야기 (비목표 4.1 위반) → `tierClass !== TIER_CLASS_GOODS` 재채택. 드래곤볼/원피스 양쪽 6 등급 동등 노출. spec 5.13.E.3 라인업별 컬럼 명시.
 
 4.17. 2026-05-10: **M4 단계 2 design - 메뉴 재설계 (홈 격상 + 4탭 → 3탭)**. (1) 1.4.B view/탭/dispatch 상수 갱신 + STATE_TAB_VALUES 신설. (2) 1.1 SCHEMA_VERSION 5 → 6. (3) 3.1.2 전역 키 갱신: kuji_lobby_acked → kuji_home_acked 개명 + kuji_active_tab 키 (영속 결정 단계 4) 신설. (4) **3.2.7 v5 → v6 마이그레이션 절 신설** (lobby_acked 키 이전 + 4탭 → 3탭 매핑 + schemaVersion bump). 멱등 게이트 + 의존성 v3→v4→v5→v6 chain + 테스트 의무 (storage_v6.test.js). 사용자 결정 5건 + 단계 1 채택 2건 (10.3/10.4) + **round 2 채택 6건** (10.1/10.2/10.5/10.7 + DC sub-section 4 + history 무한 스크롤 + "홈으로" 라벨). **round 1 P0 3건 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 / P0-2 arch 3.11 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION + 3.2.7 마이그레이션 절 신설.
+
+4.18. 2026-05-10: **M4.1 단계 2 design - 진입 정책 보정 (홈 = 1급 entry + 4탭 환원)**. **트리거** = M4 종료 직후 사용자 발화: "기본적으로 진입하면 쿠지 홈이 있어야 하고, 내가 원하는 쿠지를 선택해서 게임을 진행하는 방식이어야 해. 근데 쿠지 종류를 선택하는게 너무 어려워." (1) **1.4.B 전면 재구성**: STATE_VIEW_* 4종 폐기 (HOME/MAIN/VALUES/DEFAULT) + STATE_TAB_HOME 신설 + STATE_TAB_VALUES 4탭 환원 + STATE_TAB_DEFAULT = HOME 변경. dispatch.open_home / enter_lineup 의미 갱신 (activeTab 라우팅). (2) 1.1 SCHEMA_VERSION 6 → 7. (3) 3.1.2 home_acked 의미 변경 (진입 흐름 분리 → 면책 동의 표시 전용) + kuji_active_tab 영속 채택 박제. (4) **3.2.8 v6 → v7 마이그레이션 절 신설** (kuji_view 키 안전 제거 + home_acked 키/값 보존 + activeTab 4탭 환원 valid 보존 + schemaVersion bump). 멱등 게이트 + 의존성 v3→v4→v5→v6→v7 chain + 테스트 의무 (storage_v7.test.js). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택 (헤더 IP 라벨 클릭 affordance 폐기 / 면책 1회만 / STATE_VIEW 폐기). 사용자 결정 3.1/3.2/3.3 (Q1=A안 / Q2=M4.1 / 진입 정책 = 항상 홈). M4.1-tidy 백로그 → M4.2-tidy 개명.

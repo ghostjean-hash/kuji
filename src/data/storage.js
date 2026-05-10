@@ -1,7 +1,7 @@
 // localStorage 입출력 + 메모리 fallback. core/는 본 모듈을 import 하지 않는다 (03_architecture 2.4).
-// M3: 다중 라인업 격리. M3.1: 라인업 로비 (kuji_lobby_acked). M4: 메뉴 재설계 (kuji_lobby_acked → kuji_home_acked 개명).
+// M3: 다중 라인업 격리. M3.1: 라인업 로비 (kuji_lobby_acked). M4: 메뉴 재설계 (kuji_lobby_acked → kuji_home_acked 개명). M4.1: 진입 정책 보정 (home_acked 의미 변경 + activeTab 영속 채택).
 
-import { STORAGE_KEY_PREFIX, SCHEMA_VERSION, BOX_ROUND_INITIAL, BUY_SKIP_PICK_DEFAULT, LINEUP_DEFAULT_ID } from "./numbers.js";
+import { STORAGE_KEY_PREFIX, SCHEMA_VERSION, BOX_ROUND_INITIAL, BUY_SKIP_PICK_DEFAULT, LINEUP_DEFAULT_ID, STATE_TAB_VALUES, STATE_TAB_DEFAULT } from "./numbers.js";
 
 // 전역 키 (라인업 무관)
 const GLOBAL_KEYS = {
@@ -9,9 +9,13 @@ const GLOBAL_KEYS = {
   meta: `${STORAGE_KEY_PREFIX}meta`,
   settingsSkipPick: `${STORAGE_KEY_PREFIX}settings_skip_pick`,  // M2.1
   currentLineupId: `${STORAGE_KEY_PREFIX}current_lineup_id`,  // M3
-  homeAcked: `${STORAGE_KEY_PREFIX}home_acked`,  // M4: M3.1 lobby_acked → home_acked 개명
+  homeAcked: `${STORAGE_KEY_PREFIX}home_acked`,  // M4: M3.1 lobby_acked → home_acked 개명. M4.1: 의미 변경 = 면책 동의 표시 전용
+  activeTab: `${STORAGE_KEY_PREFIX}active_tab`,  // M4.1 신설 (M4 영속 보류)
   schemaVersion: `${STORAGE_KEY_PREFIX}schema_version`,  // M3
 };
+
+// M4까지 잔존 가능한 비표준 view 영속 키 (M4.1 마이그레이션에서만 사용 = 안전 제거)
+const LEGACY_VIEW_KEY_M4 = `${STORAGE_KEY_PREFIX}view`;
 
 // M3.1까지 lobby_acked 키 (M4 마이그레이션에서만 사용)
 const LEGACY_GLOBAL_KEYS_M3_1 = {
@@ -274,6 +278,27 @@ export function migrateV5ToV6() {
   return { migrated: true, reason: "v5_to_v6", homeAcked: oldAcked || "false" };
 }
 
+// M4.1: v6 → v7 마이그레이션 (02_data 3.2.8). 진입 정책 보정.
+// 멱등 게이트: schemaVersion ≥ 7 → return.
+// (a) kuji_view 안전 제거 (M4까지 메모리 only였으나 비표준 영속 가능성 대비).
+// (b) home_acked 키/값 보존. 의미만 변경 (= 면책 동의 표시. 진입 흐름과 분리).
+// (c) active_tab 영속 채택. 기존 값(M4 = "draw"/"products_history"/"settings" 3탭)은 v7 4탭 superset에 valid.
+// (d) schemaVersion 7 갱신.
+// 외부 노출 (단위 테스트 storage_v7.test.js).
+export function migrateV6ToV7() {
+  const versionRaw = getRaw(GLOBAL_KEYS.schemaVersion);
+  if (versionRaw !== null && Number(versionRaw) >= 7) {
+    return { migrated: false, reason: "already_v7" };
+  }
+  // (a) kuji_view 안전 제거. 키 부재 시 no-op (브라우저 표준).
+  removeRaw(LEGACY_VIEW_KEY_M4);
+  // (b) home_acked 키/값 보존. 변경 0건.
+  // (c) active_tab 영속 값은 기존 보존 (4탭이 3탭 superset이라 valid). 빈 키는 부팅 시 STATE_TAB_DEFAULT 부여.
+  // (d) schemaVersion 7 갱신
+  setRaw(GLOBAL_KEYS.schemaVersion, "7");
+  return { migrated: true, reason: "v6_to_v7" };
+}
+
 // =====================================================================
 // 라인업별 state load / save
 // =====================================================================
@@ -326,10 +351,16 @@ export function loadGlobalSettings() {
   const currentLineupIdRaw = getRaw(GLOBAL_KEYS.currentLineupId);
   const currentLineupId = currentLineupIdRaw ?? LINEUP_DEFAULT_ID;
   // M3.1 lobbyAcked → M4 homeAcked 역직렬화 (string "true" / "false" / null → boolean)
+  // M4.1: 의미 변경 = 면책 동의 표시 전용 (진입 흐름과 분리).
   const homeAckedRaw = getRaw(GLOBAL_KEYS.homeAcked);
   const homeAcked = homeAckedRaw === "true";
+  // M4.1 신설: kuji_active_tab 영속 채택. STATE_TAB_VALUES 검증. 미포함 / 키 부재 시 STATE_TAB_DEFAULT.
+  const activeTabRaw = getRaw(GLOBAL_KEYS.activeTab);
+  const activeTab = (activeTabRaw !== null && STATE_TAB_VALUES.includes(activeTabRaw))
+    ? activeTabRaw
+    : STATE_TAB_DEFAULT;
 
-  return { seed, meta, settingsSkipPick, currentLineupId, homeAcked };
+  return { seed, meta, settingsSkipPick, currentLineupId, homeAcked, activeTab };
 }
 
 export function saveGlobalSettings(partial) {
@@ -344,12 +375,20 @@ export function saveGlobalSettings(partial) {
     setRaw(GLOBAL_KEYS.currentLineupId, partial.currentLineupId);
   }
   // M3.1 lobbyAcked → M4 homeAcked 직렬화 (boolean → "true" / "false")
+  // M4.1: 의미 = 면책 동의 표시 (진입 흐름 분리).
   if ("homeAcked" in partial && partial.homeAcked !== undefined) {
     setRaw(GLOBAL_KEYS.homeAcked, String(Boolean(partial.homeAcked)));
   }
-  // M3.1까지 호환 alias (lobbyAcked → homeAcked redirect, M4.1-tidy에서 폐기)
+  // M3.1까지 호환 alias (lobbyAcked → homeAcked redirect, M4.2-tidy에서 폐기)
   if ("lobbyAcked" in partial && partial.lobbyAcked !== undefined) {
     setRaw(GLOBAL_KEYS.homeAcked, String(Boolean(partial.lobbyAcked)));
+  }
+  // M4.1 신설: kuji_active_tab 영속. STATE_TAB_VALUES 검증.
+  if ("activeTab" in partial && partial.activeTab !== undefined) {
+    if (!STATE_TAB_VALUES.includes(partial.activeTab)) {
+      throw new Error(`saveGlobalSettings: invalid activeTab value: ${partial.activeTab}`);
+    }
+    setRaw(GLOBAL_KEYS.activeTab, partial.activeTab);
   }
 }
 
@@ -399,6 +438,9 @@ export function loadState() {
   // 2-M4) v5 → v6 마이그레이션 (lobby_acked → home_acked 키 개명)
   migrateV5ToV6();
 
+  // 2-M4.1) v6 → v7 마이그레이션 (진입 정책 보정 = kuji_view 안전 제거 + home_acked 의미 변경 + active_tab 영속 채택)
+  migrateV6ToV7();
+
   // 3) global + 활성 라인업 state 로드
   const globalSettings = loadGlobalSettings();
   // currentLineupId 미존재 시 LINEUP_DEFAULT_ID 부여 + 영속
@@ -414,7 +456,8 @@ export function loadState() {
     meta: globalSettings.meta,
     settingsSkipPick: globalSettings.settingsSkipPick,
     currentLineupId: globalSettings.currentLineupId,
-    homeAcked: globalSettings.homeAcked,  // M3.1 lobbyAcked → M4 homeAcked
+    homeAcked: globalSettings.homeAcked,  // M3.1 lobbyAcked → M4 homeAcked / M4.1 의미 = 면책 동의 표시
+    activeTab: globalSettings.activeTab,  // M4.1 영속 채택
     ...lineupState,
   };
 
@@ -439,7 +482,9 @@ export function saveState(partial) {
   if ("meta" in partial) globalPartial.meta = partial.meta;
   if ("settingsSkipPick" in partial) globalPartial.settingsSkipPick = partial.settingsSkipPick;
   if ("currentLineupId" in partial) globalPartial.currentLineupId = partial.currentLineupId;
-  if ("lobbyAcked" in partial) globalPartial.lobbyAcked = partial.lobbyAcked;  // M3.1
+  if ("lobbyAcked" in partial) globalPartial.lobbyAcked = partial.lobbyAcked;  // M3.1 호환 alias (M4.2-tidy 폐기 후보)
+  if ("homeAcked" in partial) globalPartial.homeAcked = partial.homeAcked;  // M4
+  if ("activeTab" in partial) globalPartial.activeTab = partial.activeTab;  // M4.1
   if (Object.keys(globalPartial).length > 0) saveGlobalSettings(globalPartial);
 
   // 라인업별 분리

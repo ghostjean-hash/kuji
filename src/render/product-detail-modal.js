@@ -2,6 +2,7 @@
 
 import { showModal } from "./modal.js";
 import { TIER_COLORS } from "../data/colors.js";
+import { LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 import { renderProductImage } from "./product-image.js";
 import { renderTierGauge } from "./tier-gauge.js";
 import { renderTierAccordion } from "./tier-accordion.js";
@@ -11,7 +12,7 @@ export function showProductDetailModal({ tierMeta, drawnCount, drawnTypeIndices,
   body.className = "product-detail-body";
 
   const remaining = tierMeta.count - drawnCount;
-  const tierLabel = tierMeta.tier === "Last One" ? "Last One" : `${tierMeta.tier}賞`;
+  const tierLabel = tierMeta.tier === LAST_ONE_TIER_NAME ? LAST_ONE_TIER_NAME : `${tierMeta.tier}賞`;
 
   const header = document.createElement("div");
   header.className = "detail-header";

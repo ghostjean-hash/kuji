@@ -1,6 +1,6 @@
-// 쿠지 홈 (M3.1 lobby 신설 → M4 home 격상).
+// 쿠지 홈 (M3.1 lobby 신설 → M4 home 격상 → M4.1 = 탭 1 콘텐츠).
 // 03_architecture 3.21 / spec 5.13.B 정합.
-// state.view === STATE_VIEW_HOME 시 render/main.js가 호출.
+// M4.1: state.activeTab === STATE_TAB_HOME 시 render/main.js가 호출. 헤더 / 탭바는 main.js 공통 렌더 외부.
 
 import {
   LINEUPS,
@@ -10,28 +10,17 @@ import { TIER_COLORS } from "../data/colors.js";
 import { heroPreview } from "../core/home-preview.js";
 import { loadStateForLineup } from "../data/storage.js";
 
-// 메인: 홈 컨테이너 + 카드 그리드 + 푸터.
+// 메인: 홈 콘텐츠 (라인업 카드 그리드). 헤더 / 탭바는 main.js 공통 렌더이므로 본 함수 외부.
 export function renderHome(state, dispatch) {
   const root = document.createElement("section");
   root.className = "home";
 
-  const header = document.createElement("header");
-  header.className = "home-header";
-  const title = document.createElement("h1");
-  title.className = "home-title";
-  title.textContent = "Kuji 시뮬레이터";
-  header.appendChild(title);
-  const sub = document.createElement("p");
-  sub.className = "home-sub";
-  sub.textContent = "라인업을 선택하세요";
-  header.appendChild(sub);
-  root.appendChild(header);
-
   const grid = document.createElement("div");
   grid.className = "home-grid";
   for (const lineup of LINEUPS) {
-    // M3.1 design_review P2-6 흡수 / M4 갱신: homeAcked === false 시 모든 카드 isCurrent: false (= "현재" 배지 미노출).
-    const isCurrent = state.homeAcked === true && lineup.id === state.currentLineupId;
+    // M4.1: homeAcked 분기 폐기. lineup.id === state.currentLineupId 단독.
+    // (M4.1 homeAcked 의미 = 면책 동의 표시. 진입 흐름과 분리이므로 isCurrent와 무관.)
+    const isCurrent = lineup.id === state.currentLineupId;
     grid.appendChild(renderHomeCard(lineup, isCurrent, dispatch));
   }
   root.appendChild(grid);

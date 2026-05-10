@@ -23,31 +23,28 @@
 3.3. 마우스는 데스크톱에서 터치와 동일 동작.
 3.4. 뜯기 동작은 좌측 가장자리 드래그 임계값 (`02_data` 1.8 `PEEL_DRAG_THRESHOLD_RATIO`) 또는 카드 클릭(보조).
 
-# 4. 화면 흐름 - 3탭 모델 (M4 재설계, 위→아래 우선순위) + **홈 view (M4 격상)**
+# 4. 화면 흐름 - 4탭 모델 (M4.1 환원, 위→아래 우선순위) + **홈 = 탭 1 (M4.1 격상)**
 
 화면 위쪽 우선순위 정책: 모바일에서 스크롤 부담 최소화하도록 핵심 정보를 위에서부터 N단 배치.
 
-**view 모델 (M3.1 신설 / M4 갱신)**: `state.view ∈ {"home", "main"}` (M3.1 lobby → M4 home 의미 격상. 코드 식별자 개명은 단계 4 결정).
-- `home`: 진정한 entry. 라인업 선택 화면. 4탭/3탭 미노출. 헤더 = 시뮬레이터 타이틀 / IP 라벨 부재. 5.13.B 정합.
-- `main`: 라인업 진입 후 기본 탭 모델 (아래 [추첨 탭] 등). 헤더 = IP 라벨 + 클릭 = 홈 복귀.
+**라우팅 모델 (M3.1 view 신설 / M4 view 격상 / M4.1 view 폐기 + activeTab 단일 라우팅)**: `state.activeTab ∈ STATE_TAB_VALUES` (= `{"home", "draw", "products_history", "settings"}`, 02_data 1.4.B). M4까지 `state.view ∈ {"home", "main"}`로 분리되어 있던 모델은 **M4.1에서 폐기**. 사용자 도메인 인식 정합("쿠지 매장 = 모든 화면이 동등 + 매번 홈에서 시작") + 발견성 강화 (하단 탭 = 1차 진입점 단일화).
 
-**탭 모델 (M4 재설계)**: 4탭 → **3탭 = 추첨 / 갤러리+기록 (통합) / 설정**. M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정). M4에서 통합 + 정리.
+**탭 모델 (M4.1 환원)**: 3탭 → **4탭 = 홈 / 추첨 / 갤러리+기록 (통합) / 설정**. M4의 3탭은 사용자 발화 "쿠지 종류 선택이 너무 어려워"로 발견성 결손 진단 → M4.1에서 홈을 1급 탭으로 환원. M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정)과는 의미 다름 (홈 vs DC 자리).
 
 ```
-[홈 view] (M4 격상, 5.13.B)
-  1. 헤더 (홈): 시뮬레이터 타이틀 + 면책 보조 라벨 (1줄). 라인업 IP 라벨 부재
+[홈 탭] (탭 1, M4.1 격상 - 5.13.B)
+  1. 헤더 (공통): 활성 라인업 IP 라벨 (M3 잔존). 클릭 affordance 폐기 (M4.1, 5.13.A.3)
   2. 라인업 카드 그리드 (N개 카드, 모바일 1열 / 태블릿 2열). 사용자 도메인 = "쿠지 시리즈 선택"
      각 카드:
-       ├─ lobby_hero 이미지 (assetsAvailable=false면 placeholder gray + IP 라벨)
+       ├─ home_hero 이미지 (assetsAvailable=false면 placeholder gray + IP 라벨)
        ├─ 한국어 제목 (titleKo)
        ├─ IP 라벨 + 발매일 + 끝일 + 가격/매수 + 매장 (메타 풍부화)
        ├─ 메인 상품 미리보기 슬롯 (tier_class=hero 1개 = A상, 5.13.B.4)
-       ├─ 진행 상태 (단계 2 결정): 박스 회차 / 추첨 누적 / DC 응모 누적 (선택)
+       ├─ 진행 상태: 박스 회차 / 추첨 누적 / DC 응모 누적 (M4 잔존)
        └─ "이 라인업으로 진입" 버튼 또는 카드 전체 클릭
   3. 푸터: schemaVersion + 빌드 메타
 
-[main view = 3탭 모델 (M4 재설계)]
-[추첨 탭] (탭 1, 잔존)
+[추첨 탭] (탭 2, M4 = 탭 1 → M4.1 위치 변경)
   1. 헤더 (압축): 라인업 타이틀 + 가격 + 추정 배지 + **라인업 IP 라벨 (M3 신설, 5.13.A.3 "DRAGONBALL"/"ONE PIECE"/...). M3.1/M4 갱신: 클릭 = 홈 복귀 (5.13.B.5)** (1줄)
   2. 메인 캐러셀 (A~F, 1매 등급 6개): 가로 드래그.
      ├─ 중심 카드 = 큰 상품 이미지 + 등급 배지 + 1/1
@@ -71,19 +68,19 @@
      └─ (c) deck 0 → "박스 종료" 안내
   7. 기타 정보 (작게): 박스 ID / 회차 / 시드 / 미개봉 카운트 / skip 상태
 
-[갤러리+기록 탭] (탭 2, M4 신설 = M3.3 갤러리 그룹화 + M3.3 history 대시보드 + M2 history 리스트 + M1 DC 응모 통합)
+[갤러리+기록 탭] (탭 3, M4 신설 = M3.3 갤러리 그룹화 + M3.3 history 대시보드 + M2 history 리스트 + M1 DC 응모 통합)
   1. 상단: history 대시보드 (M3.3 자산 흡수). 4 카운터 카드 = 전체 / hero / main / goods.
   2. 중단: 상품 갤러리 (M3.3 product-gallery 흡수). hero / main / goods 섹션 + 카드. Last One = hero 마지막.
   3. 하단: history 리스트 (M2 자산 흡수). 시간순 추첨 이력 + 시간 / 등급 / 박스 ID.
   4. **DC 응모 영역 (M4 통합 - 단계 2 결정)**: DC 응모 카운터 + 응모 이력. M1~M3 잔존 별도 탭 → 본 탭 sub-section 흡수 또는 DC 모달만 잔존.
 
-[설정 탭] (탭 3, M3.5까지의 자산 + M4 갱신)
+[설정 탭] (탭 4, M3.5까지의 자산 + M4 / M4.1 갱신)
   - "통에서 선택 건너뛰기" 체크박스 (M2.1 잔존)
-  - **M4: 'Lineup' 섹션 dropdown 폐기** (사용자 결정 10.3 = 폐기). 라인업 전환은 홈에서만.
-  - **M4: "홈으로" 버튼 잔존** (구 "라인업 선택 화면으로" 라벨 갱신 검토)
+  - **M4: 'Lineup' 섹션 dropdown 폐기** (사용자 결정 10.3 = 폐기). 라인업 전환은 홈 탭에서만.
+  - **M4.1**: 설정 탭 "홈으로" 버튼 잔존 (M4 결정 답습). 클릭 = `dispatch({type: 'open_home'})` = activeTab = home (M4.1 의미 갱신).
   - 박스 리셋 / 시드 변경 / localStorage 비활성 안내 등
 
-[하단 탭 바] **3탭 SVG 아이콘** (추첨 / 갤러리+기록 / 설정, 02_data 1.10 갱신)
+[하단 탭 바] **4탭 SVG 아이콘** (홈 / 추첨 / 갤러리+기록 / 설정, 02_data 1.10 갱신 의무 - 단계 5 T1)
 
 [모달 / 시트] (M2 갱신: 결과 / Last One 합산 모달 폐기. 인플레이스 처리)
   ├─ Double Chance 결과 모달 (DC 탭 전용)
@@ -93,12 +90,14 @@
   └─ 추정 출처
 ```
 
-4.1. **첫 진입 (M3.1 신설 / M4 갱신)**: 면책 안내 → **홈 view (homeAcked=false 시, 5.13.B)** → 라인업 선택 → 추첨 탭 → 구매 씬. 사용자 결정 10.4 = (i) 첫 진입 강제 잔존.
-4.2. **이후 진입**: 인벤토리 잔존 시 뜯기 씬, 0매면 구매 씬. homeAcked=true이므로 마지막 라인업 자동 진입.
-4.3. **탭 전환 (M4 갱신)**: 3탭 하단 탭 클릭 → `state.activeTab` 갱신 (M3.5까지 `state.currentTab`, M4 개명) → 본문만 다시 렌더. 탭 enum = `{"draw", "products_history", "settings"}` (M3.5까지 `{"draw", "history", "dc", "settings"}` 4탭에서 갱신). 02_data 1.4.B `STATE_TAB_VALUES` 정합.
-4.4. **홈 ↔ main view 전환 (M3.1 신설 / M4 갱신, 5.13.B.5)**: 헤더 IP 라벨 클릭 → `dispatch({type: 'open_home'})` → state.view = 'home'. 홈 카드 클릭 → `dispatch({type: 'enter_lineup', lineupId})` → state.currentLineupId 갱신 + state.homeAcked = true + state.view = 'main'.
-- M3.1 잔존 dispatch.open_lobby는 단계 4 결정으로 open_home 개명.
-- M4 폐기: 설정 탭 "라인업 선택 화면으로" 버튼은 "홈으로" 라벨 갱신 검토 (단계 2 결정). 설정 탭 dropdown quick-switch는 폐기 (사용자 결정 10.3).
+4.1. **첫 진입 (M3.1 신설 / M4 / M4.1 / M4.2 갱신)**: 면책 안내 dismiss → `state.meta.disclaimerSeen = true` (M2 trigger 잔존) → **홈 탭 자동 활성** (= activeTab = home, 5.13.B). 사용자 라인업 카드 선택 → 추첨 탭으로 자동 전환 → 구매 씬. **M4.2 정정 (M4.1 P1-1 흡수, round 1 P1-1 재정정)**: M4 / M4.1 본문의 "homeAcked === false → 면책 모달" 표기는 M2 코드 trigger(`state.meta.disclaimerSeen`)와 정합 미달이라 정정. homeAcked는 본 dismiss 분기에서 갱신되지 않음 (M2 dismiss case는 disclaimerSeen만 갱신). homeAcked 의미는 5.13.B.3.3 박제 (라우팅 호환 키).
+4.2. **이후 진입 (M4.1 / M4.2 갱신)**: 면책 모달 미노출 (`state.meta.disclaimerSeen === true`) → **홈 탭 자동 활성** (M4까지 = "마지막 라인업 main view 자동 진입" 폐기). 사용자가 마지막 진행하던 라인업으로 가려면 홈 카드 클릭. 인벤토리 잔존 시 추첨 탭에서 뜯기 씬, 0매면 구매 씬.
+4.3. **탭 전환 (M4 / M4.1 갱신)**: 4탭 하단 탭 클릭 → `state.activeTab` 갱신 → 본문만 다시 렌더. 탭 enum = `{"home", "draw", "products_history", "settings"}` (M4의 3탭에서 home 추가, 02_data 1.4.B `STATE_TAB_VALUES` 정합). 영속 활성 탭 (`kuji_active_tab`)도 동기 갱신.
+4.4. **홈 ↔ 본편 탭 전환 (M3.1 view 신설 / M4 / M4.1 view 폐기, 5.13.B.5)**: M4까지의 view 모델은 폐기. 진입 경로:
+- 본편 → 홈: (a) 하단 탭 "홈" 클릭 (M4.1 1차 진입점) (b) 설정 탭 "홈으로" 버튼 (M4 잔존, 본 사이클 의미 = activeTab = home dispatch).
+- 홈 → 본편: 라인업 카드 클릭 → `dispatch({type: 'enter_lineup', lineupId})` → state.currentLineupId 갱신 + state.activeTab = 'draw' (라인업 진입 = 추첨부터 도메인 정합).
+- **M4 헤더 IP 라벨 클릭 affordance 폐기** (M4.1 결정 4.1.A): 헤더 = 라벨 표시 전용. 꺾쇠 아이콘 / 홈 복귀 호출처 폐기.
+- 라인업 전환(다른 라인업 카드 클릭) 시 메모리 only state(`pendingPeelResult` / `selectedGridIndices`) 폐기 (5.13.A.4.4 정합).
 
 # 5. 메커닉 상세
 
@@ -256,7 +255,7 @@
 5.13.A.1.0. **표기 정책 (M3 단계 3 P0 2.3 정합)**: 본 문서에서 소문자 `lineup`은 **활성 라인업 객체** = `LINEUPS[state.currentLineupId]`를 의미.
 5.13.A.1.1. 시뮬레이터는 동시에 **하나의 활성 라인업**을 표시한다 (`state.currentLineupId`).
 5.13.A.1.2. 첫 진입 시 default 라인업 = `LINEUP_DEFAULT_ID` (= 드래곤볼).
-5.13.A.1.3. **M4 갱신**: 활성 라인업 전환은 **홈 view에서만** 발생 (5.13.B). 설정 탭 dropdown quick-switch는 폐기 (사용자 결정 10.3). 메뉴 정합 단순화 + 도메인 인식 ("쿠지 매장에서 다른 시리즈 보러 가기 = 홈으로") 정합.
+5.13.A.1.3. **M4 / M4.1 갱신**: 활성 라인업 전환은 **홈 탭에서만** 발생 (5.13.B). 설정 탭 dropdown quick-switch는 폐기 (M4 사용자 결정 10.3). 메뉴 정합 단순화 + 도메인 인식 ("쿠지 매장에서 다른 시리즈 보러 가기 = 홈 탭으로") 정합. M4.1: "홈 view"는 "홈 탭"으로 의미 변경 (view 모델 폐기, 4장).
 
 ### 5.13.A.2. 라인업별 데이터 격리 (사용자 결정 8.1 (A1))
 
@@ -264,11 +263,11 @@
 5.13.A.2.2. **전역 키 (라인업 무관)**: `kuji_seed` (사용자 결정 8.2 (A) = 라인업 공유) / `kuji_settings_skip_pick` / `kuji_meta` / `kuji_current_lineup_id` / `kuji_schema_version`. 02_data 3.1.2 정합.
 5.13.A.2.3. **격리 효과**: 라인업 A에서 박스 N매 진행 → 라인업 B 전환 → 라인업 A 복귀 시 박스 + 인벤토리 + 이력 + DC 모두 N매 그대로 보존. 수집/완주 경험 보존.
 
-### 5.13.A.3. 헤더 라인업 라벨 (사용자 결정 8.3 (A) → M3.1 / **M4 갱신**)
+### 5.13.A.3. 헤더 라인업 라벨 (사용자 결정 8.3 (A) → M3.1 / M4 / **M4.1 갱신 - 클릭 affordance 폐기**)
 
 5.13.A.3.1. 헤더에 활성 라인업 짧은 라벨 (`lineup.ip`, 예: `"DRAGONBALL"` / `"ONE PIECE"`) 표시.
-5.13.A.3.2. **M4 갱신**: 클릭 = 홈 view 복귀 (`dispatch({type: 'open_home'})`. M3.1 dispatch.open_lobby 개명 - 단계 4 결정). 클릭 affordance = 라벨 우측 꺾쇠 아이콘 (`›`) 또는 "홈" 텍스트.
-5.13.A.3.3. 홈 view (`state.view === "home"`) 시 헤더 IP 라벨 미렌더 (현재 라인업 미선택 상태). 4장 [홈 view] 헤더 정합.
+5.13.A.3.2. **M4.1 갱신 (자비스 단계 1 결정 4.1.A 채택)**: 헤더 IP 라벨 클릭 affordance **폐기**. 라벨 = 표시 전용 (현재 라인업 식별). 사유: 하단 홈 탭이 1차 진입점 (5.13.B.5)이므로 헤더 보조 진입점은 발견성 분산 + 인지 부담만 일으킴. M4까지의 꺾쇠 아이콘(`›`) / "홈" 텍스트 / 클릭 핸들러 폐기 의무 (단계 5 T5 grep + 잔존 0).
+5.13.A.3.3. **M4.1 갱신**: 모든 탭에서 헤더 IP 라벨 노출. M4까지의 "홈 view 시 헤더 IP 라벨 미렌더" 정책 폐기 (view 모델 폐기 정합, 4장). 홈 탭 활성 시도 헤더 = 활성 라인업 IP 라벨 (= 라인업 미선택 상태가 부재. currentLineupId는 항상 default 또는 마지막 진입 라인업).
 
 ### 5.13.A.4. ~~설정 탭 'Lineup' 섹션~~ (**M4 폐기 - 사용자 결정 10.3**)
 
@@ -276,7 +275,7 @@
 5.13.A.4.2. **라인업 전환은 홈 view에서만** (5.13.B). 헤더 IP 라벨 클릭 → 홈 → 다른 라인업 카드 선택 → 진입.
 5.13.A.4.3. **M4 갱신**: dispatch.set_current_lineup은 dispatch.enter_lineup으로 통합 (단계 4 결정). 별도 set_current_lineup 호출처 0건 - 단계 5에서 grep + 폐기.
 5.13.A.4.4. **라인업 전환 시 폐기되는 메모리 only state**: `pendingPeelResult` (메모리 전용 reveal 상태) / `selectedGridIndices` (B-α 격자 선택 메모리). 영속 데이터(history / inventory / DC / box) 0건 손실. 5.13.B.5 enter_lineup 분기 B 정합.
-5.13.A.4.5. **M4 갱신**: 설정 탭 "라인업 선택 화면으로" 버튼 → "홈으로" 라벨 갱신 검토 (단계 2 추가 결정).
+5.13.A.4.5. **M4 / M4.1 갱신**: 설정 탭 "홈으로" 버튼 잔존. M4.1 의미 갱신 = 클릭 시 `dispatch({type: 'open_home'})` → state.activeTab = home (view 변경 폐기). 라벨 = "홈으로" (M4 결정 답습).
 
 ### 5.13.A.5. 자산 fallback (사용자 결정 8.4 (A))
 
@@ -292,24 +291,27 @@
 5.13.A.6.4. **M3.1 추가**: 등급별 `tierClass` 부여 (02_data 1.4.A.4) + DC `tierClass` + `lobbyHeroAssetPath` (M4 의도 = `homeHeroAssetPath` 키 개명 검토 - 단계 4) 정의 + 1.4.A.3 검증식 통과 (M3.5 룰 완화 = hero ≥ 1 + goods ≥ 1).
 5.13.A.6.5. **M4 추가**: 홈 카드 메타 풍부도 정합 (5.13.B.4) - 출시일 / 끝일 / 가격 / 매장 / 진행 상태. 산출식 = 5.13.B.4.3.
 
-## 5.13.B. 쿠지 홈 (M3.1 lobby 신설 / **M4 home 격상**)
+## 5.13.B. 쿠지 홈 (M3.1 lobby 신설 / M4 home 격상 / **M4.1 = 1급 entry 탭 + 매번 노출**)
 
 ### 5.13.B.1. 목적
 
-M3.1에서 설정 탭에 묻혀있던 라인업 전환을 메인 흐름으로 승격 (lobby = 보조 진입). **M4에서 home으로 격상** = 사용자 도메인 인식상 진정한 entry. "쿠지 매장에 들어가서 어느 시리즈를 살지 고르는" 행위 정합. 라인업 N≥3 도달 시 자연스러운 확장 흐름 + 4탭 → 3탭 재구성과 결합.
+M3.1에서 설정 탭에 묻혀있던 라인업 전환을 메인 흐름으로 승격 (lobby = 보조 진입). M4에서 home으로 격상 (= "전체 화면 격리 view" 모델). **M4.1에서 1급 entry 탭으로 재격상**: 사용자 발화 ("기본적으로 진입하면 쿠지 홈이 있어야", 2026-05-10) 답습. M4의 "재방문 시 마지막 라인업 자동 진입" + "홈 = 격리 view" 모델은 사용자 도메인 인식 ("매번 쿠지 매장에서 시작") 정합 미달이라 폐기. 홈 = 하단 탭 1 + 매번 자동 활성 + 모든 본편 탭과 동등.
 
-### 5.13.B.2. view 모델 (사용자 결정 9.1 / **M4 갱신**)
+### 5.13.B.2. 라우팅 모델 (M3.1 view 신설 / M4 view 격상 / **M4.1 view 폐기 + activeTab 단일 라우팅**)
 
-5.13.B.2.1. `state.view ∈ {"home", "main"}` (M3.1 lobby → M4 home 의미 격상. 코드 식별자 개명은 단계 4 결정. 박제 잔존 호환 alias 검토).
-5.13.B.2.2. 전체 화면. 시트/모달 오버레이가 아닌 본편과 동등한 view 단위.
-5.13.B.2.3. **M4 갱신**: home view 시 **3탭** 바 미노출 (M3.5까지 4탭). 본편 컴포넌트(헤더 IP 라벨 / 캐러셀 / 갤러리 / 기록 등) 미렌더. 헤더 = 시뮬레이터 타이틀만.
+5.13.B.2.1. **state.view 모델 폐기 (M4.1)**: M4까지의 `state.view ∈ {"home", "main"}`는 폐기. 자비스 단계 1 결정 4.3.A 채택. 라우팅은 `state.activeTab` 단일 축으로 통합 (02_data 1.4.B).
+5.13.B.2.2. **홈 = 탭 1**: 하단 탭 4탭 중 첫 번째. activeTab === "home" 시 라인업 카드 그리드 렌더. 다른 탭과 동등한 본문 영역.
+5.13.B.2.3. **모든 탭 공통 노출 컴포넌트 (M4.1 갱신)**:
+- 헤더 = 활성 라인업 IP 라벨 (5.13.A.3, 클릭 affordance 폐기 - 표시 전용).
+- 하단 탭 바 = 4탭 항상 노출.
+- M4의 "home view 시 탭바 / 본편 컴포넌트 미렌더" 정책 폐기 (`5.13.B.2.3 v6` 폐기).
 
-### 5.13.B.3. 진입 흐름 (사용자 결정 9.3 / **M4 결정 10.4 = (i) 잔존**)
+### 5.13.B.3. 진입 흐름 (M3.1 결정 9.3 → M4 결정 10.4 → **M4.1 재정정**)
 
-5.13.B.3.1. **첫 방문자**: storage `kuji_home_acked === false` (M3.1 `kuji_lobby_acked` 키 개명, 마이그레이션 의무 - 단계 4) → 면책 모달 dismiss 후 home view 자동 진입.
-5.13.B.3.2. **재방문자**: storage `kuji_home_acked === true` → main view 자동 진입 (마지막 라인업으로). 홈 재노출 없음.
-5.13.B.3.3. 1회 ack 흐름. 토글 미도입 (M4 결정 10.4 = (i) 잔존 채택, M3.1 결정 9.3 답습).
-5.13.B.3.4. 5.13.B.5 헤더 IP 라벨 클릭으로 언제든 home view 복귀 가능.
+5.13.B.3.1. **첫 방문자** (`state.meta.disclaimerSeen === false`): 면책 모달 dismiss → `meta.disclaimerSeen = true` 갱신 (M2 trigger 잔존) → **홈 탭 자동 활성** (= activeTab = home). **M4.2 정정 (M4.1 P1-1 흡수 + round 1 P1-1 재정정)**: 면책 모달 trigger 키 = `state.meta.disclaimerSeen` (M2 잔존). M4 / M4.1 spec 본문의 "homeAcked === false → 면책 모달" 표기는 M2 코드 trigger와 정합 미달이라 정정. dismiss 분기에서 home_acked 갱신은 일어나지 않음 (코드 정합). home_acked 키 = 라우팅 호환 (M3.1 lobbyAcked → M4 개명) + 의미 = M4.1에서 "면책 동의 표시"로 박제했지만 trigger와 분리 (5.13.B.3.3 박제).
+5.13.B.3.2. **재방문자** (`state.meta.disclaimerSeen === true`): 면책 모달 미노출 → **홈 탭 자동 활성** (M4까지 = 마지막 라인업 main view 자동 진입은 폐기). currentLineupId 보존 (마지막 진입 라인업) + activeTab = home 강제.
+5.13.B.3.3. **`home_acked` 의미 변경 (M4.1, 02_data 3.1.2 정합)**: M4까지 = "마지막 라인업 자동 진입 플래그" → M4.1 = "면책 동의 표시 전용". 진입 흐름과 분리. 면책 1회 ack 흐름 잔존 (사용자 단계 1 결정 4.2.A 채택).
+5.13.B.3.4. **홈 탭 복귀 진입 경로** (5.13.B.5 정합): 본편 탭(추첨/갤러리+기록/설정)에서 홈 탭으로 복귀 = 하단 탭 "홈" 버튼 클릭 (1차) 또는 설정 탭 "홈으로" 버튼 (보조).
 
 ### 5.13.B.4. 카드 구성 (사용자 결정 9.4 - hero 1개 미리보기 / **M4 메타 풍부화**)
 
@@ -342,38 +344,55 @@ preview = heroTiers[0]   // 통상 A상
 ```
 Last One도 hero지만 미리보기 슬롯에서는 A상 우선. 박스 등급 첫 hero를 라인업 대표로 채택. heroTiers 배열이 비어있으면 1.4.A.3 검증식 위반이라 부팅 실패 (선조건).
 
-5.13.B.4.6. 활성 라인업(`state.currentLineupId`와 일치하는 카드)에는 "현재" 배지 + 카드 보더 강조.
+5.13.B.4.6. 활성 라인업(`state.currentLineupId`와 일치하는 카드)에는 "현재" 배지 + 카드 보더 강조. **M4.1**: home_acked 분기 조건 폐기 (M4까지 = `homeAcked === true && lineup.id === currentLineupId`). M4.1 = `lineup.id === state.currentLineupId` 단독 (homeAcked 진입 흐름 분리 정합). 첫 방문자도 currentLineupId default(드래곤볼) = 활성 카드.
 
-### 5.13.B.5. 홈 진입 경로 (사용자 결정 9.5 / **M4 갱신**)
+### 5.13.B.5. 홈 진입 경로 (M3.1 결정 9.5 / M4 갱신 / **M4.1 재정정 - 하단 탭 1차**)
 
-5.13.B.5.1. **M4 갱신**: 설정 탭 dropdown quick-switch는 폐기 (사용자 결정 10.3, 5.13.A.4 폐기). 설정 탭 "홈으로" 버튼 잔존. 라벨 = "홈으로" (M3.1 "라인업 선택 화면으로" → M4 "홈으로" 갱신, round 2 박제). 클릭 = `dispatch({type: 'open_home'})`.
-5.13.B.5.2. **메인 진입 경로 = 헤더 IP 라벨 클릭** (5.13.A.3.2). `dispatch({type: 'open_home'})`. 클릭 affordance 시각 보강 (꺾쇠 아이콘).
+5.13.B.5.1. **하단 탭 "홈" 버튼 (M4.1 1차 진입점)**: 모든 탭에서 발견성 최고. 클릭 = `dispatch({type: 'set_active_tab', tab: 'home'})` 또는 `dispatch({type: 'open_home'})` (M4.1 의미 동일, 단계 4 단일화 결정).
+5.13.B.5.2. **설정 탭 "홈으로" 버튼 (보조 진입점, M4 잔존)**: 설정 후 즉시 홈 복귀 동선. 클릭 = `dispatch({type: 'open_home'})`. 라벨 = "홈으로" (M4 결정 답습).
+5.13.B.5.3. **헤더 IP 라벨 진입 경로 폐기 (M4.1)**: M4까지의 헤더 클릭 → 홈 복귀 폐기. 자비스 단계 1 결정 4.1.A 채택. 헤더는 표시 전용 (5.13.A.3.2).
 
-### 5.13.B.6. dispatch (M3.1 신설 / **M4 갱신 - 개명 + set_current_lineup 폐기**)
+### 5.13.B.6. dispatch (M3.1 신설 / M4 갱신 / **M4.1 의미 갱신 - activeTab 라우팅**)
 
-5.13.B.6.1. **`dispatch({type: 'open_home'})`** (M3.1 open_lobby 개명, 단계 4 결정): state.view = 'home'. currentLineupId / homeAcked 보존. main view에서만 호출 가능 (home에서 호출 시 no-op).
-5.13.B.6.2. **`dispatch({type: 'enter_lineup', lineupId})`**:
+5.13.B.6.1. **`dispatch({type: 'open_home'})`** (M3.1 open_lobby 개명):
+- **M4.1 의미 갱신**: state.activeTab = STATE_TAB_HOME 강제. view 키 변경 폐기 (view 모델 폐기).
+- currentLineupId / homeAcked 보존.
+- 영속: kuji_active_tab = "home" 갱신 (영속 활성 탭 정합).
+- activeTab === STATE_TAB_HOME 시 호출 = no-op.
+- 호출처: 하단 탭 "홈" 클릭 / 설정 탭 "홈으로" 버튼 / 첫 방문자 면책 dismiss 직후.
+
+5.13.B.6.2. **`dispatch({type: 'enter_lineup', lineupId})`** (M4.1 의미 갱신):
 - state.currentLineupId = lineupId (변경 시 라인업 공간 재로드).
-- state.homeAcked = true.
-- state.view = 'main'.
-- saveState(currentLineupId, homeAcked: true).
-- 메모리 only state(`pendingPeelResult` / `selectedGridIndices`) 폐기 (5.13.A.4.4 정합).
-- rerender (home → main 전환).
+- state.homeAcked = true (면책 동의 표시. 의미 = M4.1 변경, 진입 흐름 분리).
+- **state.activeTab = STATE_TAB_DRAW** (M4까지 = state.view = 'main' 폐기. M4.1 = "라인업 진입 = 추첨부터" 도메인 정합).
+- saveState(currentLineupId, homeAcked: true) + saveGlobal(activeTab: "draw").
+- 메모리 only state(`pendingPeelResult` / `selectedGridIndices`) 폐기 (5.13.A.4.4 정합 - 라인업 전환 분기 B만).
+- rerender.
 
-5.13.B.6.3. **`set_current_lineup` 폐기 (M4)**: M3.1 quick-switch 전용 dispatch는 enter_lineup으로 통합 (M4 결정 10.3 = dropdown 폐기 + 5.13.A.4.3 = enter_lineup 통합). 단계 4 호출처 grep + 단계 5 dead 제거.
+5.13.B.6.3. **`dispatch({type: 'set_active_tab', tab})`** (M4 신설 잔존):
+- state.activeTab = tab (STATE_TAB_VALUES 검증).
+- 영속 갱신.
+- M4.1: tab === STATE_TAB_HOME 호출 시 5.13.B.6.1 의미와 동등. 단계 4 단일화 결정.
+
+5.13.B.6.4. **`set_current_lineup` 폐기 (M4)**: 잔존. M4.1 추가 폐기 없음.
 
 ### 5.13.B.7. 자산 정책
 
 5.13.B.7.1. `homeHeroAssetPath` (M3.1 `lobbyHeroAssetPath` 키 개명 검토 - 단계 4)는 라인업별 `assetsBasePath` 하위 `home_hero.webp`. assetsAvailable=false면 placeholder gray + IP 라벨로 fallback.
 5.13.B.7.2. 라이선스 안전 정책 (5.13.A.5.2): 자산 부재 시 placeholder는 라인업 IP 텍스트만 표기, IP 비주얼/캐릭터 비표기.
 
-### 5.13.B.8. 비목표 (M4 갱신)
+### 5.13.B.8. 비목표 (M4 / **M4.1 갱신**)
 
 5.13.B.8.1. 카드 swipe / 디테일 시트 / 영상 미리보기 등 풍부한 인터랙션 - 차기 사이클.
 5.13.B.8.2. 라인업 추천 / 정렬 (인기순, 발매일순 등) - N≥3 시점에 검토 (M5+).
 5.13.B.8.3. 본편 화면(추첨/기록/DC) tier_class 시각 - **M3.2/M3.3에서 흡수 완료**.
 5.13.B.8.4. 홈 다국어 - 한국어/일본어만.
 5.13.B.8.5. **M4 추가 비목표**: 진행 상태(박스 회차 / 추첨 누적) 그래프 / 차트 - 단순 카운트 표시만. 카드 부담 회피.
+5.13.B.8.6. **M4.1 추가 비목표**:
+- 헤더 외 추가 진입점(햄버거 메뉴 등) 신설 = 본 사이클 비목표. 하단 탭이 1차 진입점이고 설정 탭 "홈으로" 버튼이 보조. 추가 분산 금지.
+- 라인업 미선택 빈 화면 view 신설 = 비목표. currentLineupId는 항상 default 또는 마지막 진입 라인업으로 보존. view 모델 자체 폐기 정합.
+- 면책 모달 매 진입 시 노출 = 비목표 (자비스 단계 1 결정 4.2.A 1회만 채택).
+- 코토부키야쿠지 30연 천장 룰 = M5 별도 사이클.
 
 ## 5.13.C. tier_class 시각 적용 (M3.2 신설)
 
@@ -502,8 +521,8 @@ M3.1~M3.3에서 tier_class 시각/카운트/그룹화 기반을 구축. M3.5는 
 | 영역 | 드래곤볼 | 원피스 | 비고 |
 |---|---|---|---|
 | product-gallery (5.13.D.2) | hero=A+LastOne / main=B/C/D/E/F / goods=G/H/I/J | hero=A+B+C+D+E+F+LastOne (7) / main=빈 헤더 미렌더 / goods=G/H/I (3) | 자동 정합 (M3.3 그룹화 = tierClass 기반) |
-| hero-carousel (5.13.C.2) | A/B/C/D/E/F (6 등급, hero+main) | A/B/C/D/E/F (6 등급, hero) | **코드 변경 의무**: filter = `t.tierClass !== TIER_CLASS_GOODS && t.tier !== "Last One"`. 기존 `count === 1` 폐기. round 3 정정 (round 2 P0-1 = 드래곤볼 회귀 방지). 양쪽 라인업 6 등급 동등 노출. data-tier-class 속성으로 hero/main 톤 차이 유지 |
-| minor-row (5.13.C.2) | G/H/I/J (4 등급, goods) | G/H/I (3 등급, goods) | **코드 변경 의무**: filter = `t.tierClass === TIER_CLASS_GOODS && t.tier !== "Last One"`. 기존 `count >= 2` 폐기. round 1 P0-1 정정 |
+| hero-carousel (5.13.C.2) | A/B/C/D/E/F (6 등급, hero+main) | A/B/C/D/E/F (6 등급, hero) | filter 식 (M3.5 round 3 정정 적용 완료) = `t.tierClass !== TIER_CLASS_GOODS && t.tier !== LAST_ONE_TIER_NAME`. 양쪽 라인업 6 등급 동등 노출. data-tier-class 속성으로 hero/main 톤 차이 유지. **M4.2 정정 (M3.5 P2-1 흡수)**: 시점 표기 "코드 변경 의무" → "적용 완료". 매직 문자열 `"Last One"` → 상수 `LAST_ONE_TIER_NAME`. |
+| minor-row (5.13.C.2) | G/H/I/J (4 등급, goods) | G/H/I (3 등급, goods) | filter 식 (M3.5 round 1 P0-1 정정 적용 완료) = `t.tierClass === TIER_CLASS_GOODS && t.tier !== LAST_ONE_TIER_NAME`. **M4.2 정정**: 시점 표기 단순화 + 매직 문자열 상수화. |
 | 결과 reveal hero 모션 (5.13.C.3) | A/LastOne (변경 0) | A/B/C/D/E/F/LastOne (확장) | 자동 정합 (peel-card.js hero 분기 식 = `getTierClassForTier(lineup, result.tier) === TIER_CLASS_HERO` 그대로) |
 | dc-result-modal (5.13.C.3) | 변경 0 (DC.tierClass=hero 고정) | 변경 0 (DC.tierClass=hero 고정, 1.4-OP.3 잔존) | 자동 정합 (사실 박제) |
 | history 대시보드 (5.13.D.3) | 변경 0 (hero=A+LastOne / main=B~F / goods=G~J) | hero=A+B+C+D+E+F+LastOne / main=0 / goods=G+H+I | 자동 정합 |
@@ -517,11 +536,11 @@ M3.1~M3.3에서 tier_class 시각/카운트/그룹화 기반을 구축. M3.5는 
 5.13.E.4.4. minor-row 빈 main 영역 별도 처리 - 본 사이클은 분기 식이 goods로 한정되어 main = 0 자연 흡수. 별도 빈 영역 안내 / 라벨 표시 미도입.
 5.13.E.4.5. M3.4-tidy 정리 라운드 항목 - 별도 사이클.
 
-## 5.13.F. 갤러리+기록 통합 탭 (M4 신설) - 4탭 → 3탭 재구성
+## 5.13.F. 갤러리+기록 통합 탭 (M4 신설 - 4탭→3탭 / **M4.1 = 탭 3 위치 변경, 통합 자산 보존**)
 
 ### 5.13.F.1. 목적
 
-M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정) 구조에서 사용자 도메인 인식 = "수집 한눈에"를 위해 history 대시보드 + 상품 갤러리 + 추첨 이력 리스트를 단일 탭에 통합. M3.3 갤러리 그룹화 + 대시보드 자산을 그대로 활용 + M2 history 리스트 흡수. **DC 응모 통합 검토는 단계 2 결정**.
+M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정) 구조에서 사용자 도메인 인식 = "수집 한눈에"를 위해 history 대시보드 + 상품 갤러리 + 추첨 이력 리스트를 단일 탭에 통합. M3.3 갤러리 그룹화 + 대시보드 자산을 그대로 활용 + M2 history 리스트 흡수. **M4.1 갱신**: 통합 자산은 보존, 탭 위치만 변경 (M4 탭 2 → M4.1 탭 3, 홈 탭 1 신설로 시프트).
 
 ### 5.13.F.2. sub-section 구성 (사용자 결정 10.2 - **round 2 채택 박제**)
 
@@ -691,3 +710,5 @@ M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정) 구조에서 사용자 �
 8.18. 2026-05-10: **M4 단계 2 design - 메뉴 재설계 (홈 격상 + 4탭 → 3탭)**. (1) 4장 view 모델 갱신: lobby → home 의미 격상. 4탭 → 3탭 (추첨 / 갤러리+기록 / 설정). state 키 명 currentTab → activeTab 갱신 (단계 4 코드 식별자 개명). (2) 5.13.A.4 설정 탭 dropdown quick-switch 폐기. (3) 5.13.A.3 헤더 IP 라벨 클릭 = 홈 복귀. (4) 5.13.B 라인업 로비 → 쿠지 홈 격상. 카드 메타 풍부화 (출시일 + 끝일 + 가격 + 매장 + 진행 상태) + 5.13.B.4.3 산출식 박제. (5) 5.13.B.6 dispatch 갱신 (open_home + set_active_tab 신설 / set_current_lineup 폐기). (6) 5.13.D.4 비목표 갱신. (7) **5.13.F 통합 탭 절 신설** (대시보드 + 갤러리 + history 리스트 무한 스크롤 + DC sub-section 4). 사용자 결정 5건 + 단계 1 채택 2건 (10.3/10.4) + **round 2 채택 6건** (10.1/10.2 권고 / 10.5 별도 M4.1-tidy / 10.7 IP 라벨 클릭만 / DC = sub-section 4 / history = 무한 스크롤 / "홈으로" 라벨). **round 1 P0 3건 정정 (round 2 박제)**: P0-1 currentTab vs activeTab 통일 / P0-2 arch 3.11 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION v5 → v6 + 02_data 3.2.7 마이그레이션 절 + 3.1.2 home_acked 키 + active_tab 키 박제.
 
 8.17. 2026-05-10: **M3.5 단계 2 design - tier_class 라인업별 자율 분류 (원피스 B~F hero)**. (1) 5.13.E 절 신설 (5.13.E.1 목적 / 5.13.E.2 검증식 룰 완화 / 5.13.E.3 영향 매트릭스 / 5.13.E.4 비목표). (2) 02_data 1.4.A.3 검증식 룰 main ≥ 1 제거. 1.4.A.4 분류 정책 라인업별 자율 명문화. 1.4-OP.2 등급표 B/C/D/E/F tierClass main → hero 변경. 사용자 결정 5건 정합 (변경 의미 / 포함 범위 / DB 정합 / 검증식 / 라이브 검수 시점). **round 1 P0 정정 (2026-05-10 round 2)**: hero-carousel/minor-row 분기 식이 count 기반(`count === 1` / `count >= 2`)이라 tierClass 변경만으로 시각 자동 정합 미성립. (b) 분기 식을 tierClass 기반으로 변경 채택 (round 1 답 = `tierClass === HERO` / `tierClass === GOODS`). spec 5.13.E.3 + 5.13.E.4 + arch 5.18 + plan 4.8/8.3 정합 갱신. dc-result-modal 행 추가. **round 2 P0 재정정 (2026-05-10 round 3)**: round 2 채택 `tierClass === HERO` 분기 식이 드래곤볼 hero-carousel 6→1 등급 회귀 야기 (비목표 4.1 위반). round 3 = `t.tierClass !== TIER_CLASS_GOODS && t.tier !== "Last One"` 재채택. 드래곤볼: A/B/C/D/E/F (hero+main 6) / 원피스: A/B/C/D/E/F (hero 6) 양쪽 동등. minor-row는 round 1 답 그대로 (`tierClass === GOODS`) 유지. spec 5.13.E.3을 라인업별 컬럼(드래곤볼/원피스)으로 갱신.
+
+8.19. 2026-05-10: **M4.1 단계 2 design - 진입 정책 보정 (홈 = 1급 entry 탭 + 4탭 환원 + view 모델 폐기)**. **트리거** = M4 종료 직후 사용자 발화: "기본적으로 진입하면 쿠지 홈이 있어야 하고, 내가 원하는 쿠지를 선택해서 게임을 진행하는 방식이어야 해. 근데 쿠지 종류를 선택하는게 너무 어려워." (1) 4장 라우팅 모델 전면 갱신: state.view 모델 폐기 + activeTab 단일 라우팅 + 4탭 환원 (홈 / 추첨 / 갤러리+기록 / 설정). 첫 진입 / 재방문 모두 홈 탭 자동 활성. 4.4 view 전환 dispatch 의미 갱신 (activeTab 라우팅). (2) 5.13.A.1.3 활성 라인업 전환 = 홈 탭에서만 (의미 답습). (3) 5.13.A.3 헤더 IP 라벨 클릭 affordance 폐기 (자비스 단계 1 결정 4.1.A 채택). 모든 탭에서 헤더 라벨 노출. (4) 5.13.A.4.5 설정 탭 "홈으로" 버튼 의미 갱신 (open_home → activeTab = home). (5) 5.13.B 전면 갱신: B.1 목적 재기술 / B.2 라우팅 모델 (view 폐기) / B.3 진입 흐름 (재방문도 홈 자동) / B.4.6 isCurrent 분기 (homeAcked 분리) / B.5 진입 경로 (하단 탭 1차 + 설정 보조 + 헤더 폐기) / B.6 dispatch (open_home / enter_lineup / set_active_tab 의미 갱신) / B.8.6 비목표 추가 (헤더 외 진입점 / 빈 화면 view / 매 진입 면책 / M5 분리). (6) 5.13.F 탭 위치 갱신 (탭 2 → 탭 3, 통합 자산 보존). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택 (헤더 클릭 폐기 / 면책 1회만 / STATE_VIEW 폐기). 사용자 결정 3.1/3.2/3.3 (재방문 시도 홈 / Q1=A안 / Q2=M4.1).

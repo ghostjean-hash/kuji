@@ -1,17 +1,20 @@
-// 하단 탭 바 (M2 SVG 아이콘 + M4 4탭 → 3탭 재구성).
+// 하단 탭 바 (M2 SVG 아이콘 + M4 4탭 → 3탭 재구성 / M4.1 = 4탭 환원, 홈 = 탭 1).
 
 import { renderIcon } from "./icon.js";
 import {
   TAB_ICON_IDS,
+  STATE_TAB_HOME,
   STATE_TAB_DRAW,
   STATE_TAB_PRODUCTS_HISTORY,
   STATE_TAB_SETTINGS,
   DISPATCH_TYPE_SET_ACTIVE_TAB,
 } from "../data/numbers.js";
 
+// M4.1: 4탭 환원. 홈 = 탭 1 (entry 격상).
 const TABS = [
+  { id: STATE_TAB_HOME, label: "홈" },  // M4.1 신설
   { id: STATE_TAB_DRAW, label: "추첨" },
-  { id: STATE_TAB_PRODUCTS_HISTORY, label: "갤러리·기록" },  // M4: 통합 탭
+  { id: STATE_TAB_PRODUCTS_HISTORY, label: "갤러리·기록" },  // M4 신설 잔존
   { id: STATE_TAB_SETTINGS, label: "설정" },
 ];
 

@@ -2,7 +2,7 @@
 // 03_architecture 3.15. research/05_kuji_ticket_form.md 폼 모사.
 // M3.2 갱신: hero 분기 (5.13.C.3) - lineup 인자 추가, getTierClassForTier 룩업.
 
-import { PEEL_DRAG_THRESHOLD_RATIO, PEEL_HAPTIC_HALF_MS, PEEL_HAPTIC_FULL_MS, PEEL_HAPTIC_FULL_DELAY_MS, getTierClassForTier, TIER_CLASS_HERO } from "../data/numbers.js";
+import { PEEL_DRAG_THRESHOLD_RATIO, PEEL_HAPTIC_HALF_MS, PEEL_HAPTIC_FULL_MS, PEEL_HAPTIC_FULL_DELAY_MS, getTierClassForTier, TIER_CLASS_HERO, LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 import { attachLeftEdgeDrag } from "../input/drag.js";
 
 export function renderPeelCard({ ticket, onReveal, onConfirm, revealedResult, isConfirmDisabled, lineup }) {
@@ -62,11 +62,11 @@ export function renderPeelCard({ ticket, onReveal, onConfirm, revealedResult, is
   }
 
   function renderInnerFace(result) {
-    const tierClass = result.tier === "Last One" ? " is-last-one" : "";
+    const tierClass = result.tier === LAST_ONE_TIER_NAME ? " is-last-one" : "";
     const sizeLabel = result.sizeLabel ? `<div class="product-size">${result.sizeLabel}</div>` : "";
     const disabledAttr = isConfirmDisabled ? "disabled" : "";
     innerFace.innerHTML = `
-      <div class="tier-display${tierClass}">${result.tier}${result.tier === "Last One" ? "" : "賞"}</div>
+      <div class="tier-display${tierClass}">${result.tier}${result.tier === LAST_ONE_TIER_NAME ? "" : "賞"}</div>
       <div class="product-label">${result.nameKo}</div>
       <div class="product-label-ja">${result.nameJa}</div>
       ${sizeLabel}

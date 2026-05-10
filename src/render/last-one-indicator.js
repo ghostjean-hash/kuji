@@ -1,12 +1,12 @@
 // Last One 시각 강조 (M2 신설). 박스 deck 잔여 1매 시점에 표시.
 
-import { getLineupById } from "../data/numbers.js";
+import { getLineupById, LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 
 export function renderLastOneIndicator(state) {
   if (state.boxState.deck.length !== 1) return null;
 
   const lineup = getLineupById(state.currentLineupId);
-  const lastOne = lineup.tiers.find((t) => t.tier === "Last One");
+  const lastOne = lineup.tiers.find((t) => t.tier === LAST_ONE_TIER_NAME);
   if (!lastOne) return null;
 
   const el = document.createElement("section");

@@ -4,7 +4,7 @@
 //     pickIndex (M2.1, number | null), gridIndex (M2.1, number | null), revealed (M2.1, deprecated 호환) }
 // M3.3 신설: tierClassCounts. 02_data 1.4.A.5 호출처 + 5.13.D.3 정합.
 
-import { getTierClassForTier, TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS } from "../data/numbers.js";
+import { getTierClassForTier, TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS, LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 
 export function appendHistory(history, entry) {
   return [...history, entry];
@@ -22,7 +22,7 @@ export function tierCounts(history, lineup) {
   for (const e of history) {
     if (!e || e.revealed === false) continue;
     if (e.tier && (e.tier in counts)) counts[e.tier] += 1;
-    if (e.isLastOne && ("Last One" in counts)) counts["Last One"] += 1;
+    if (e.isLastOne && (LAST_ONE_TIER_NAME in counts)) counts[LAST_ONE_TIER_NAME] += 1;
   }
   return counts;
 }

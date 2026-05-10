@@ -5,7 +5,7 @@
 export const STORAGE_KEY_PREFIX = "kuji_";
 export const DEFAULT_SEED_FALLBACK_BITS = 32;
 export const BOX_ROUND_INITIAL = 1;
-export const SCHEMA_VERSION = 6;  // M4: 메뉴 재설계 (lobby_acked → home_acked 키 개명 + 4탭 → 3탭). M3.1 v5 = 라인업 로비. M3 v4 = 다중 라인업 격리.
+export const SCHEMA_VERSION = 7;  // M4.1: 진입 정책 보정 (home_acked 의미 변경 = 면책 동의 표시 / kuji_view 키 안전 제거 / 4탭 환원 valid 보존). M4 v6 = 메뉴 재설계 (lobby_acked → home_acked + 4탭 → 3탭). M3.1 v5 = 라인업 로비. M3 v4 = 다중 라인업 격리.
 
 // 02_data 1.4.A 등급 클래스 (M3.1 신설) - hero/main/goods 3단계 분류
 export const TIER_CLASS_HERO = "hero";
@@ -20,23 +20,25 @@ export const TIER_CLASS_LABEL_KO = {
   goods: "굿즈",
 };
 
-// 02_data 1.4.B view 상수 (M3.1 신설 / M4 갱신 - lobby → home 일괄 개명)
-export const STATE_VIEW_HOME = "home";
-export const STATE_VIEW_MAIN = "main";
-export const STATE_VIEW_VALUES = [STATE_VIEW_HOME, STATE_VIEW_MAIN];
-export const STATE_VIEW_DEFAULT = STATE_VIEW_MAIN;
+// 02_data 1.4.A.7 Last One 등급 식별자 (M4.2 신설 - M3.1 P2-3 흡수)
+// 매직 문자열 "Last One" 단일화. 모든 호출처에서 본 상수 import 의무.
+export const LAST_ONE_TIER_NAME = "Last One";
 
-// 02_data 1.4.B 탭 상수 (M4 신설) - state.activeTab 모델 (M3.5까지 currentTab + 4탭 폐기)
+// 02_data 1.4.B view 상수 (M3.1 신설 / M4 갱신 / M4.1 폐기)
+// M4.1: STATE_VIEW_* 4종 폐기 (자비스 단계 1 결정 4.3.A 채택). activeTab 단일 라우팅. 호환 alias 미생성.
+
+// 02_data 1.4.B 탭 상수 (M4 신설 / M4.1 4탭 환원) - state.activeTab 모델
+export const STATE_TAB_HOME = "home";  // M4.1 신설 - 쿠지 홈 = 탭 1
 export const STATE_TAB_DRAW = "draw";
 export const STATE_TAB_PRODUCTS_HISTORY = "products_history";
 export const STATE_TAB_SETTINGS = "settings";
-export const STATE_TAB_VALUES = [STATE_TAB_DRAW, STATE_TAB_PRODUCTS_HISTORY, STATE_TAB_SETTINGS];
-export const STATE_TAB_DEFAULT = STATE_TAB_DRAW;
+export const STATE_TAB_VALUES = [STATE_TAB_HOME, STATE_TAB_DRAW, STATE_TAB_PRODUCTS_HISTORY, STATE_TAB_SETTINGS];
+export const STATE_TAB_DEFAULT = STATE_TAB_HOME;  // M4.1 갱신 (M4 = STATE_TAB_DRAW). 부팅 default = 홈 탭
 
-// 02_data 1.4.B dispatch type 상수 (M3.1 신설 / M4 갱신)
-export const DISPATCH_TYPE_OPEN_HOME = "open_home";  // M3.1 OPEN_LOBBY 개명
-export const DISPATCH_TYPE_ENTER_LINEUP = "enter_lineup";
-export const DISPATCH_TYPE_SET_ACTIVE_TAB = "set_active_tab";  // M4 신설
+// 02_data 1.4.B dispatch type 상수 (M3.1 신설 / M4 / M4.1 의미 갱신)
+export const DISPATCH_TYPE_OPEN_HOME = "open_home";  // M4.1: state.activeTab = STATE_TAB_HOME 강제
+export const DISPATCH_TYPE_ENTER_LINEUP = "enter_lineup";  // M4.1: state.activeTab = STATE_TAB_DRAW 강제 + currentLineupId + homeAcked = true
+export const DISPATCH_TYPE_SET_ACTIVE_TAB = "set_active_tab";  // M4 신설 / M4.1 4탭 정합
 // M4 폐기: DISPATCH_TYPE_SET_CURRENT_LINEUP - enter_lineup 통합
 
 // 02_data 1.2 PRNG
@@ -286,10 +288,11 @@ export const PEEL_STACK_OFFSET_PX = 6;
 export const PEEL_STACK_SCALE_DELTA = 0.03;
 export const PRODUCT_OVERLAY_TICKETS_MAX = 12;
 
-// 02_data 1.10 탭 아이콘 ID (M2 / M4 갱신: 4탭 → 3탭). M3.5까지 icon-history 자산을 통합 탭에서 재사용.
+// 02_data 1.10 탭 아이콘 ID (M2 / M4 / M4.1 갱신: 4탭 환원 = 홈/추첨/갤러리+기록/설정)
 export const TAB_ICON_IDS = {
+  home: "icon-home",  // M4.1 신설 = 쿠지 홈 탭 1
   draw: "icon-draw",
-  products_history: "icon-history",  // M4 갱신: 자산은 M3.5 icon-history 그대로 재사용 (별도 아이콘 신설은 비목표)
+  products_history: "icon-history",  // M4 갱신 자산 잔존: M3.5 icon-history 자산 재사용
   settings: "icon-settings",
   // M4 폐기: history / dc 4탭 키. 호출처 0건 의무.
 };

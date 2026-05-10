@@ -3,8 +3,7 @@
 
 import { createRng, nextInt } from "./random.js";
 import { boxId, fnv1a } from "./hash.js";
-
-const LAST_ONE_TIER_LABEL = "Last One";
+import { LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 일괄 단일화 (M3.1 P2-3 흡수)
 
 // initBox: lineup.boxSize - 1 매(Last One 제외)의 등급 라벨 배열 시드 기반 셔플.
 // Last One은 deck에 포함하지 않음. 마지막 1매 추첨 시 자동 지급 (01_spec 5.4.4).
@@ -16,7 +15,7 @@ export function initBox(seed, boxRound, lineup) {
 
   const labels = [];
   for (const t of lineup.tiers) {
-    if (t.tier === LAST_ONE_TIER_LABEL) continue;
+    if (t.tier === LAST_ONE_TIER_NAME) continue;
     for (let i = 0; i < t.count; i++) labels.push(t.tier);
   }
 

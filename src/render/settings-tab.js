@@ -1,4 +1,5 @@
 // 설정 탭. M3 dropdown / M3.1 "라인업 선택 화면으로" → M4 dropdown 폐기 + "홈으로" 버튼.
+// M4.1 의미 갱신: dispatch.open_home 호출 → state.activeTab = STATE_TAB_HOME (view 키 폐기). 라벨 / 코드 변경 0.
 
 import { getLineupById, DISPATCH_TYPE_OPEN_HOME } from "../data/numbers.js";
 

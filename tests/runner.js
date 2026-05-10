@@ -21,10 +21,12 @@ import "./suites/tier_class.test.js";  // M3.1
 import "./suites/tier_class_lookup.test.js";  // M3.2
 import "./suites/tier_class_counts.test.js";  // M3.3
 import "./suites/lineup_validation.test.js";  // M3.5
-import "./suites/home_flow.test.js";  // M4 (구 lobby_flow)
-import "./suites/storage_v6.test.js";  // M4
-import "./suites/state_view.test.js";  // M4
+import "./suites/home_flow.test.js";  // M4 (구 lobby_flow) / M4.1 갱신 (view 모델 폐기 + 4탭 환원 자산 흡수)
+import "./suites/storage_v6.test.js";  // M4 (chain 보존)
+// M4.1 폐기: import "./suites/state_view.test.js" - tab_routing.test.js로 자산 흡수 (STATE_VIEW_* 폐기 = M4.2-tidy 파일 삭제 후보)
 import "./suites/products_history_layout.test.js";  // M4
+import "./suites/storage_v7.test.js";  // M4.1 신설
+import "./suites/tab_routing.test.js";  // M4.1 신설 (구 state_view 자산 흡수)
 
 const rootEl = document.getElementById("root");
 runAll(rootEl).then(({ passCount, failCount }) => {

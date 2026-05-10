@@ -1,6 +1,7 @@
 // 등급 1개 항목 (M2 신설). 1매 등급 vs 다수 등급 분기.
 
 import { TIER_COLORS } from "../data/colors.js";
+import { LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 import { renderProductImage } from "./product-image.js";
 import { renderTierGauge } from "./tier-gauge.js";
 import { renderTierAccordion } from "./tier-accordion.js";
@@ -8,7 +9,7 @@ import { renderTierAccordion } from "./tier-accordion.js";
 export function renderProductItem({ tierMeta, drawnCount, drawnTypeIndices, isLastOnePulsing, isJustDrawn, isExpanded, onToggle }) {
   const item = document.createElement("div");
   item.className = "product-item"
-    + (tierMeta.tier === "Last One" ? " is-last-one" : "")
+    + (tierMeta.tier === LAST_ONE_TIER_NAME ? " is-last-one" : "")
     + (isExpanded ? " is-expanded" : "")
     + (isLastOnePulsing ? " is-pulsing" : "")
     + (isJustDrawn ? " is-just-drawn" : "");
@@ -19,9 +20,9 @@ export function renderProductItem({ tierMeta, drawnCount, drawnTypeIndices, isLa
   header.addEventListener("click", () => onToggle && onToggle(tierMeta.tier));
 
   const badge = document.createElement("span");
-  badge.className = "product-tier-badge" + (tierMeta.tier === "Last One" ? " is-last-one" : "");
+  badge.className = "product-tier-badge" + (tierMeta.tier === LAST_ONE_TIER_NAME ? " is-last-one" : "");
   badge.style.background = TIER_COLORS[tierMeta.tier] || "#9C8B78";
-  badge.textContent = tierMeta.tier === "Last One" ? "Last One" : tierMeta.tier;
+  badge.textContent = tierMeta.tier === LAST_ONE_TIER_NAME ? LAST_ONE_TIER_NAME : tierMeta.tier;
   header.appendChild(badge);
 
   const info = document.createElement("div");

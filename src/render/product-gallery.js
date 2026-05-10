@@ -1,7 +1,7 @@
 // 상품 갤러리 (M2 재설계, 4장 영역 5). 디폴트 접힘 + 펼침 토글. 펼치면 11종 모두 자세히.
 // M3.3 갱신 (5.13.D.2): tier_class 그룹화 (hero → main → goods + Last One hero 마지막).
 
-import { getLineupById, TIER_CLASS_LABEL_KO, TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS, getTierClassForTier } from "../data/numbers.js";
+import { getLineupById, TIER_CLASS_LABEL_KO, TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS, getTierClassForTier, LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 LAST_ONE_TIER_NAME 일괄 단일화
 import { renderProductItem } from "./product-item.js";
 
 export function renderProductGallery(state, dispatch) {
@@ -22,7 +22,7 @@ export function renderProductGallery(state, dispatch) {
       drawnByTier[e.tier] += 1;
       drawnTypesByTier[e.tier].push(e.typeIndex);
     }
-    if (e.isLastOne && ("Last One" in drawnByTier)) drawnByTier["Last One"] += 1;
+    if (e.isLastOne && (LAST_ONE_TIER_NAME in drawnByTier)) drawnByTier[LAST_ONE_TIER_NAME] += 1;
   }
 
   const isLastDrawAhead = state.boxState.deck.length === 1;
@@ -34,11 +34,11 @@ export function renderProductGallery(state, dispatch) {
     [TIER_CLASS_GOODS]: [],
   };
   for (const t of lineup.tiers) {
-    if (t.tier === "Last One") continue;
+    if (t.tier === LAST_ONE_TIER_NAME) continue;
     const tc = getTierClassForTier(lineup, t.tier);
     if (tc && groups[tc]) groups[tc].push(t);
   }
-  const lastOne = lineup.tiers.find((t) => t.tier === "Last One");
+  const lastOne = lineup.tiers.find((t) => t.tier === LAST_ONE_TIER_NAME);
   if (lastOne) groups[TIER_CLASS_HERO].push(lastOne);
 
   const orderedClasses = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS];
@@ -59,7 +59,7 @@ export function renderProductGallery(state, dispatch) {
         tierMeta: t,
         drawnCount: drawnByTier[t.tier],
         drawnTypeIndices: drawnTypesByTier[t.tier],
-        isLastOnePulsing: t.tier === "Last One" && isLastDrawAhead && drawnByTier["Last One"] === 0,
+        isLastOnePulsing: t.tier === LAST_ONE_TIER_NAME && isLastDrawAhead && drawnByTier[LAST_ONE_TIER_NAME] === 0,
         isJustDrawn: state.lastDrawnTier === t.tier,
         isExpanded: state.expandedTier === t.tier,
         onToggle: (tier) => dispatch({ type: "toggle_tier", tier }),

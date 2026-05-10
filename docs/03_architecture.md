@@ -275,7 +275,7 @@ export function migrateV3ToV4(): void
 //   saveGlobalSettings(partial)
 ```
 
-### 3.10.M3.1. M3.1 v5 라인업 로비
+### 3.10.M3.1. M3.1 v5 라인업 로비 (M4 v6 / **M4.1 v7 갱신**)
 
 ```js
 // 02_data 3.2.6 마이그레이션 v4 → v5.
@@ -284,26 +284,36 @@ export function migrateV3ToV4(): void
 // schemaVersion = 5.
 export function migrateV4ToV5(): void
 
-// 전역 키 lookup 갱신:
-//   loadGlobalSettings() → { seed, settingsSkipPick, meta, currentLineupId, lobbyAcked, schemaVersion }
-//     lobbyAcked는 string "true" / "false" → boolean 역직렬화 후 반환 (P2-5 흡수).
-//   saveGlobalSettings(partial): partial.lobbyAcked가 boolean이면 String() 직렬화 후 setItem.
+// **M4 v6 신설 (02_data 3.2.7)**:
+//   migrateV5ToV6: kuji_lobby_acked → kuji_home_acked 키 개명 + 4탭 → 3탭 매핑 + schemaVersion = 6.
+export function migrateV5ToV6(): void
 
-// **saveState 시그니처 객체 인자 명시** (P2-3 흡수):
-//   saveState({ currentLineupId?, lobbyAcked?, ...라인업별 키들 })
-//   currentLineupId / lobbyAcked는 saveGlobalSettings 경유, 라인업별 키는 saveStateForLineup 경유.
+// **M4.1 v7 신설 (02_data 3.2.8)**:
+//   migrateV6ToV7: kuji_view 키 안전 제거 + home_acked 키/값 보존 (의미 변경 = 면책 동의 표시) + activeTab 4탭 환원 valid 보존 + schemaVersion = 7.
+export function migrateV6ToV7(): void
+
+// 전역 키 lookup 갱신 (M4 / M4.1 갱신):
+//   loadGlobalSettings() → { seed, settingsSkipPick, meta, currentLineupId, homeAcked, activeTab, schemaVersion }
+//     **M4 갱신**: lobbyAcked → homeAcked (키명).
+//     **M4.1 갱신**: homeAcked 의미 = 면책 동의 표시 전용 (진입 흐름 분리). activeTab 영속 채택 (M4 미영속 → M4.1 영속).
+//     homeAcked / activeTab는 string → boolean / STATE_TAB_VALUES 역직렬화 후 반환.
+//   saveGlobalSettings(partial): partial.homeAcked가 boolean이면 String() 직렬화 후 setItem. partial.activeTab은 STATE_TAB_VALUES 검증 후 setItem.
+
+// **saveState 시그니처 객체 인자 명시** (P2-3 흡수 / **M4.1 갱신**):
+//   saveState({ currentLineupId?, homeAcked?, activeTab?, ...라인업별 키들 })
+//   currentLineupId / homeAcked / activeTab는 saveGlobalSettings 경유, 라인업별 키는 saveStateForLineup 경유.
 ```
 
 ## 3.11. render/main.js
 
-진입점. **3탭 라우팅 (M4 갱신)** + 모듈 wire-up. state 객체 보유.
+진입점. **4탭 라우팅 (M4.1 갱신)** + 모듈 wire-up. state 객체 보유.
 
 ```js
 state = {
-  view,               // **M3.1 신설 / M4 갱신**: STATE_VIEW_HOME | STATE_VIEW_MAIN. 'home' = 쿠지 홈 (라인업 선택), 'main' = 3탭 모델. 코드 식별자 STATE_VIEW_LOBBY → STATE_VIEW_HOME 개명은 단계 4 결정.
-  activeTab,          // **M4 갱신** (M3.5까지 currentTab): 'draw' | 'products_history' | 'settings' (view === 'main' 시에만 유효). M3.5까지 4탭 ('draw' / 'history' / 'dc' / 'settings') 폐기.
-  currentLineupId,    // M3 신설. 활성 라인업 ID.
-  homeAcked,          // **M3.1 신설 / M4 갱신**: boolean. false = 첫 방문 (홈 노출). true = 마지막 라인업 자동 진입. 영속. 코드 식별자 lobbyAcked → homeAcked 개명은 단계 4 결정.
+  // **M4.1 view 키 폐기**: M4까지의 STATE_VIEW_HOME / STATE_VIEW_MAIN 모델은 폐기. activeTab 단일 라우팅.
+  activeTab,          // **M4.1 갱신**: STATE_TAB_HOME | STATE_TAB_DRAW | STATE_TAB_PRODUCTS_HISTORY | STATE_TAB_SETTINGS. 4탭 (M4의 3탭에서 home 추가, 02_data 1.4.B). 영속 (kuji_active_tab).
+  currentLineupId,    // M3 신설. 활성 라인업 ID. 영속.
+  homeAcked,          // **M3.1 신설 / M4 / M4.1 의미 변경**: boolean. **M4.1**: 면책 동의 표시 전용 (false = 첫 방문, true = 면책 dismiss 완료). 진입 흐름과 분리. 영속.
   seed,
   boxRound,
   boxState,           // core/box BoxState
@@ -324,13 +334,25 @@ state = {
 
 state 변경 시 영속(`data/storage.saveState`) + 본문 재렌더.
 
-**B-α 메모리 vs 영속**:
-- 메모리 전용: `view` (M3.1 신설), `selectedGridIndices`, `pendingPeelResult`, `activeTab` (M4 갱신, M3.5까지 currentTab), `expandedTier`, `galleryExpanded`, `lastBuyCount`, `lastDrawnTier`.
-- 영속: `seed` / `boxRound` / `boxState` / `history` / `dcTickets` / `dcResults` / `meta` / `unopenedTickets` (lockedResult 포함) / `settingsSkipPick` / `currentLineupId` (M3) / `homeAcked` (M3.1 lobbyAcked → M4 homeAcked, 단계 4 개명).
+**M4.1 메모리 vs 영속**:
+- 메모리 전용: `selectedGridIndices`, `pendingPeelResult`, `expandedTier`, `galleryExpanded`, `lastBuyCount`, `lastDrawnTier`. **view 키 폐기 (M4.1)**.
+- 영속: `seed` / `boxRound` / `boxState` / `history` / `dcTickets` / `dcResults` / `meta` / `unopenedTickets` (lockedResult 포함) / `settingsSkipPick` / `currentLineupId` (M3) / `homeAcked` (M4.1 의미 변경 = 면책 동의 표시) / `activeTab` (M4.1 영속 채택, kuji_active_tab).
 
-**M3.1 view 라우팅 / M4 갱신**: render/main.js의 본문 렌더 함수가 `state.view === STATE_VIEW_HOME`이면 `render/home.renderHome(state, dispatch)` 호출 (M3.1 render/lobby.renderLobby 개명), `STATE_VIEW_MAIN`이면 **3탭 라우팅 (draw / products_history / settings)**. 헤더 / 하단 탭 바 / 3탭 컨텐츠는 main view에서만 렌더. home view 시 헤더 IP 라벨 미렌더 (현재 라인업 미선택 의미).
+**M4.1 라우팅**: render/main.js 본문 렌더 함수는 `state.activeTab` 단일 분기:
+- `STATE_TAB_HOME` → `render/home.renderHome(state, dispatch)`.
+- `STATE_TAB_DRAW` → 추첨 탭 컨텐츠.
+- `STATE_TAB_PRODUCTS_HISTORY` → `render/products-history-tab.renderProductsHistoryTab(state, dispatch)`.
+- `STATE_TAB_SETTINGS` → `render/settings-tab.renderSettingsTab(state, dispatch)`.
 
-**B-α 새로고침 복원**: `findUnrevealed` / `revealHistory` (M2.1 1차) 폐기. `unopenedTickets[i].lockedResult !== null` 인 항목이 존재하면 b2 분기 (페이지플립 카드 표시). 없고 raw가 있으면 b1 분기 (격자). 없으면 a (구매).
+헤더 / 하단 탭 바는 **모든 탭에서 공통 노출** (M4의 "home view 시 미노출" 정책 폐기). 헤더 = 활성 라인업 IP 라벨 (표시 전용, 클릭 affordance 폐기 - spec 5.13.A.3.2).
+
+**M4.1 부팅 흐름**:
+1. loadState → activeTab / homeAcked / currentLineupId 복원.
+2. activeTab 미존재(첫 진입) → STATE_TAB_DEFAULT = STATE_TAB_HOME.
+3. homeAcked === false → 면책 모달 노출 → dismiss 시 homeAcked = true.
+4. 라우팅 시작 (activeTab 분기).
+
+**B-α 새로고침 복원**: `findUnrevealed` / `revealHistory` (M2.1 1차) 폐기. `unopenedTickets[i].lockedResult !== null` 인 항목이 존재하면 b2 분기 (페이지플립 카드 표시). 없고 raw가 있으면 b1 분기 (격자). 없으면 a (구매). 본 분기는 activeTab === STATE_TAB_DRAW 시에만 적용.
 
 ## 3.12. render/[tab].js / [modal].js
 
@@ -413,12 +435,12 @@ export function buildConsumedGridSet(state, lineup): Set<number>
 
 ~~첫 진입 안내 toast~~ 모듈은 사용자 결정으로 폐기됨 (PROGRESS 4.14.1, 메모리 룰 `feedback_lottery_red_text`). `src/render/pick-hint-toast.js` 파일 삭제 + `dispatch.pick_hint_seen` 호출처 0건. `PICK_FIRST_HINT_TEXT_KO` / `PICK_FIRST_HINT_DURATION_MS` 상수는 numbers.js에 잔존(deprecated, 다음 정리 라운드 제거 후보).
 
-## 3.17. render/settings-tab.js (**M3 Lineup 섹션 + M3.1 로비 진입 버튼**)
+## 3.17. render/settings-tab.js (**M3 Lineup 섹션 + M3.1 로비 진입 버튼 / M4 dropdown 폐기 / M4.1 의미 갱신**)
 
 ```js
-// 사용자 결정 8.3 (A) - 헤더 라벨 정보성 (M3) → M4 갱신.
+// 사용자 결정 8.3 (A) - 헤더 라벨 정보성 (M3) → M4 갱신 → M4.1 갱신.
 // **M4 폐기 (5.13.A.4)**: 'Lineup' 섹션 dropdown quick-switch 폐기. 라인업 전환은 홈에서만.
-// settings-tab은 라인업 표시 + "홈으로" 버튼만 잔존. 클릭 → dispatch({ type: DISPATCH_TYPE_OPEN_HOME }).
+// **M4.1 갱신 (5.13.A.4.5 / 5.13.B.5.2)**: settings-tab은 라인업 표시 + "홈으로" 버튼 잔존. 클릭 → dispatch({ type: DISPATCH_TYPE_OPEN_HOME }) = activeTab = STATE_TAB_HOME 강제 (view 변경 폐기, M4.1 의미 갱신).
 ```
 
 ## 3.18. ~~dispatch.set_current_lineup~~ (**M4 폐기** - enter_lineup 통합, 5.13.A.4.3)
@@ -430,52 +452,70 @@ export function buildConsumedGridSet(state, lineup): Set<number>
 // 호출처 grep 0건 의무 (단계 6 게이트).
 ```
 
-## 3.19. dispatch.open_home (**M3.1 open_lobby → M4 개명**)
+## 3.19. dispatch.open_home (**M3.1 open_lobby → M4 개명 → M4.1 의미 갱신 (activeTab 라우팅)**)
 
 ```js
-// main.js dispatch 분기. spec 5.13.B.6.1 정합.
+// main.js dispatch 분기. spec 5.13.B.6.1 정합. M4.1: view 라우팅 폐기 → activeTab 라우팅.
 // payload: { type: DISPATCH_TYPE_OPEN_HOME }
 // 동작:
-//   1. state.view === STATE_VIEW_HOME 이면 no-op (home에서 호출 시 무시).
-//   2. state.view = STATE_VIEW_HOME.
+//   1. state.activeTab === STATE_TAB_HOME 이면 no-op.
+//   2. state.activeTab = STATE_TAB_HOME.
 //   3. **메모리 only state 보존** (pendingPeelResult / selectedGridIndices 그대로).
 //      → 사용자가 같은 라인업 카드 클릭 (enter_lineup, 동일 lineupId)으로 복귀하면 reveal 진행 그대로.
-//   4. 영속 변경 0건 (view는 메모리 전용).
-//   5. rerender (3탭 미렌더, 홈 카드 그리드 렌더).
+//   4. 영속: saveGlobalSettings({ activeTab: STATE_TAB_HOME }).
+//   5. rerender (홈 카드 그리드 + 4탭 바 + 헤더 모두 노출 = M4까지의 "탭바 미노출" 폐기).
 ```
 
-## 3.20. dispatch.enter_lineup (**M3.1 신설 / M4 갱신 - homeAcked**)
+## 3.20. dispatch.enter_lineup (**M3.1 신설 / M4 갱신 - homeAcked / M4.1 의미 갱신 (activeTab 라우팅)**)
 
 ```js
-// main.js dispatch 분기. spec 5.13.B.6.2 정합. M4: lobbyAcked → homeAcked 개명.
+// main.js dispatch 분기. spec 5.13.B.6.2 정합. M4.1: state.view 폐기 → activeTab 갱신.
 // payload: { type: DISPATCH_TYPE_ENTER_LINEUP, lineupId: string }
 // 동작:
-//   분기 A: lineupId === state.currentLineupId (= 동일 라인업, view 전환만)
-//     1. state.view = STATE_VIEW_MAIN.
+//   분기 A: lineupId === state.currentLineupId (= 동일 라인업, 탭 전환만)
+//     1. state.activeTab = STATE_TAB_DRAW (M4.1: 라인업 진입 = 추첨 탭 도메인 정합).
 //     2. state.homeAcked가 false였으면 true로 갱신 + saveState({ homeAcked: true }).
+//        (M4.1 의미: 면책 동의 표시. 진입 흐름 분리.)
 //     3. **메모리 only state 보존**.
-//     4. rerender.
+//     4. 영속: saveGlobalSettings({ activeTab: STATE_TAB_DRAW, homeAcked: true }).
+//     5. rerender.
 //
-//   분기 B: lineupId !== state.currentLineupId (= 라인업 전환 + view 전환). M4: set_current_lineup 통합.
+//   분기 B: lineupId !== state.currentLineupId (= 라인업 전환 + 탭 전환). M4: set_current_lineup 통합.
 //     1. persistAll (현재 라인업 state 영속).
-//     2. saveGlobalSettings({ currentLineupId: lineupId, homeAcked: true }).
+//     2. saveGlobalSettings({ currentLineupId: lineupId, homeAcked: true, activeTab: STATE_TAB_DRAW }).
 //     3. lineup = getLineupById(lineupId).
 //     4. state = bootstrapState(loadStateForLineup(lineupId), globalSettings, lineup).
-//     5. state.homeAcked = true / state.view = STATE_VIEW_MAIN.
+//     5. state.homeAcked = true / state.activeTab = STATE_TAB_DRAW (M4.1: view 키 부재).
 //     6. state.pendingPeelResult = null / state.selectedGridIndices = []
 //        (메모리 only 폐기 = 라인업 전환 정합).
 //     7. rerender.
 ```
 
-## 3.21. render/home.js (**M3.1 lobby 신설 / M4 home 격상**)
+## 3.20.M4.1. dispatch.set_active_tab (**M4 신설 / M4.1 4탭 정합**)
+
+```js
+// main.js dispatch 분기. spec 5.13.B.6.3 정합.
+// payload: { type: DISPATCH_TYPE_SET_ACTIVE_TAB, tab: string }
+// 동작:
+//   1. tab 검증: STATE_TAB_VALUES (4탭) 미포함 시 throw 또는 default.
+//   2. state.activeTab === tab 이면 no-op.
+//   3. state.activeTab = tab.
+//   4. **메모리 only state 보존**.
+//   5. 영속: saveGlobalSettings({ activeTab: tab }).
+//   6. rerender.
+//
+// **M4.1**: tab === STATE_TAB_HOME 호출 시 dispatch.open_home과 의미 동등 (단계 4 결정 = 호출처에서 단일화 권고. dispatch는 양쪽 모두 잔존).
+```
+
+## 3.21. render/home.js (**M3.1 lobby 신설 / M4 home 격상 / M4.1 = 탭 1 콘텐츠**)
 
 ```js
 // 쿠지 홈 (라인업 선택 화면). spec 5.13.B 정합.
-// state.view === STATE_VIEW_HOME 인 경우 render/main.js가 호출.
+// **M4.1**: state.activeTab === STATE_TAB_HOME 인 경우 render/main.js가 호출 (M4까지의 state.view === STATE_VIEW_HOME 분기 폐기).
 // DOM 의존성 OK (render 모듈).
 
 export function renderHome(state, dispatch): HTMLElement
-//   레이아웃: 헤더 (시뮬레이터 타이틀, IP 라벨 미렌더) + 라인업 카드 그리드 + 푸터.
+//   레이아웃: **라인업 카드 그리드 + 푸터** (헤더 / 하단 탭 바는 render/main.js가 모든 탭 공통 렌더 - spec 5.13.A.3.3 / 5.13.B.2.3 / arch 3.11 정합. 본 함수 시그니처 외부).
 //   카드 그리드: CSS Grid. cols = HOME_GRID_COLS_MOBILE (1) ~ HOME_GRID_COLS_TABLET (2)
 //                @media (min-width: HOME_TABLET_BREAKPOINT_PX) 에서 cols 2.
 //   각 카드: renderHomeCard(lineup, isCurrent, dispatch).
@@ -483,8 +523,8 @@ export function renderHome(state, dispatch): HTMLElement
 export function renderHomeCard(lineup, isCurrent, dispatch): HTMLElement
 //   props:
 //     - lineup: 라인업 객체 (1.4.0 구조).
-//     - isCurrent: boolean. lineup.id === state.currentLineupId && state.homeAcked === true.
-//                  (homeAcked === false 첫 방문자는 모든 카드 isCurrent: false → "현재" 배지 미노출).
+//     - isCurrent: boolean. **M4.1**: lineup.id === state.currentLineupId 단독 (homeAcked 분리). M4까지의 homeAcked 분기 폐기.
+//                  (M4.1: homeAcked 의미 = 면책 동의 표시이므로 isCurrent와 무관.)
 //
 //   카드 구성 (spec 5.13.B.4.2 표, M4 풍부화):
 //     1. home hero 이미지: lineup.homeHeroAssetPath.
@@ -611,27 +651,32 @@ export function heroPreview(lineup):
 ```
 mount(rootEl):
   1. 마이그레이션 점검 (chain, 02_data 3.2 정합):
-     - kuji_schema_version 미존재 또는 < 5:
-       - schemaVersion < 3 → migrateV2ToV3 → migrateV3ToV4 → migrateV4ToV5 순차 호출.
-       - schemaVersion === 3 → migrateV3InPlace + migrateV3ToV4 → migrateV4ToV5.
-       - schemaVersion === 4 → migrateV4ToV5.
-       - **migrateV4ToV5 (M3.1 신설, 02_data 3.2.6)**:
-         - 멱등 게이트: schemaVersion ≥ 5 || kuji_lobby_acked !== null → return.
-         - existingLineupId = localStorage.getItem("kuji_current_lineup_id").
-         - lobbyAcked = (existingLineupId !== null) ? "true" : "false" (string으로 영속).
-         - localStorage.setItem("kuji_lobby_acked", lobbyAcked).
-         - localStorage.setItem("kuji_schema_version", "5").
+     - kuji_schema_version 미존재 또는 < 7 (M4.1 갱신 - 본 사이클 chain 범위):
+       - schemaVersion < 3 → migrateV2ToV3 → migrateV3ToV4 → migrateV4ToV5 → migrateV5ToV6 → migrateV6ToV7 순차 호출.
+       - schemaVersion === 3 → migrateV3InPlace + migrateV3ToV4 → migrateV4ToV5 → migrateV5ToV6 → migrateV6ToV7.
+       - schemaVersion === 4 → migrateV4ToV5 → migrateV5ToV6 → migrateV6ToV7.
+       - schemaVersion === 5 → migrateV5ToV6 → migrateV6ToV7 (M4 신설 + M4.1 신설).
+       - schemaVersion === 6 → migrateV6ToV7 (**M4.1 신설, 02_data 3.2.8**).
+       - **migrateV6ToV7 (M4.1 신설)**:
+         - 멱등 게이트: schemaVersion ≥ 7 → return.
+         - localStorage.removeItem("kuji_view") (M4.1 view 키 안전 제거).
+         - kuji_home_acked 키/값 보존 (의미만 변경 = 면책 동의 표시 전용).
+         - kuji_active_tab 영속 값 보존 (4탭 환원이 v6 3탭 superset, valid).
+         - localStorage.setItem("kuji_schema_version", "7").
   2. globalSettings = loadGlobalSettings()
      - currentLineupId 미존재 → LINEUP_DEFAULT_ID 부여 + saveGlobalSettings.
-     - **lobbyAcked 역직렬화 (M3.1 신설)**: localStorage 값 "true" === "true"로 boolean 변환 (P2-5 흡수).
-       lobbyAcked 키 부재면 false (안전 default).
+     - **homeAcked 역직렬화 (M4 개명 / M4.1 의미 변경)**: localStorage 값 "true" === "true"로 boolean 변환. homeAcked 키 부재면 false (안전 default = 첫 방문자).
+     - **activeTab 역직렬화 (M4 영속 보류 → M4.1 영속 채택)**: localStorage `kuji_active_tab` 값 → STATE_TAB_VALUES 검증 → 미포함이면 STATE_TAB_DEFAULT (= STATE_TAB_HOME). 키 부재면 STATE_TAB_HOME.
   3. lineup = getLineupById(globalSettings.currentLineupId)
      - 미발견 → console.warn + LINEUP_DEFAULT 사용 (spec 7.16.1).
   4. state = bootstrapState(loadStateForLineup(lineup.id), globalSettings, lineup)
-  5. **view 결정 (M3.1 신설)**:
-     - state.lobbyAcked === false → state.view = STATE_VIEW_LOBBY.
-     - state.lobbyAcked === true → state.view = STATE_VIEW_MAIN (= STATE_VIEW_DEFAULT).
-  6. rerender.
+     - state.activeTab = globalSettings.activeTab (영속 복원).
+     - state.homeAcked = globalSettings.homeAcked.
+  5. **면책 모달 분기 (M4.1 갱신, 진입 흐름과 분리)**:
+     - state.homeAcked === false → 면책 모달 노출 → 사용자 dismiss 시 state.homeAcked = true + saveGlobalSettings({ homeAcked: true }).
+     - 면책 dismiss 후 라우팅 진입.
+     - **M4까지의 "lobbyAcked === true → STATE_VIEW_MAIN 자동 진입" 분기 폐기 (M4.1, 4.3.A 채택)**.
+  6. rerender (activeTab 분기. STATE_TAB_HOME → renderHome / STATE_TAB_DRAW → 추첨 / STATE_TAB_PRODUCTS_HISTORY / STATE_TAB_SETTINGS).
 ```
 
 ### 4.M3.2. 라인업 전환 (사용자 액션)
@@ -675,43 +720,23 @@ mount(rootEl):
 - localStorage.setItem("kuji_lobby_acked", lobbyAcked).
 - localStorage.setItem("kuji_schema_version", "5").
 
-### 4.M3.1.B. 로비 ↔ main view 전환 흐름 (M3.1 신설, spec 5.13.B)
+### 4.M3.1.B. ~~로비 ↔ main view 전환 흐름~~ (**M4.1 폐기**, view 모델 폐기 정합)
 
-#### 진입 1: 첫 방문 자동
+**M4.1 폐기 박제**: state.view 모델 폐기 (자비스 단계 1 결정 4.3.A 채택) + open_lobby → open_home 개명(M4) → activeTab 라우팅 의미 갱신(M4.1, arch 3.19) → 본 절의 매트릭스 무의미.
 
-```
-부팅 (4.M3.1) → state.lobbyAcked === false → state.view = STATE_VIEW_LOBBY → render/lobby.renderLobby
-사용자 카드 클릭 → dispatch.enter_lineup (3.20)
-  분기 A 또는 B 적용 (lineupId 동일 여부)
-  → state.view = STATE_VIEW_MAIN → main view 렌더
-```
+**M4.1 라우팅 흐름 SSOT**:
+- 부팅 흐름 = arch 4.M3.1 (M4.1 갱신, 6단계).
+- dispatch 명세 = arch 3.19 (open_home) / 3.20 (enter_lineup) / 3.20.M4.1 (set_active_tab).
+- 진입 경로 = spec 5.13.B.5 (하단 탭 1차 + 설정 보조 + 헤더 클릭 폐기).
 
-#### 진입 2: 헤더 라벨 클릭 (재방문, spec 5.13.A.3.2 / 5.13.B.5.2)
+**M3.1 시점 매트릭스 (변경이력 박제 - 단계 8 흡수 예정)**:
 
-```
-사용자 헤더 라벨 클릭 → dispatch.open_lobby (3.19)
-  state.view = STATE_VIEW_LOBBY (메모리 only state 보존)
-  → render/lobby.renderLobby
-사용자 카드 클릭 → dispatch.enter_lineup (3.20)
-  분기 A: 같은 라인업 → view 전환만 + 메모리 보존 (reveal 진행 그대로)
-  분기 B: 다른 라인업 → 라인업 전환 + 메모리 폐기 + 새 라인업 공간 로드
-```
-
-#### 진입 3: 설정 탭 "라인업 선택 화면으로" 버튼 (spec 5.13.A.4.5 / 5.13.B.5.1)
-
-```
-사용자 settings-tab 'Lineup' 섹션의 "라인업 선택 화면으로" 클릭 → dispatch.open_lobby
-  진입 2와 동일 흐름.
-```
-
-#### dispatch 사용 매트릭스 (M3.1)
-
-| dispatch type | 호출 위치 | view 전환 | 라인업 변경 | 메모리 폐기 | 영속 변경 |
-|---|---|---|---|---|---|
-| `open_lobby` | 헤더 라벨 / 설정 탭 버튼 | main → lobby | 없음 | 없음 | 없음 |
-| `enter_lineup` (분기 A 동일) | 로비 카드 (동일 라인업) | lobby → main | 없음 | 없음 | lobbyAcked 부족 시만 갱신 |
-| `enter_lineup` (분기 B 전환) | 로비 카드 (다른 라인업) | lobby → main | currentLineupId 갱신 | pendingPeel/selectedGrid 폐기 | currentLineupId + lobbyAcked + 라인업 공간 |
-| `set_current_lineup` (M3) | 설정 탭 dropdown | 없음 (main 유지) | currentLineupId 갱신 | pendingPeel/selectedGrid 폐기 | currentLineupId + 라인업 공간 |
+| dispatch type | M3.1 시점 의미 | M4.1 시점 의미 |
+|---|---|---|
+| ~~`open_lobby`~~ | 헤더 라벨 / 설정 버튼 → state.view = LOBBY | M4 = open_home 개명. M4.1 = state.activeTab = STATE_TAB_HOME. 헤더 클릭 폐기 (4.1.A) |
+| `enter_lineup` (분기 A 동일) | lobby → main view 전환 | state.activeTab = STATE_TAB_DRAW (view 키 폐기) |
+| `enter_lineup` (분기 B 전환) | lobby → main + 라인업 전환 | state.activeTab = STATE_TAB_DRAW + 라인업 전환 (view 키 폐기) |
+| ~~`set_current_lineup`~~ | settings dropdown | M4 폐기 |
 
 # 5. 정적 검사 / 단계 6 게이트 검증식
 
@@ -741,14 +766,14 @@ mount(rootEl):
 - 라인업 미발견 (getLineupById fallback) 정합.
 - 라인업 전환 시 메모리 only state (pendingPeelResult / selectedGridIndices) 폐기 정합.
 
-5.13. **M3.1 lobbyAcked + view 매트릭스 (단계 6 신설)**:
-- 부팅 시 schemaVersion < 5 → migrateV4ToV5 호출 정합. existingLineupId 부재 → lobbyAcked=false 부여.
-- state.lobbyAcked === false 시 state.view = STATE_VIEW_LOBBY 강제.
-- state.lobbyAcked === true 시 state.view = STATE_VIEW_MAIN default.
-- view === STATE_VIEW_LOBBY 시 4탭 / 헤더 / 본편 컴포넌트 미렌더 정합.
-- dispatch.open_lobby가 lobby에서 호출 시 no-op.
-- dispatch.enter_lineup 분기 A (동일 라인업) vs 분기 B (다른 라인업) 의도 정합.
-- localStorage `kuji_lobby_acked` 영속 형식 string ("true"/"false"). 역직렬화 정합.
+5.13. **~~M3.1 lobbyAcked + view 매트릭스~~ (M4 부분 갱신 / M4.1 폐기, view 모델 폐기 정합 - 5.20 흡수)**:
+- ~~부팅 시 schemaVersion < 5 → migrateV4ToV5 호출 정합~~ (M4.1: chain v3→v7, 5.20 흡수).
+- ~~state.lobbyAcked === false 시 state.view = STATE_VIEW_LOBBY 강제~~ (M4.1 폐기).
+- ~~state.lobbyAcked === true 시 state.view = STATE_VIEW_MAIN default~~ (M4.1 폐기).
+- ~~view === STATE_VIEW_LOBBY 시 4탭 / 헤더 / 본편 컴포넌트 미렌더 정합~~ (M4.1 폐기, 모든 탭 공통 노출).
+- dispatch.open_home (M4 개명) 호출 시 state.activeTab = STATE_TAB_HOME 강제 (5.20 흡수).
+- dispatch.enter_lineup 분기 A (동일 라인업) vs 분기 B (다른 라인업) 의도 정합 (M4.1: activeTab = STATE_TAB_DRAW 강제).
+- localStorage `kuji_home_acked` (M4 개명 / M4.1 의미 변경 = 면책 동의 표시) 영속 형식 string ("true"/"false"). 역직렬화 정합.
 
 5.14. **M3.1 tier_class 검증식 grep (단계 6 신설 / M3.5 갱신)**:
 - 모든 라인업의 모든 tier에 tierClass 존재 (`lineup.tiers.every(t => t.tierClass)`).
@@ -757,12 +782,13 @@ mount(rootEl):
 - DC.tierClass === TIER_CLASS_HERO 정합.
 - core/lobby-preview.heroPreview 반환 형식 정합 (Last One 제외).
 
-5.15. **M3.1 매직 넘버 grep (단계 6 신설)**:
-- "lobby" / "main" 문자열 리터럴은 STATE_VIEW_LOBBY / STATE_VIEW_MAIN 상수 경유. 값 자체 import 패턴 grep.
-- "open_lobby" / "enter_lineup" 문자열 리터럴은 DISPATCH_TYPE_OPEN_LOBBY / DISPATCH_TYPE_ENTER_LINEUP 경유.
-- "hero" / "main" / "goods" 문자열 리터럴은 TIER_CLASS_HERO / TIER_CLASS_MAIN / TIER_CLASS_GOODS 경유.
-- "kuji_lobby_acked" 키는 storage.js 1곳에서만 정의 + 다른 호출처는 GLOBAL_KEYS.lobbyAcked 경유.
-- 768 / 1 / 2 (LOBBY_GRID_COLS_*, LOBBY_TABLET_BREAKPOINT_PX)는 02_data 1.5 상수 경유.
+5.15. **M3.1 매직 넘버 grep (단계 6 신설 / M4 부분 갱신 / M4.1 부분 폐기, 5.20 흡수)**:
+- ~~"lobby" / "main" 문자열 리터럴은 STATE_VIEW_LOBBY / STATE_VIEW_MAIN 상수 경유~~ (M4.1 폐기, STATE_VIEW_* 4종 폐기. 5.20에서 잔존 0건 grep으로 통합).
+- "open_home" / "enter_lineup" / "set_active_tab" 문자열 리터럴은 DISPATCH_TYPE_OPEN_HOME / DISPATCH_TYPE_ENTER_LINEUP / DISPATCH_TYPE_SET_ACTIVE_TAB 경유 (M4 개명 / M4.1 잔존).
+- "hero" / "main" / "goods" 문자열 리터럴은 TIER_CLASS_HERO / TIER_CLASS_MAIN / TIER_CLASS_GOODS 경유 (M4.1 잔존).
+- "kuji_home_acked" 키는 storage.js 1곳에서만 정의 + 다른 호출처는 GLOBAL_KEYS.homeAcked 경유 (M4 개명 / M4.1 의미 변경).
+- "kuji_active_tab" 키 (M4.1 영속 채택) storage.js 1곳에서만 정의 + 호출처는 GLOBAL_KEYS.activeTab 경유.
+- 768 / 1 / 2 (LOBBY_GRID_COLS_*, LOBBY_TABLET_BREAKPOINT_PX 또는 M4 신설 HOME_GRID_COLS_*)는 02_data 1.5 상수 경유 (M4.2-tidy 정리 라운드 후보 - 키명 lobby → home 미정정).
 
 5.16. **M3.2 tier_class 시각 적용 검증 (단계 6 신설)**:
 - hero-carousel.js / minor-row.js의 카드에 `data-tier-class` 속성 부착 정합 (lineup.tiers의 모든 tier에 대해).
@@ -812,6 +838,22 @@ mount(rootEl):
 - 단위 테스트 (home_flow / products_history_layout / state_view) 통과.
 - M3 series 라이브 결함 누적 흡수 정합 (단계 7 QA).
 
+5.20. **M4.1 진입 정책 보정 검증 (단계 6 신설)**:
+- spec 4장 라우팅 모델 (activeTab 단일) ↔ 02_data 1.4.B 탭 상수 ↔ src/data/numbers.js export 1:1.
+- M4까지 STATE_VIEW_* 4종 (HOME/MAIN/VALUES/DEFAULT) 코드 잔존 0건 grep (자비스 단계 1 결정 4.3.A 채택).
+- spec 4장 탭 모델 (4탭) ↔ STATE_TAB_VALUES = [HOME, DRAW, PRODUCTS_HISTORY, SETTINGS] ↔ STATE_TAB_DEFAULT = HOME 1:1.
+- M4 3탭 STATE_TAB_DEFAULT = STATE_TAB_DRAW 잔존 0건 grep (M4.1 = STATE_TAB_HOME).
+- render/main.js: state.view 키 / view 라우팅 분기 잔존 0건. state.activeTab 단일 라우팅. STATE_TAB_HOME 분기 = renderHome 호출.
+- render/header.js: 헤더 IP 라벨 클릭 핸들러 / 꺾쇠 아이콘 / "홈" 텍스트 잔존 0건 grep (자비스 단계 1 결정 4.1.A 채택). 모든 탭에서 헤더 IP 라벨 노출 (M4의 home view 미렌더 정책 폐기).
+- render/home.js: state.activeTab === STATE_TAB_HOME 분기에서 호출. isCurrent 분기 = lineup.id === currentLineupId 단독 (homeAcked 분기 제거).
+- render/bottom-tabs.js: 4탭 (홈/추첨/갤러리+기록/설정) 노출 + 모든 탭에서 노출 (M4의 home view 미노출 정책 폐기).
+- render/settings-tab.js: "홈으로" 버튼 잔존 + dispatch open_home 호출 (의미 = activeTab = HOME).
+- dispatch.open_home: state.activeTab = STATE_TAB_HOME (state.view 변경 잔존 0건).
+- dispatch.enter_lineup: state.activeTab = STATE_TAB_DRAW + state.homeAcked = true (state.view 변경 잔존 0건).
+- storage v6 → v7 마이그레이션 (kuji_view 키 안전 제거 + home_acked 의미 변경 + activeTab 4탭 환원 valid + schemaVersion bump) 멱등성 정합.
+- 단위 테스트 (storage_v7 / home_flow / tab_routing) 통과. **M4.2 정정 (M4.1 P1-2 흡수)**: home_flow_m41 → home_flow (M4 자산 흡수, 이름 보존) 정정.
+- M3 series + M4 라이브 결함 누적 흡수 정합 (단계 7 QA).
+
 # 6. 변경 이력
 
 6.1. 2026-05-02: M1 단계 4 impl_plan 작성. placeholder 교체. 모듈 분해 / 의존성 그래프 / 인터페이스 시그니처 / 데이터 흐름 정의.
@@ -819,6 +861,8 @@ mount(rootEl):
 6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설. **(이후 6.5에서 findUnrevealed/revealHistory 폐기 + pendingPickResult → ticket.lockedResult 통합. 6.6에서 pick-hint-toast 폐기)**.
 
 6.7. 2026-05-08: **M3 단계 4 impl_plan 사전 정합 (단계 3 통과 후)**. (1) 3.7.M3 신설 - history.tierCounts(history, lineup) 시그니처 + box.id lineup_id 포함. (2) 3.10.M3 신설 - storage v4 다중 라인업 격리 (migrateV3ToV4 / loadStateForLineup / saveGlobalSettings). (3) 3.15.M3 신설 - core/pick-grid.js (M2.1 정리 3.5.1 흡수, render→core 이전). (4) 3.17 settings-tab Lineup 섹션 + 3.18 dispatch.set_current_lineup. (5) 4.M3 흐름 신설 (부팅 / 전환 / 영속 매핑 / 마이그레이션 알고리즘). (6) 5.10/5.11/5.12 단계 6 게이트 grep 신설 (라인업 격리 / 등급 수 가변성 / currentLineupId 매트릭스).
+6.13. 2026-05-10: **M4.1 단계 2 design + 단계 4 impl_plan 사전 정합 (단계 3 design_review 진입 전 박제)**. (1) **5.20 게이트 신설** - 진입 정책 보정 검증 (state.view 키 잔존 0 / 4탭 환원 / dispatch 의미 갱신 / 헤더 클릭 폐기 / storage v7 마이그레이션). (2) 3.11 state 객체 view 키 폐기 + activeTab 4탭 enum + homeAcked 의미 변경 (면책 동의 표시). (3) 3.11 라우팅 단일화 (activeTab 단일). (4) 3.17 settings-tab 의미 갱신 ("홈으로" 버튼 = activeTab 라우팅). (5) 3.19 dispatch.open_home 의미 갱신 (activeTab = HOME, view 폐기). (6) 3.20 dispatch.enter_lineup 의미 갱신 (activeTab = DRAW). (7) 3.20.M4.1 dispatch.set_active_tab 4탭 정합. (8) 3.21 render/home.js = 탭 1 콘텐츠 (activeTab 분기). (9) 단계 4 본 plan 흡수 예정: numbers.js STATE_VIEW 폐기 + STATE_TAB_HOME 신설 + STATE_TAB_DEFAULT = HOME / main.js 라우팅 단일화 / bottom-tabs 4탭 환원 / home.js / header 클릭 폐기 / settings 의미 갱신 / storage migrateV6ToV7 신설 + chain / 단위 테스트 storage_v7 + home_flow_m41 + tab_routing 신설. M3 series + M4 라이브 결함 누적 흡수 정합 (단계 7 QA). 1장 트리 신규 모듈 0 (구조 변경, 모듈 수 동일). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택. 사용자 결정 3.1/3.2/3.3.
+
 6.12. 2026-05-10: **M4 단계 2 design + 단계 4 impl_plan 사전 정합 (round 2 정정 흡수)**. (1) **5.19 게이트 신설** - 메뉴 재설계 검증. (2) 단계 4 본 plan에서 흡수: state.view 개명 (lobby → home) / state.activeTab 4탭 → 3탭 / dispatch open_home 개명 + set_current_lineup 폐기 + set_active_tab 신설 / render/lobby → home + 카드 메타 풍부화 / render/products-history-tab 신설 (M3.3 자산 흡수 + M2 history 리스트 흡수 + DC sub-section 4 통합) / render/history-tab + dc-tab 폐기 / settings-tab dropdown 폐기 + "홈으로" 버튼 / tab-bar 4 → 3 / storage v5 → v6 마이그레이션 / 단위 테스트 home_flow + products_history_layout + state_view + storage_v6 신설. M3 series 라이브 결함 누적 흡수 정합 (단계 7 QA). 1장 트리: render/home.js (개명) + render/products-history-tab.js (신설). 폐기: render/history-tab.js + render/dc-tab.js. **round 1 P0 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 (3.11 + spec 4.3) / P0-2 3.11 state 객체 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION v6 bump + 02_data 3.2.7 마이그레이션 절 신설. P1 4건 (sub-section 번호 / 결정 게이트 6건 / 산출식 / 본체 박제) 흡수.
 
 6.11. 2026-05-10: **M3.5 단계 2 design + 단계 4 impl_plan 사전 정합 (round 3 정정 흡수)**. (1) 5.14 M3.1 검증식 grep 갱신 - main ≥ 1 룰 폐기 (M3.5 완화). (2) **5.18 게이트 신설** - tier_class 라인업별 자율 분류 검증 (1.4-OP.2 ↔ numbers.js 1:1 / validateLineup main 코드 제거 / 원피스 throw 0 / hero=0 goods=0 throw 잔존 / **hero-carousel + minor-row 분기 식 tierClass 기반 grep** / 단위 테스트 3종). (3) 단계 4 본 plan에서 흡수: numbers.js TIERS_ONEPIECE B/C/D/E/F tierClass main → hero / `_validateLineupTierClass` 함수 main 룰 제거 / **render/hero-carousel.js filter `count===1` → `tierClass !== TIER_CLASS_GOODS`** / **render/minor-row.js filter `count>=2` → `tierClass===TIER_CLASS_GOODS`** / lineup_validation.test.js 신설 또는 확장 / tier_class_lookup.test.js + tier_class_counts.test.js 갱신. state / dispatch / storage / core/draw / 결정론 영향 0 (데이터 분류 + 검증식 + render 분기 식 미세 변경). 1장 트리 신규 모듈 0. **round 1 P0 정정 + round 2 P0 재정정**: round 1은 분기 식이 count 기반이라 tierClass 변경만으로 시각 자동 정합 미성립 - 분기 식 변경 채택. round 2는 `tierClass===HERO` 채택이 드래곤볼 hero-carousel 6→1 회귀 야기 - `tierClass !== GOODS`로 재변경 (양쪽 라인업 6 등급 동등 노출, 비목표 4.1 정합). plan 4.8 비목표 "hero-carousel UI 자체 재설계"는 토큰/scroll/카드 크기 정책 재설계만 의미하며 filter 식 미세 변경은 본 사이클 흡수 가능으로 명문화.

@@ -623,3 +623,127 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 11.5.4. **마이그레이션 chain 멱등 정합**: v3→v4→v5→v6 chain. 각 마이그레이션 함수가 단독 멱등 + chain 멱등 모두 통과 의무.
 
 11.5.5. **자율 진행 신호 답습 (M3.5 → M4)**: "권고 진행" / "한번에 끝까지" 신호로 단계 1/4/7 자율 통과. 차기 메이저 사이클 답습 패턴.
+
+# 12. M4.1 home-entry-fix (2026-05-10) - 진입 정책 보정
+
+## 12.1. 사이클 메타
+
+12.1.1. 스프린트 ID = M4.1-home-entry-fix. 8단계 파이프라인 정식 보정 사이클.
+12.1.2. **트리거 (사용자 발화 2026-05-10)**: "기본적으로 진입하면 쿠지 홈이 있어야 하고, 내가 원하는 쿠지를 선택해서 게임을 진행하는 방식이어야 해. 근데 쿠지 종류를 선택하는게 너무 어려워."
+12.1.3. 스코프 = (1) 진입 정책 보정 (재방문 시도 홈 entry, home_acked 1회 ack 진입 흐름 폐기) + (2) 4탭 환원 (홈/추첨/갤러리+기록/설정) + (3) state.view 모델 폐기 (자비스 단계 1 결정 4.3.A 채택) + (4) 헤더 IP 라벨 클릭 affordance 폐기 (4.1.A 채택) + (5) home_acked 의미 변경 = 면책 동의 표시 전용 (4.2.A 채택) + (6) storage v7 마이그레이션 + activeTab 영속 채택.
+12.1.4. 사용자 결정 3건 (3.1 재방문 시도 홈 / 3.2 Q1=A안 = 4탭 환원 / 3.3 Q2=M4.1) + 자비스 단계 1 추천 채택 3건 (4.1.A / 4.2.A / 4.3.A).
+12.1.5. **자율 진행 신호 답습 (M3.5 / M4 → M4.1)**: "권장안대로 정석대로 진행" + "기획서 작성후 구현까지... 당연히 qa까지". 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존.
+12.1.6. **명명 충돌 정리**: M4.1-tidy 백로그 (PROGRESS 11.4) → **M4.2-tidy** 개명. 본 사이클이 M4.1 슬롯 점유.
+
+## 12.2. 단계별 산출물
+
+12.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M4.1-home-entry-fix/01_plan.md). 자율 승인.
+12.2.2. 단계 2 design: spec 4장 라우팅 모델 / 5.13.A.1.3 / 5.13.A.3 (헤더 클릭 폐기) / 5.13.A.4.5 / 5.13.B 전면 (B.2 view 폐기 + B.3 진입 흐름 + B.5 진입 경로 + B.6 dispatch + B.8.6 비목표) / 5.13.F.1 / 8.19. 02_data 1.1 SCHEMA_VERSION 7 / 1.4.B 전면 재구성 (STATE_VIEW 폐기 + STATE_TAB_HOME 신설 + 4탭 환원 + STATE_TAB_DEFAULT = HOME) / 3.1.2 home_acked 의미 변경 + kuji_active_tab 영속 채택 / 3.2.8 v6→v7 마이그레이션 절 신설 / 4.18. arch 3.10.M3.1 (saveState 시그니처 갱신) / 3.11 (state 객체 view 키 폐기 + activeTab 4탭 + 라우팅 단일화 + 부팅 흐름 6단계) / 3.17 / 3.19 / 3.20 / 3.20.M4.1 / 3.21 / 4.M3.1 (부팅 절차 view 결정 단계 폐기 + chain v3→v7) / 4.M3.1.B (절 폐기 박제) / 5.13 / 5.15 (게이트 폐기 박제) / 5.20 신설 (M4.1 검증 게이트) / 6.13.
+12.2.3. 단계 3 design_review: [03_design_review.md](docs/pipeline/M4.1-home-entry-fix/03_design_review.md). round 1 P0=4 (renderHome 헤더 표기 충돌 / 4.M3.1 view 결정 잔존 / 4.M3.1.B 절 폐기 누락 / 5.13+5.15 STATE_VIEW 게이트 자기-충돌) → round 2 통과 (P0=0 + 신규 결함 0). 자동 재시도 1회 사용 (CLAUDE.md 2.2 한도 내).
+12.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M4.1-home-entry-fix/04_impl_plan.md). T1~T12 분할. 자율 승인.
+12.2.5. **단계 5 implement (2026-05-10)**:
+- T1 numbers.js: STATE_VIEW_* 4종 export 폐기 + STATE_TAB_HOME 신설 + STATE_TAB_VALUES 4탭 환원 + STATE_TAB_DEFAULT = HOME 변경 + SCHEMA_VERSION 7 + TAB_ICON_IDS.home 신설.
+- T2 storage.js: migrateV6ToV7 신설 (kuji_view 안전 제거 + home_acked 키/값 보존 + active_tab valid 보존 + schemaVersion bump) / chain v3→v7 등재 / GLOBAL_KEYS.activeTab 신설 + LEGACY_VIEW_KEY_M4 / loadGlobalSettings activeTab 역직렬화 + saveGlobalSettings activeTab 검증 + saveState activeTab + homeAcked 정합.
+- T3 main.js: state.view 키 폐기 + activeTab 단일 라우팅 (4탭 분기) + 헤더/탭바 모든 탭 공통 노출 + dispatch.open_home / enter_lineup / set_active_tab 의미 갱신 (activeTab 라우팅) + bootstrapState activeTab 영속 복원.
+- T4 bottom-tabs.js: 4탭 환원 (홈 = 탭 1 + 추첨 + 갤러리·기록 + 설정).
+- T5 home.js: isCurrent 분기 = lineup.id === currentLineupId 단독 (homeAcked 분리) + renderHome 헤더 표기 폐기 (main.js 공통 렌더 정합).
+- T6 header.js: 클릭 affordance 폐기 (`<button>` → `<span>` + addEventListener 제거 + aria-label 제거).
+- T7 settings-tab.js: 의미 박제 갱신 (코드 변경 0, 주석만).
+- T8 storage_v7.test.js 신설 (8 케이스: 빈 / v6 fixture / kuji_view 비표준 / v7 멱등 / 의미 변경 / chain v3→v7 / chain v5→v7).
+- T9 home_flow.test.js 갱신 (M4 자산 흡수 + view 모델 폐기 + 4탭 환원 + homeAcked 의미 분리).
+- T10 tab_routing.test.js 신설 (state_view.test.js 자산 흡수 + STATE_VIEW_* 폐기 검증 + 4탭 enum + dispatch 상수).
+- T11 runner.js: storage_v7 / tab_routing 등재 + state_view 폐기 박제 (M4.2-tidy 후보 = 파일 삭제).
+- T12 PROGRESS M4.1 절 신설 (본 절).
+
+## 12.3. 단계 5 정합 검증 (Node ESM 시뮬)
+
+| 검증 | 결과 |
+|---|---|
+| numbers.js: STATE_VIEW_* 4종 = undefined | ✅ |
+| numbers.js: STATE_TAB_HOME = "home" / STATE_TAB_DEFAULT = "home" / SCHEMA_VERSION = 7 | ✅ |
+| storage.js: migrateV6ToV7 빈 storage / v6 fixture / kuji_view 제거 / v7 멱등 / chain v3→v7 | ✅ ALL PASS |
+| src/ STATE_VIEW_* 잔존 grep | ✅ 0건 |
+| src/ state.view 잔존 grep | ✅ 0건 (주석 박제만) |
+| header.js 클릭 affordance 잔존 | ✅ 0건 |
+
+12.3.1. 단계 6/7/8 산출물은 별도 보고서로 진행.
+
+## 12.4. 차기 사이클 후보 (M4.1 라이브 검수 결함 0 보고 후)
+
+12.4.1. **M4.2-tidy 정리 라운드** (소, 누적 = 구 M4.1-tidy):
+- M4 dead alias 4 파일 git rm (lobby.js / lobby-preview.js / history-tab.js / dc-tab.js).
+- M4.1 dead 추가: state_view.test.js / lobby_flow.test.js / storage_v5.test.js (runner 미import이므로 file system rm 의무).
+- 02_data GLOBAL_KEYS 표 kuji_active_tab 행 보강.
+- M3.1 P2-3 LAST_ONE_TIER_NAME / M3.3 P2-1 tier-grid.js dead / M3.3 P2-2 "전체" 라벨 / CSS 인라인 px / M3.5 P2-1 spec 5.13.E.3 표현.
+- M4.1 P1-1 lobbyHeroAssetPath → homeHeroAssetPath 키 개명 (storage 영속 v8 마이그레이션 동반).
+
+12.4.2. **M3 series + M4 + M4.1 라이브 검수 결과 보정** (사용자 검수 결과 의존).
+
+12.4.3. **M5 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰** (확장 로드맵 슬롯 보존).
+
+## 12.5. M4.1 학습
+
+12.5.1. **사용자 도메인 인식 정합 검증 의무 (M4 → M4.1 재발 박제)**: M4 단계 2 design에서 home view를 "전체 화면 격리 view"로 결정한 게 사용자 도메인 인식 ("쿠지 매장 = 모든 화면 동등") 정합 미달. 자비스 단독 view 모델 결정 사건. 차기 메이저 사이클 단계 2에서 view / 탭 모델 변경 시 사용자 도메인 인식 명시 확인 의무.
+
+12.5.2. **1회 ack 흐름과 entry view 의미 충돌 답습**: M3.1 결정 9.3 + M4 결정 10.4 = (i) 잔존이 본 사이클에서 폐기됨. 1회 ack 정책은 "면책 / 약관"에는 적합하나 "entry view 진입"에는 부적합. 차기 entry 동선 변경 시 ack 정책 분리 의무.
+
+12.5.3. **M3.1 시점 잔존 절 stale 정정 의무 (M4.1 단계 3 학습)**: round 1 P0 4건 모두 동일 패턴 = arch 3.10.M3.1 / 4.M3.1 / 4.M3.1.B / 5.13 / 5.15 등 시점별 절의 본 사이클 갱신 누락. 차기 사이클 plan 6.1 영향 매트릭스에서 시점 절 명시 의무.
+
+12.5.4. **자율 진행 신호 답습 (M3.5 → M4 → M4.1)**: "권장안대로 정석대로 진행" + "구현까지 + qa까지" 신호로 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존. 차기 사이클 답습 패턴.
+
+12.5.5. **자비스 진행 보고 직관성 결손 박제**: 사용자 발화 (2026-05-10) "전체 작업 진행단계에서 어디까지 진행했는지 직관적으로 설명해주면 좋잖아"로 진행도 표 의무 박제. 메모리 `feedback_progress_visibility.md` 신설. 큰 사이클 응답 도입부에 단계 진행도 표 + 세부 task 진행도 표 (✅/🔄/⏳/❌) 의무.
+
+12.5.6. **차기 응답 분할 결정의 효율 사고 회귀 박제**: 자비스가 단계 4 종료 후 "차기 응답 분할" 결정으로 단계 5~8 진행을 끊은 사건. 사용자 추궁 ("작업 완료한거야?")으로 정정. 메모리 `feedback_no_efficiency_shortcuts.md` 답습 + `feedback_progress_visibility.md` 신설.
+
+# 13. M4.2-tidy (2026-05-10) - 누적 백로그 정리 라운드
+
+## 13.1. 사이클 메타
+
+13.1.1. 스프린트 ID = M4.2-tidy. 8단계 파이프라인 정식 정리 라운드 (소).
+13.1.2. **트리거**: 사용자 차기 사이클 결정 = "M4.2-tidy 정리 라운드 (자비스 추천)" + 자율 진행 신호 답습.
+13.1.3. 스코프 = (1) M4 dead alias 4 + M4.1 dead test 3 + tier-grid.js fs 삭제 (8 파일) + (2) "Last One" 매직 문자열 → LAST_ONE_TIER_NAME 분기 식 일괄 단일화 (M3.1 P2-3 흡수) + (3) M4.1 P1-1 spec 본문 정정 (면책 trigger 키 = state.meta.disclaimerSeen) + (4) M4.1 P1-2 arch 5.20 / impl_plan 단위 테스트 명명 stale 정정 + (5) spec 5.13.E.3 시점 표기 단순화 + (6) styles/main.css `.tier-grid*` 셀렉터 폐기.
+13.1.4. **명명 정합**: 구 M4.1-tidy → M4.1 슬롯 점유 후 M4.2-tidy로 개명 (PROGRESS 12.1.6 박제).
+13.1.5. 자율 진행 신호 = "다음 진행해" + 답습. 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존.
+
+## 13.2. 단계별 산출물
+
+13.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M4.2-tidy/01_plan.md). 자율 승인.
+13.2.2. 단계 2 design: spec 4.1 / 4.2 / 5.13.B.3.1 / 5.13.B.3.2 면책 trigger 본문 갱신 + 5.13.E.3 시점 표기 + 02_data 1.4.A.7 LAST_ONE_TIER_NAME 신설 + 02_data 1.4.A.5 호출처 표 product-gallery 단독 / arch 5.20 home_flow 정정 / M4.1 04_impl_plan home_flow_m41 → home_flow.
+13.2.3. 단계 3 design_review: [03_design_review.md](docs/pipeline/M4.2-tidy/03_design_review.md). round 1 P0=0 / P1=2 / P2=3. 단계 4 진입 가능. P1-1 (spec "homeAcked = true 동시 갱신" 박제 정정) / P1-2 (LAST_ONE_TIER_NAME 02_data 정의 박제) 단계 4 흡수.
+13.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M4.2-tidy/04_impl_plan.md). T1~T10 분할. 자율 승인.
+13.2.5. **단계 5 implement (2026-05-10)**:
+- T1 dead 7 파일 git rm: src/render/lobby.js / src/core/lobby-preview.js / src/render/history-tab.js / src/render/dc-tab.js / tests/suites/state_view.test.js / tests/suites/lobby_flow.test.js / tests/suites/storage_v5.test.js.
+- T2 numbers.js LAST_ONE_TIER_NAME 신설 (02_data 1.4.A.7 정합).
+- T3 core/box.js + core/last_one.js 모듈 내 LAST_ONE_TIER_LABEL → numbers import.
+- T4 분기 식 호출처 일괄 단일화: 10 module / 16 분기 식 (단계 6 P2-1 정정 박제). core/home-preview.js (1건) / core/history.js (1건) / render/minor-row.js (1건) / render/hero-carousel.js (1건) / render/peel-card.js (2건) / render/product-gallery.js (4건) / render/product-item.js (3건) / render/last-one-row.js (1건) / render/last-one-indicator.js (1건) / render/product-detail-modal.js (1건).
+- T5 src/render/tier-grid.js git rm + styles/main.css `.tier-grid*` 셀렉터 폐기.
+- T6 products-history-tab "전체" 라벨 / CSS 인라인 px = 변경 0 정합 박제.
+- T7~T9 = 단계 2에서 흡수 완료.
+- T10 PROGRESS 13절 신설 (본 절).
+
+## 13.3. 단계 5 정합 검증
+
+| 검증 | 결과 |
+|---|---|
+| `grep "tier === \"Last One\"\|tier !== \"Last One\"\|\"Last One\" in" src/` | ✅ 0건 (분기 식 잔존 0) |
+| `grep "tier-grid" src/ styles/` | ✅ 주석 1건만 잔존 (styles/main.css의 폐기 박제 주석) |
+| dead 8 파일 fs 부재 | ✅ |
+| Node ESM `import("./src/data/numbers.js")` LAST_ONE_TIER_NAME = "Last One" | ✅ |
+| 데이터 정의 / 표시 라벨 / 자산 키 (15건) 잔존 | ✅ 차기 사이클 백로그 (M5+) |
+
+## 13.4. 차기 사이클 후보
+
+13.4.1. **M5 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰** (메이저, 확장 로드맵 슬롯 보존).
+13.4.2. **lobbyHeroAssetPath → homeHeroAssetPath 키 개명** (storage v8 마이그레이션 동반, M5 흡수 또는 별도).
+13.4.3. **"Last One" 데이터 정의 / 자산 키 / 표시 라벨 단일화** (M5+ 별도, 부피 대): numbers.js 등급 라벨 / colors.js 키 / assets.js 키 / dataset 값.
+13.4.4. **M3 series + M4 + M4.1 + M4.2 라이브 검수 결과 보정** (사용자 액션 의존).
+
+## 13.5. M4.2 학습
+
+13.5.1. **정리 라운드 사이클 의미 한정 (plan 10.1 답습)**: "정리 라운드" = 단순 정리 (dead 폐기 + spec stale + 매직 문자열 분기 식). 데이터 정의 / 자산 키 / 표시 라벨 단일화는 별도 사이클 명시. 본 사이클은 분기 식 호출처 11건만 흡수.
+
+13.5.2. **누적 백로그 일괄 처리 vs 분리 (plan 10.2 답습)**: 사용자 결정 = 자비스 추천 채택. 차기 사이클(M5+) 답습 패턴.
+
+13.5.3. **fs rm vs dead alias 박제**: M4 = dead alias 박제 (자비스 권한 부재 시), M4.2 = fs rm (정리 라운드 의미 정합 + 자비스 권한 행사 + 사용자 명시 결정 영역). 차기 dead 폐기 시 사이클 의미별 결정.
+
+13.5.4. **단계 2 design에서 spec 정정 흡수의 부피 감소 효과**: T6/T7/T8/T9가 단계 2에서 흡수되어 단계 5 T 부피 11건 분기 식 + 8 파일 fs rm + 1 신설 상수 + 1 CSS 셀렉터 폐기 = 깔끔. M4.1 학습 답습.
