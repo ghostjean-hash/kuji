@@ -40,9 +40,9 @@ suite("tier_class_lookup (M3.2)", () => {
     assertEq(getTierClassForTier(LINEUP_ONEPIECE, "Last One"), TIER_CLASS_HERO);
   });
 
-  test("getTierClassForTier(원피스, B-F) = main 5건", () => {
+  test("getTierClassForTier(원피스, B-F) = hero 5건 (M3.5 갱신)", () => {
     for (const t of ["B", "C", "D", "E", "F"]) {
-      assertEq(getTierClassForTier(LINEUP_ONEPIECE, t), TIER_CLASS_MAIN, `OP ${t}`);
+      assertEq(getTierClassForTier(LINEUP_ONEPIECE, t), TIER_CLASS_HERO, `OP ${t}`);
     }
   });
 
@@ -99,6 +99,13 @@ suite("tier_class_lookup hero 분기 식 (M3.2 spec 5.13.C.3.1)", () => {
   test("원피스 tier=A → hero (魂豪示像)", () => {
     const result = { tier: "A", isLastOne: false };
     assert(isHeroResult(LINEUP_ONEPIECE, result));
+  });
+
+  test("원피스 tier=B-F → hero 5건 (M3.5 갱신)", () => {
+    for (const t of ["B", "C", "D", "E", "F"]) {
+      const result = { tier: t, isLastOne: false };
+      assert(isHeroResult(LINEUP_ONEPIECE, result), `OP ${t} hero 분기`);
+    }
   });
 
   test("원피스 tier=H → goods (아크릴 마그넷)", () => {

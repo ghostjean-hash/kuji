@@ -16,10 +16,15 @@ import "./suites/build_consumed_grid_set.test.js";  // M2.1 / 4.14.7
 import "./suites/storage_v4.test.js";  // M3
 import "./suites/lineup_isolation.test.js";  // M3
 import "./suites/tier_class.test.js";  // M3.1
-import "./suites/storage_v5.test.js";  // M3.1
-import "./suites/lobby_flow.test.js";  // M3.1
+// M4 폐기: import "./suites/storage_v5.test.js" - storage_v6.test.js로 자산 흡수 (M4.1-tidy 파일 삭제)
+// M4 폐기: import "./suites/lobby_flow.test.js" - home_flow.test.js로 자산 이전 (M4.1-tidy 파일 삭제)
 import "./suites/tier_class_lookup.test.js";  // M3.2
 import "./suites/tier_class_counts.test.js";  // M3.3
+import "./suites/lineup_validation.test.js";  // M3.5
+import "./suites/home_flow.test.js";  // M4 (구 lobby_flow)
+import "./suites/storage_v6.test.js";  // M4
+import "./suites/state_view.test.js";  // M4
+import "./suites/products_history_layout.test.js";  // M4
 
 const rootEl = document.getElementById("root");
 runAll(rootEl).then(({ passCount, failCount }) => {

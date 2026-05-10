@@ -1,19 +1,21 @@
-// 메인 캐러셀 (M2 재설계, 4장 영역 2). A~F 1매 등급 6종을 가로 드래그 캐러셀로 표시.
+// 메인 캐러셀 (M2 재설계, 4장 영역 2). goods 아닌 등급(hero + main)을 가로 드래그 캐러셀로 표시.
+// M3.5: filter 식이 count 기반 → tierClass 기반으로 변경. 변수명 HERO_TIERS → CAROUSEL_TIERS (hero+main 모두 포함하므로 의미 정확화).
 
-import { PERCENT_BASE, getLineupById, getTierClassForTier } from "../data/numbers.js";
+import { PERCENT_BASE, getLineupById, getTierClassForTier, TIER_CLASS_GOODS } from "../data/numbers.js";
 import { TIER_COLORS } from "../data/colors.js";
 import { getProductMainAsset } from "../data/assets.js";
 import { attachHorizontalDragScroll } from "../input/scroll.js";
 import { showProductDetailModal } from "./product-detail-modal.js";
 
 export function renderHeroCarousel(state, dispatch) {
-  // A~F: count === 1 + tier !== "Last One"
-  // M3: 활성 라인업의 tiers에서 동적 필터.
+  // M3.5: goods 아닌 일반 등급 (Last One 제외) = hero + main. 드래곤볼 A/B/C/D/E/F (6) / 원피스 A/B/C/D/E/F (6).
   const lineup = getLineupById(state.currentLineupId);
-  const HERO_TIERS = lineup.tiers.filter((t) => t.count === 1 && t.tier !== "Last One");
+  const CAROUSEL_TIERS = lineup.tiers.filter(
+    (t) => t.tierClass !== TIER_CLASS_GOODS && t.tier !== "Last One"
+  );
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);
   const drawnByTier = {};
-  for (const t of HERO_TIERS) drawnByTier[t.tier] = 0;
+  for (const t of CAROUSEL_TIERS) drawnByTier[t.tier] = 0;
   for (const e of drawnInBox) {
     if (e.tier in drawnByTier) drawnByTier[e.tier] += 1;
   }
@@ -24,7 +26,7 @@ export function renderHeroCarousel(state, dispatch) {
   const track = document.createElement("div");
   track.className = "hero-carousel-track";
 
-  for (const t of HERO_TIERS) {
+  for (const t of CAROUSEL_TIERS) {
     const drawn = drawnByTier[t.tier];
     const isDrawn = drawn >= 1;
     const isJustDrawn = state.lastDrawnTier === t.tier;

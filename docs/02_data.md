@@ -13,7 +13,7 @@
 | `STORAGE_KEY_PREFIX` | `"kuji_"` | localStorage 키 prefix |
 | `DEFAULT_SEED_FALLBACK_BITS` | 32 | 시드 기본값 (`Date.now()`) 변환 비트 |
 | `BOX_ROUND_INITIAL` | 1 | 박스 회차 초기값 |
-| `SCHEMA_VERSION` | 5 | localStorage 스키마 버전. **M3.1 갱신 (2026-05-08)**: 라인업 로비 도입으로 v5 증가 (전역 키 `kuji_lobby_acked` 신설). M3 v4 = 다중 라인업 격리 (라인업별 키 prefix + `kuji_current_lineup_id` + `kuji_schema_version` 신설). |
+| `SCHEMA_VERSION` | 6 | localStorage 스키마 버전. **M4 갱신 (2026-05-10)**: 메뉴 재설계로 v6 증가 (전역 키 `kuji_lobby_acked` → `kuji_home_acked` 개명 + 4탭 → 3탭 활성 탭 매핑, 영속 시). M3.1 v5 = 라인업 로비 도입 (전역 키 `kuji_lobby_acked` 신설). M3 v4 = 다중 라인업 격리. |
 
 ## 1.2. PRNG
 
@@ -87,21 +87,29 @@ TIER_CLASS_VALUES = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS]
 1) 모든 t in LINEUP.tiers: t.tierClass ∈ TIER_CLASS_VALUES
 2) LINEUP.dc.tierClass ∈ TIER_CLASS_VALUES
 3) ∃ t1 in LINEUP.tiers: t1.tierClass === "hero"
-4) ∃ t2 in LINEUP.tiers: t2.tierClass === "main"
-5) ∃ t3 in LINEUP.tiers: t3.tierClass === "goods"
+4) ∃ t3 in LINEUP.tiers: t3.tierClass === "goods"
 ```
+
+**M3.5 (2026-05-10) 룰 완화**: 기존 룰 `∃ t2: t2.tierClass === "main"` 제거. 즉 **main 등급 부재 라인업 허용**. 라인업별 도메인 분류 자율성 확보 (1.4.A.4 정합). hero / goods 룰은 잔존.
 
 부팅 시(numbers.js import 시점) 본 검증 미성립 → 시뮬레이터 부팅 실패 (throw + console.error). 1.4.B.2의 등급 매수 합 검증과 동일 게이트.
 
-#### 1.4.A.4. 분류 정책 (M3.1 합의)
+#### 1.4.A.4. 분류 정책 (M3.1 합의 / **M3.5 갱신**)
 
-본 사이클에서는 다음 휴리스틱으로 라인업 등급별 tierClass 부여.
+본 정책은 **라인업별 자율 분류** (M3.5 사용자 결정). 휴리스틱은 권고. 라인업 도메인 특성상 다른 분류가 적합하면 라인업 단위로 자율 채택.
+
+기본 휴리스틱 (드래곤볼 정합):
 
 - **hero**: 라인업 첫 등급(A) + Last One + DC 보너스. 또는 라인업 메타에 명시된 "최상급" 상품(예: 魂豪示像 시리즈, MASTERLISE PLUS).
 - **main**: A 외 피규어 시리즈(MASTERLISE / Revible Moment / ONDIMENSION 등) + 디오라마 / 미니 피규어.
 - **goods**: 타올 / 마그넷 / 클리어 포스터 / 데스크 아소트 / 러버 참 등 굿즈.
 
-**경계 분쟁 발생 시**: 본 사이클은 main/goods 경계의 mid 도입을 거부 (plan 8.2.3 리스크 동결). 새 사이클로 분리.
+**라인업별 변형 (M3.5)**:
+
+- **원피스 (1.4-OP)**: B/C/D/E/F 모두 hero. 사용자 도메인 인식 = "주요 상품" 범위 확장 (대형 + 디오라마 + 미니 피규어 모두 hero 그룹). main = 0.
+- **드래곤볼 (1.4-DB)**: 기본 휴리스틱 그대로 (A + Last One = hero, B~F = main, G~J = goods).
+
+**경계 분쟁 발생 시**: 본 사이클은 main/goods 경계의 mid 도입을 거부 (M3.1 plan 8.2.3 리스크 동결). 새 사이클로 분리. **M3.5 룰 완화**: main = 0 허용으로 라인업 자율성 확장. main 등급 사용 여부는 라인업 정의 시 자율.
 
 #### 1.4.A.5. tierClass lookup 헬퍼 (M3.2 신설)
 
@@ -279,17 +287,19 @@ export const TIER_CLASS_LABEL_KO = {
 | 등급 | 매수 | 종 수 | tierClass | 일본어 | 한국어 |
 |---|---|---|---|---|---|
 | A | 1 | 1 | `hero` | `モンキー・D・ルフィ 魂豪示像` | `몽키 D 루피 영혼호시상` |
-| B | 2 | 2 | `main` | `モンキー・D・ルフィ MASTERLISE` | `몽키 D 루피 MASTERLISE` |
-| C | 2 | 1 | `main` | `モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment` | `몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment` |
-| D | 3 | 1 | `main` | `モンキー・D・ルフィ ギア5 ONDIMENSION` | `몽키 D 루피 기어5 ONDIMENSION` |
-| E | 4 | 2 | `main` | `はこにわーるど` | `하코니와루도 (디오라마 박스)` |
-| F | 6 | 3 | `main` | `モンキー・D・ルフィ ミニフィギュア` | `몽키 D 루피 미니 피규어` |
+| B | 2 | 2 | `hero` | `モンキー・D・ルフィ MASTERLISE` | `몽키 D 루피 MASTERLISE` |
+| C | 2 | 1 | `hero` | `モンキー・D・ルフィ 海賊王におれはなる!!!! Revible Moment` | `몽키 D 루피 해적왕에 내가 되겠다!!!! Revible Moment` |
+| D | 3 | 1 | `hero` | `モンキー・D・ルフィ ギア5 ONDIMENSION` | `몽키 D 루피 기어5 ONDIMENSION` |
+| E | 4 | 2 | `hero` | `はこにわーるど` | `하코니와루도 (디오라마 박스)` |
+| F | 6 | 3 | `hero` | `モンキー・D・ルフィ ミニフィギュア` | `몽키 D 루피 미니 피규어` |
 | G | 12 | 8 | `goods` | `タオル` | `타올` |
 | H | 16 | 14 | `goods` | `アクリルマグネット` | `아크릴 마그넷` |
 | I | 33 | 10 | `goods` | `デスクアソート` | `데스크 아소트` |
 | Last One | 1 | 1 | `hero` | `モンキー・D・ルフィ MASTERLISE PLUS` | `몽키 D 루피 MASTERLISE PLUS` |
 
-**M3.1 분류 근거**: A상 魂豪示像은 BANDAI SPIRITS 최상급 도색 라인. B~D는 MASTERLISE/Revible Moment/ONDIMENSION 시리즈. E(디오라마 박스), F(미니 피규어)도 조형물이라 main. G~I 굿즈. Last One = MASTERLISE PLUS 강화판으로 hero.
+**M3.5 분류 근거 (2026-05-10 사용자 결정)**: 사용자 도메인 인식상 원피스는 A~F가 모두 "주요 상품"이라는 인식. A 영혼호시상 + B/C/D 대형 피규어 + E 디오라마 + F 미니 피규어 모두 hero 그룹. G/H/I 굿즈만 분리. main 등급 부재 (1.4.A.3 검증식 M3.5 완화로 허용). 드래곤볼 1.4-DB.2와 분류 패턴 차이 (라인업별 자율 분류 정책 1.4.A.4).
+
+**M3.1 구 분류 근거 (2026-05-08, M3.5에서 폐기)**: A상 魂豪示像은 BANDAI SPIRITS 최상급 도색 라인. B~D는 MASTERLISE/Revible Moment/ONDIMENSION 시리즈. E(디오라마 박스), F(미니 피규어)도 조형물이라 main. G~I 굿즈. Last One = MASTERLISE PLUS 강화판으로 hero.
 
 ##### 1.4-OP.2.1. 매수 합계 검증식
 
@@ -347,28 +357,45 @@ export const TIER_CLASS_LABEL_KO = {
 4. **M3.1 추가**: 등급별 `tierClass` 부여 (1.4.A.4 분류 정책 정합) + DC `tierClass` 부여.
 5. **M3.1 추가**: `lobbyHeroAssetPath` 정의 (assets.js 매핑 + 1.7 자산 정책 정합).
 6. assets.js에 `LINEUP_XX_ASSETS_BASE_PATH` 추가.
-7. 1.4.A.3 검증식 통과 (hero ≥ 1 + main ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES).
+7. 1.4.A.3 검증식 통과 (hero ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES). **M3.5 갱신**: main ≥ 1 룰 폐기. main 등급 부재 라인업 허용.
 8. 단계 6 게이트 검증 룰 통과.
 
-## 1.4.B. View 상수 (M3.1 신설)
+## 1.4.B. View 상수 (M3.1 신설 / **M4 갱신 - lobby → home 격상**)
 
-라인업 로비 도입으로 view 모델 추가. spec 5.13.B.2 정합.
+view 모델 + 탭 모델 정의. spec 4장 / 5.13.B 정합.
 
-| 키 | 값 | 의미 |
-|---|---|---|
-| `STATE_VIEW_LOBBY` | `"lobby"` | 라인업 선택 화면 (5.13.B) |
-| `STATE_VIEW_MAIN` | `"main"` | 본편 4탭 모델 (5.13.A 외) |
-| `STATE_VIEW_VALUES` | `[STATE_VIEW_LOBBY, STATE_VIEW_MAIN]` | 검증식용 enum |
-| `STATE_VIEW_DEFAULT` | `STATE_VIEW_MAIN` | lobbyAcked=true 시 부팅 default. lobbyAcked=false 시 main.js bootstrap에서 LOBBY 강제 |
-
-**dispatch type 상수** (M3.1 신설, 03_architecture에서 정확한 dispatch 모델 정의):
+**view 상수** (M3.1 신설 / M4 갱신):
 
 | 키 | 값 | 의미 |
 |---|---|---|
-| `DISPATCH_TYPE_OPEN_LOBBY` | `"open_lobby"` | 5.13.B.6.1 |
+| `STATE_VIEW_HOME` | `"home"` (M3.1 `STATE_VIEW_LOBBY = "lobby"` 개명, **단계 4 결정**) | 라인업 선택 화면 = 쿠지 홈 (5.13.B) |
+| `STATE_VIEW_MAIN` | `"main"` | 본편 3탭 모델 (5.13.A 외) |
+| `STATE_VIEW_VALUES` | `[STATE_VIEW_HOME, STATE_VIEW_MAIN]` | 검증식용 enum |
+| `STATE_VIEW_DEFAULT` | `STATE_VIEW_MAIN` | homeAcked=true 시 부팅 default. homeAcked=false 시 HOME 강제 |
+
+**M3.1 잔존 호환 alias (단계 4 결정)**: `STATE_VIEW_LOBBY` / `STATE_VIEW_VALUES` 구 명칭 호환 alias 유지 vs 일괄 개명 + 호출처 갱신. 영속 storage 값(`"lobby"`/`"home"`)은 마이그레이션 의무.
+
+**탭 상수 (M4 신설)**: 4탭 → 3탭 재구성. spec 4장 정합.
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `STATE_TAB_DRAW` | `"draw"` | 추첨 탭 (탭 1, 잔존) |
+| `STATE_TAB_PRODUCTS_HISTORY` | `"products_history"` | 갤러리+기록 통합 탭 (탭 2, M4 신설) |
+| `STATE_TAB_SETTINGS` | `"settings"` | 설정 탭 (탭 3, 잔존) |
+| `STATE_TAB_VALUES` | `[STATE_TAB_DRAW, STATE_TAB_PRODUCTS_HISTORY, STATE_TAB_SETTINGS]` | 검증식 enum |
+| `STATE_TAB_DEFAULT` | `STATE_TAB_DRAW` | 라인업 진입 default |
+
+**M3.5까지 4탭 (`"draw"` / `"history"` / `"dc"` / `"settings"`) 폐기**: 단계 4 마이그레이션 + 호출처 grep + `"history"` / `"dc"` 잔존 0 의무.
+
+**dispatch type 상수** (M3.1 신설 / M4 갱신):
+
+| 키 | 값 | 의미 |
+|---|---|---|
+| `DISPATCH_TYPE_OPEN_HOME` | `"open_home"` (M3.1 `OPEN_LOBBY = "open_lobby"` 개명, **단계 4 결정**) | 5.13.B.6.1 |
 | `DISPATCH_TYPE_ENTER_LINEUP` | `"enter_lineup"` | 5.13.B.6.2 |
+| `DISPATCH_TYPE_SET_ACTIVE_TAB` | `"set_active_tab"` (M4 신설) | 3탭 전환 |
 
-기존 `set_current_lineup` (M3) / 기타 dispatch type 상수화는 단계 4 impl_plan에서 일괄 검토 (별도 사이클 후보). M3.1 본 사이클은 신규 2종만 상수화.
+**M4 폐기**: `DISPATCH_TYPE_SET_CURRENT_LINEUP` (= `"set_current_lineup"`)는 enter_lineup으로 통합. 단계 4 호출처 grep + 단계 5 dead 제거.
 
 ## 1.5. UI 표시 상수
 
@@ -703,7 +730,7 @@ styles/tokens.css의 CSS 변수와 numbers.js / colors.js 상수의 1:1 매핑. 
 | `kuji_settings_skip_pick` | boolean | **M2.1 신설** - 통 선택 단계 skip 토글. 라인업 무관. 기본 `BUY_SKIP_PICK_DEFAULT` (= false) |
 | `kuji_meta` | JSON | 메타 (`disclaimerSeen` / `schemaVersion` / `pickHintSeen` (M2.1 신설, boolean. **2026-05-08 deprecated**)) |
 | `kuji_current_lineup_id` | string | **M3 신설** - 활성 라인업 ID (1.4.LINEUPS 정합). 부팅 시 미존재면 `LINEUP_DEFAULT_ID` 부여. |
-| `kuji_lobby_acked` | boolean | **M3.1 신설** - 라인업 로비 진입 완료 플래그. false = 첫 방문 (로비 노출). true = 마지막 라인업 자동 진입. spec 5.13.B (라인업 로비) 정합. |
+| `kuji_home_acked` | boolean | **M3.1 신설 (`kuji_lobby_acked`) → M4 개명**. 쿠지 홈 진입 완료 플래그. false = 첫 방문 (홈 노출). true = 마지막 라인업 자동 진입. spec 5.13.B (쿠지 홈) 정합. M4 마이그레이션 (3.2.7)에서 구 키 → 신 키 이전. |
 | `kuji_schema_version` | number | **M3 신설** - 스키마 버전. v3 이전엔 `kuji_meta.schemaVersion`만 사용. v4부터 별도 키로 분리 (마이그레이션 일관성). M3.1 v5. |
 
 ## 3.2. 마이그레이션 정책
@@ -795,6 +822,53 @@ localStorage.setItem("kuji_schema_version", "5")
 - v3 fixture → v3→v4→v5 chain 적용 후 lobbyAcked=true.
 - v5 fixture → 멱등 (변경 0).
 
+3.2.7. **M3.1(v5) → M4(v6) 마이그레이션 - 메뉴 재설계 (M4 신설)**:
+
+```
+// 멱등 게이트: schemaVersion ≥ 6 또는 kuji_home_acked 키 존재 시 skip
+if (schemaVersion >= 6 || localStorage.getItem("kuji_home_acked") !== null):
+  return  // 멱등
+
+// (a) lobby_acked → home_acked 키 개명
+const oldAcked = localStorage.getItem("kuji_lobby_acked")
+if oldAcked !== null:
+  localStorage.setItem("kuji_home_acked", oldAcked)  // 값 그대로 ("true" | "false")
+  localStorage.removeItem("kuji_lobby_acked")
+else:
+  localStorage.setItem("kuji_home_acked", "false")  // 신규 사용자 처리 (첫 진입 강제)
+
+// (b) activeTab 4탭 → 3탭 매핑 (영속 시점 결정 = 단계 4. 미영속이면 본 단계 skip)
+const oldActiveTab = localStorage.getItem("kuji_active_tab")
+if oldActiveTab !== null:
+  // M3.5까지 4탭: "draw" / "history" / "dc" / "settings"
+  // M4 3탭: "draw" / "products_history" / "settings"
+  const TAB_MAP_M3_TO_M4 = {
+    "draw": "draw",
+    "history": "products_history",  // history 탭 → 통합 탭
+    "dc": "products_history",       // DC 탭 → 통합 탭 sub-section 4
+    "settings": "settings"
+  }
+  const newTab = TAB_MAP_M3_TO_M4[oldActiveTab] || "draw"  // unknown → default
+  localStorage.setItem("kuji_active_tab", newTab)
+
+// (c) schemaVersion bump
+const meta = JSON.parse(localStorage.getItem("kuji_meta") || "{}")
+meta.schemaVersion = 6
+localStorage.setItem("kuji_meta", JSON.stringify(meta))
+localStorage.setItem("kuji_schema_version", "6")
+```
+
+**의존성**: 3.2.6 (v4→v5)가 선행. v4 사용자는 v4→v5→v6 순차 적용. loadState() 안에서 schemaVersion 비교로 자동 chain.
+
+**멱등 정합**: `schemaVersion ≥ 6` 또는 `kuji_home_acked` 키 존재 시 skip.
+
+**테스트 의무**: `tests/suites/storage_v6.test.js` 신설. 다음 시나리오 검증:
+- 빈 storage (첫 방문) → schemaVersion=6 + homeAcked=false + (영속 활성 탭 결정 시) activeTab=draw.
+- v5 fixture (lobbyAcked=true 존재) → schemaVersion=6 + homeAcked=true + lobby_acked 키 제거.
+- v4/v3 fixture → v3→v4→v5→v6 chain 적용 후 homeAcked=true.
+- (영속 활성 탭 시) 4탭 fixture (activeTab="history") → 3탭 매핑 ("products_history").
+- v6 fixture → 멱등 (변경 0).
+
 # 4. 변경 이력
 
 4.1. 2026-05-02: M1 단계 2 design. placeholder 교체 + 一番くじ ドラゴンボール SSOT.
@@ -812,3 +886,7 @@ localStorage.setItem("kuji_schema_version", "5")
 4.13. 2026-05-08: **M3.1 단계 2 design - 라인업 로비 + tier_class**. (1) 1.1 `SCHEMA_VERSION` v4 → v5 갱신. (2) 1.4.0 라인업 구조에 `lobbyHeroAssetPath` 필드 + `dc.tierClass` 필수 + `tiers[*].tierClass` 필수 추가. (3) 1.4.A 절 신설 = `TIER_CLASS_VALUES` 3단계 (hero/main/goods) + 검증식 (라인업당 hero/main/goods 각 ≥ 1) + 분류 정책. (4) 1.4-DB.2 / 1.4-OP.2 등급표에 `tierClass` 컬럼 추가 + DB.3 / OP.3 DC에 `_DC_TIER_CLASS = "hero"` 상수 추가 + DB.5 / OP.5 LINEUP 객체에 `dc.tierClass` / `lobbyHeroAssetPath` 매핑. (5) 라인업 추가 절차 8단계로 확장 (4 / 5 = M3.1 신규 항목). (6) 3.1.2 전역 키에 `kuji_lobby_acked` 추가. (7) 3.2.6 v4→v5 마이그레이션 알고리즘 + 멱등 + 테스트 의무 (storage_v5.test.js). 사용자 결정 5건 정합 (전체 화면 view / 드롭다운 quick-switch 유지 / 토글 미도입 / hero 1개 미리보기 / 헤더 라벨 클릭 활성).
 4.14. 2026-05-09: **M3.2 단계 2 design - tier_class 시각 적용 (round 1 정정 흡수)**.
 4.15. 2026-05-09: **M3.3 단계 2 design - tier_class 갤러리 그룹화 + history 대시보드**. (1) 1.4.A.5 호출처 표 확장 (tier-grid 또는 product-gallery + core/history.tierClassCounts 추가). (2) **1.4.A.6 절 신설** - TIER_CLASS_LABEL_KO 한국어 라벨 ("메인 등급" / "표준 등급" / "굿즈"). (3) 1.5에 HISTORY_DASHBOARD_COLS_MOBILE=2 / HISTORY_DASHBOARD_COLS_TABLET=4 / HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX=768 3종 신설. 사용자 결정 5건 정합 (한국어 라벨 / 2x2 그리드 / hero→main→goods / Last One hero 마지막 / 통합 카운트). (1) 1.4.A.5 절 신설 - `getTierClassForTier(lineup, tier)` 헬퍼 함수 명세 (사용자 결정 9.4). (2) 1.5에 HERO_POP_SCALE_PEAK=1.18 / HERO_GLOW_DURATION_MS=1200 / HERO_STATIC_GLOW_BLUR_PX=12 / HERO_STATIC_GLOW_ALPHA=0.25 4종 신설. (3) 2.2에 COLOR_TIER_CLASS_HERO_BG_TINT / HERO_GLOW_RGBA / MAIN_BG_TINT / GOODS_BG_TINT 4종 신설. (4) **2.3 절 신설** - CSS 변수 ↔ JS 상수 매핑 표 (round 1 P1 3.1 흡수, M3 단계 6 P0 2.4 / 2.5 학습 답습). (5) **round 1 P0 2.1 정정** - "결과 모달" 표현을 "결과 reveal" / 페이지플립 인플레이스 (`peel-card.js`)로 교체 (M2 K-1 정합). 1.4.A.5 호출처 4번째 항목 result-modal.js → peel-card.js. 1.5 HERO_POP/GLOW 의미문 정정. (6) **round 1 P1 3.2 흡수** - spec 5.13.C.3.1에 lookup 주체 = 결과 표시 영역 명기. (7) **round 1 P2 4.1 흡수** - OR 중복 의도 박제 (Last One redundant + lookup 실패 fallback). 사용자 결정 4건 정합 (DC 모달도 hero / minor-row 속성만 / 약한 골드 글로우 / 헬퍼 신설).
+
+4.16. 2026-05-10: **M3.5 단계 2 design - tier_class 라인업별 자율 분류 (원피스 B~F hero)**. (1) 1.4.A.3 검증식 룰 완화: `∃ t2: t2.tierClass === "main"` 룰 제거. main 등급 부재 라인업 허용 ("hero ≥ 1 + goods ≥ 1만 의무"). (2) 1.4.A.4 분류 정책 갱신: 기본 휴리스틱 권고 + 라인업별 자율 분류 명문화 + 원피스/드래곤볼 분류 차이 박제. (3) 1.4-OP.2 등급표 B/C/D/E/F tierClass main → hero 변경 (5건). M3.5 분류 근거 박제 + M3.1 구 분류 근거 폐기 표시. (4) 라인업 추가 절차 7번 항목 갱신 (main ≥ 1 룰 제거). 사용자 결정 5건 정합 (변경 의미 / 포함 범위 / DB 정합 / 검증식 / 라이브 검수 시점). 9등급 → hero 7 (A+B+C+D+E+F+LastOne) + main 0 + goods 3 (G+H+I) 분포. **round 1 P0 정정 (2026-05-10 round 2)**: hero-carousel/minor-row 분기 식이 count 기반이라 시각 자동 정합 미성립 - (b) 분기 식 변경 채택 (round 1 답 = HERO/GOODS). spec 5.13.E.3 영향 매트릭스 + arch 5.18 게이트 + plan 4.8/8.3 정합 갱신. **round 2 P0 재정정 (2026-05-10 round 3)**: round 2 채택 `tierClass===HERO` 분기가 드래곤볼 hero-carousel 6→1 회귀 야기 (비목표 4.1 위반) → `tierClass !== TIER_CLASS_GOODS` 재채택. 드래곤볼/원피스 양쪽 6 등급 동등 노출. spec 5.13.E.3 라인업별 컬럼 명시.
+
+4.17. 2026-05-10: **M4 단계 2 design - 메뉴 재설계 (홈 격상 + 4탭 → 3탭)**. (1) 1.4.B view/탭/dispatch 상수 갱신 + STATE_TAB_VALUES 신설. (2) 1.1 SCHEMA_VERSION 5 → 6. (3) 3.1.2 전역 키 갱신: kuji_lobby_acked → kuji_home_acked 개명 + kuji_active_tab 키 (영속 결정 단계 4) 신설. (4) **3.2.7 v5 → v6 마이그레이션 절 신설** (lobby_acked 키 이전 + 4탭 → 3탭 매핑 + schemaVersion bump). 멱등 게이트 + 의존성 v3→v4→v5→v6 chain + 테스트 의무 (storage_v6.test.js). 사용자 결정 5건 + 단계 1 채택 2건 (10.3/10.4) + **round 2 채택 6건** (10.1/10.2/10.5/10.7 + DC sub-section 4 + history 무한 스크롤 + "홈으로" 라벨). **round 1 P0 3건 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 / P0-2 arch 3.11 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION + 3.2.7 마이그레이션 절 신설.

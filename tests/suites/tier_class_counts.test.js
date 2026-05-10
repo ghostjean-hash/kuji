@@ -35,7 +35,7 @@ suite("tier_class_counts (M3.3)", () => {
     assertEq(counts.total, 5);
   });
 
-  test("원피스 (A 1매 + B 2매 + I 5매) → hero=1 / main=2 / goods=5 / total=8", () => {
+  test("원피스 (A 1매 + B 2매 + I 5매) → hero=3 / main=0 / goods=5 / total=8 (M3.5 갱신)", () => {
     const history = [
       { tier: "A", isLastOne: false },
       { tier: "B", isLastOne: false },
@@ -47,9 +47,28 @@ suite("tier_class_counts (M3.3)", () => {
       { tier: "I", isLastOne: false },
     ];
     const counts = tierClassCounts(history, LINEUP_ONEPIECE);
-    assertEq(counts[TIER_CLASS_HERO], 1);
-    assertEq(counts[TIER_CLASS_MAIN], 2);
-    assertEq(counts[TIER_CLASS_GOODS], 5);
+    assertEq(counts[TIER_CLASS_HERO], 3);  // M3.5: A + B 2매 = 3
+    assertEq(counts[TIER_CLASS_MAIN], 0);  // M3.5: main = 0 (B는 hero로 변경)
+    assertEq(counts[TIER_CLASS_GOODS], 5);  // I x 5
+    assertEq(counts.total, 8);
+  });
+
+  test("원피스 (A 1매 + F 6매 + Last One 1매) → hero=8 / main=0 / goods=0 / total=8 (M3.5 갱신)", () => {
+    // F가 hero로 변경되므로 모든 entry가 hero. main = 0.
+    const history = [
+      { tier: "A", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "F", isLastOne: false },
+      { tier: "Last One", isLastOne: true },
+    ];
+    const counts = tierClassCounts(history, LINEUP_ONEPIECE);
+    assertEq(counts[TIER_CLASS_HERO], 8);  // M3.5: A + F 6매 + Last One = 8
+    assertEq(counts[TIER_CLASS_MAIN], 0);
+    assertEq(counts[TIER_CLASS_GOODS], 0);
     assertEq(counts.total, 8);
   });
 

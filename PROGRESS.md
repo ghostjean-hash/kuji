@@ -517,3 +517,109 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 9.4.1. **M3.4-tidy 정리 라운드** (소): tier-grid.js dead 모듈 폐기 + LAST_ONE_TIER_NAME 상수화 + storage_v5.test.js v3 chain + "전체" 라벨 / CSS 인라인 px 정책 통일.
 9.4.2. **M3 series 라이브 검수 결과 보정** (M3.2 P2-1/P2-2/P2-3 + M3.1/M3.3 라이브 결함 발견 시).
 9.4.3. **M4 메이저 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰** (확장 로드맵 원래의 M3, 첫 메커닉 분기).
+
+# 10. M3.5 tier-class-rebalance (2026-05-10)
+
+## 10.1. 사이클 메타
+
+10.1.1. 스프린트 ID = M3.5-tier-class-rebalance. 8단계 파이프라인 정식.
+10.1.2. 스코프 = (1) 원피스 1.4-OP.2 B/C/D/E/F tierClass main → hero (5건 데이터 재조정) + (2) 검증식 1.4.A.3 룰 완화 (main = 0 허용) + (3) hero-carousel/minor-row filter 식 count 기반 → tierClass 기반 변경.
+10.1.3. 사용자 결정 5건 (plan 9.1~9.5): tier_class 의미 변경 / B/C/D/E/F 모두 / 원피스만 / main = 0 허용 / 라이브 검수 M3.5 완료 후 누적.
+10.1.4. **사용자 자율 진행 신호 박제**: "한번에 끝까지 진행" → 단계 1/4/7 사용자 승인 게이트 자율 통과. 단계 3/6 subagent 격리 검증은 의무 잔존. 자동 재시도 한도 우회 박제.
+
+## 10.2. 단계별 산출물
+
+10.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M3.5-tier-class-rebalance/01_plan.md). 자율 승인.
+10.2.2. 단계 2 design: 02_data 1.4.A.3 룰 완화 + 1.4.A.4 자율 분류 + 1.4-OP.2 B-F=hero / spec 5.13.E 신설 / arch 5.14 갱신 + 5.18 신설.
+10.2.3. 단계 3 design_review: [03_design_review.md](docs/pipeline/M3.5-tier-class-rebalance/03_design_review.md). round 1 P0=1 (분기 식 count 기반) → round 2 P0=1 (드래곤볼 회귀) → round 3 통과 (P0=0). 자동 재시도 2회 사용.
+10.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M3.5-tier-class-rebalance/04_impl_plan.md). T1~T8 분할 + design_review round 1/2/3 이월 답 박제.
+10.2.5. **단계 5 implement (2026-05-10)**:
+- T1 numbers.js: TIERS_ONEPIECE B/C/D/E/F → hero (5건). _validateLineupTierClass → validateLineupTierClass 개명 + export. REQUIRED_TIER_CLASSES = [HERO, GOODS] export. main 룰 throw 코드 제거.
+- T2 hero-carousel.js: filter `count===1` → `tierClass !== TIER_CLASS_GOODS && tier !== "Last One"`. 변수명 HERO_TIERS → CAROUSEL_TIERS (3 호출처). import + docstring 갱신.
+- T3 minor-row.js: filter `count>=2` → `tierClass === TIER_CLASS_GOODS && tier !== "Last One"`. import + docstring 갱신.
+- T4 tier_class_lookup.test.js: 원피스 B-F → hero 5건 갱신 + B-F hero 분기 시뮬레이션 추가.
+- T5 tier_class_counts.test.js: 원피스 (A 1 + B 2 + I 5) hero=3/main=0 갱신 + (A 1 + F 6 + Last One 1) hero=8 케이스 추가.
+- T6 lineup_validation.test.js 신설 (7 케이스).
+- T7 runner.js: lineup_validation 등록.
+- T8 PROGRESS M3.5 절 신설 (본 절).
+- 추가 (round 2 정정): tier_class.test.js (M3.1 suite) line 38 REQUIRED_TIER_CLASSES + line 60 원피스 B-F hero 갱신 + spec 5.13.D.2.6 SSOT 갱신.
+
+## 10.3. 단계 6/7/8 산출물
+
+10.3.1. 단계 6 impl_review: [06_impl_review.md](docs/pipeline/M3.5-tier-class-rebalance/06_impl_review.md). round 1 P0=2 (tier_class.test.js 회귀 테스트 미갱신) + P1=1 (spec SSOT 위반) → round 2 통과 (P0=0/P1=0/P2=1 비블로커). 자동 재시도 1회 사용.
+10.3.2. 단계 7 QA: [07_qa.md](docs/pipeline/M3.5-tier-class-rebalance/07_qa.md). 자비스 정적 정합 통과 + 사용자 라이브 검수 의무 (M3.5 단독 6건 + M3 series 누적 4건).
+10.3.3. 단계 8 improve: [08_improve.md](docs/pipeline/M3.5-tier-class-rebalance/08_improve.md). 8단계 종료. 단계 6 P2 1건 (spec 5.13.E.3 hero-carousel 비고 표현 미세 부정합) 차기 정리 라운드 백로그.
+
+## 10.4. 차기 사이클 후보 (M3.5 라이브 검수 결함 0 보고 후)
+
+10.4.1. **M3.4-tidy 정리 라운드** (소, 누적): M3.1 P2-3 LAST_ONE_TIER_NAME / M3.1 P2-1 storage_v5 v3 chain / M3.3 P2-1 tier-grid.js dead / M3.3 P2-2 "전체" 라벨 / CSS 인라인 px / M3.5 P2-1 spec 5.13.E.3 표현.
+10.4.2. **M3 series 라이브 검수 결과 보정** (M3.1/M3.2/M3.3/M3.5 누적, 사용자 결정 9.5).
+10.4.3. **M4 메이저 = コトブキヤくじ XENOGLOSSIA 30연 천장 룰**.
+
+## 10.5. M3.5 학습
+
+10.5.1. **분기 식 SSOT 정합 검증 의무**: 데이터 분류 변경 시 호출처 분기 식이 데이터 기반인지 count 기반인지 grep 의무. M3.5 단계 3 round 1 P0-1.
+
+10.5.2. **다중 라인업 영향 매트릭스 의무**: 분기 식 변경 시 모든 활성 라인업에 대한 영향 매트릭스 박제 의무. M3.5 단계 3 round 2 P0-1 (드래곤볼 회귀를 단일 라인업 매트릭스로 인지 미달).
+
+10.5.3. **회귀 테스트 갱신 grep 의무**: 데이터 분류 변경 시 동일 류 회귀 테스트가 다중 suite에 산포된 경우 grep 의무. M3.5 단계 6 round 1 P0-1/P0-2.
+
+10.5.4. **자율 진행 신호 박제**: "한번에 끝까지 진행" 명시 = 자동 재시도 한도 우회 + 단계 1/4/7 사용자 승인 게이트 자율 통과 (subagent 격리 검증은 의무 잔존). 차기 동일 신호 시 답습 패턴.
+
+# 11. M4 menu-redesign (2026-05-10) - 메이저 사이클
+
+## 11.1. 사이클 메타
+
+11.1.1. 스프린트 ID = M4-menu-redesign. 8단계 파이프라인 정식 메이저 사이클.
+11.1.2. 스코프 = (1) 쿠지 홈 격상 (M3.1 lobby → M4 home, 진정한 entry) + (2) 4탭 → 3탭 재구성 (추첨 / 갤러리+기록 / 설정) + (3) 카드 메타 풍부화 (출시일+끝일+가격+매장+진행 상태) + (4) dispatch 정리 (open_home / set_active_tab + set_current_lineup 폐기) + (5) storage v6 마이그레이션.
+11.1.3. 사용자 결정 5건 (plan 2.X) + 단계 1 채택 2건 (10.3 dropdown 폐기 / 10.4 home_acked 잔존) + round 2 채택 6건 (10.1/10.2/10.5/10.7 + DC sub-section + history 무한 스크롤 + "홈으로" 라벨).
+11.1.4. **자율 진행 신호** "권고 진행" 답습. 단계 1/4/7 사용자 승인 게이트 자율 통과. 단계 3/6 subagent 격리 검증 의무. 자동 재시도 한도 우회.
+11.1.5. **메이저 사이클 의도** = M5 (코토부키야쿠지 30연 천장 룰) 분리. M5는 별도 사이클.
+
+## 11.2. 단계별 산출물
+
+11.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M4-menu-redesign/01_plan.md). 자율 승인.
+11.2.2. 단계 2 design: spec 4장 view 모델 (lobby → home, 4탭 → 3탭) + 5.13.A.4 dropdown 폐기 + 5.13.B 홈 격상 + 5.13.F 통합 탭 절 신설 / 02_data 1.1 SCHEMA_VERSION 6 + 1.4.B view/탭/dispatch 상수 + 3.1.2 home_acked + 3.2.7 마이그레이션 + 4.17 변경 이력 / arch 3.11 state 객체 + 3.17~3.22 본문 갱신 + 5.19 게이트 + 6.12 변경 이력.
+11.2.3. 단계 3 design_review: [03_design_review.md](docs/pipeline/M4-menu-redesign/03_design_review.md). round 1 P0=3 (currentTab vs activeTab 충돌 / arch 3.11 4탭 enum / SCHEMA_VERSION + 마이그레이션) → round 2 통과 (P0=0/P1=0/P2=1).
+11.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M4-menu-redesign/04_impl_plan.md). T1~T17 분할 + 단계 4 결정 6건 (lobby → home 일괄 개명 / activeTab 메모리 잔존 / history+dc 탭 폐기 / 모듈 개명 / set_current_lineup 폐기).
+11.2.5. **단계 5 implement (2026-05-10)**:
+- T1 numbers.js: SCHEMA_VERSION 6 / STATE_VIEW_HOME 신설 (LOBBY 폐기) / STATE_TAB_* 3종 + DEFAULT + VALUES / DISPATCH_TYPE_OPEN_HOME + SET_ACTIVE_TAB 신설 / LINEUP_*_HOME_HERO_ASSET_PATH 개명 / lineup.homeHeroAssetPath 객체 키 개명 / HOME_GRID_* 개명 / TAB_ICON_IDS 갱신.
+- T2 core/home-preview.js 신설 (lobby-preview.js dead alias).
+- T3 render/main.js: 3탭 라우팅 + view = HOME/MAIN + activeTab + homeAcked + dispatch.open_home/set_active_tab + enter_lineup 통합 + set_current_lineup case body 제거.
+- T4 render/home.js 신설: 카드 메타 풍부화 (출시일+끝일+가격+박스+추정+매장+진행) + computeLineupProgress 산출식. lobby.js dead alias.
+- T5 render/products-history-tab.js 신설: 4 sub-section (대시보드 + 갤러리 + history 리스트 + DC).
+- T6 render/history-tab.js + dc-tab.js dead alias.
+- T7 render/header.js (open_home) + bottom-tabs.js (3탭 + SET_ACTIVE_TAB).
+- T8 render/settings-tab.js: dropdown 폐기 + "홈으로" 버튼.
+- T9 core/storage.js: GLOBAL_KEYS.homeAcked + LEGACY_GLOBAL_KEYS_M3_1 / migrateV5ToV6 신설 + chain v3→v4→v5→v6.
+- T10~T13 단위 테스트 4 suite 신설 (storage_v6 / home_flow / state_view / products_history_layout).
+- T14 runner.js: M4 4 suite 등재 + lobby_flow + storage_v5 import 폐기.
+- T15 호출처 grep 통과 (활성 lobby 식별자 잔존 0).
+- T16 arch 3.17~3.22 본문 갱신 (round 2 정정으로 흡수).
+- T17 PROGRESS 본 절 (단계 8 흡수).
+- 추가 (round 2 정정): tier_class.test.js homeHeroAssetPath + home-preview import 갱신.
+
+## 11.3. 단계 6/7/8 산출물
+
+11.3.1. 단계 6 impl_review: [06_impl_review.md](docs/pipeline/M4-menu-redesign/06_impl_review.md). round 1 P0=4 (storage_v5 회귀 / dead alias 4 파일 / dispatch case body / arch 3.17~3.22) → round 2 통과 (P0=0/P1=3 비블로킹). P1 3건 (storage_v5 빈 파일 미이행 / lobby-preview 호출처 1건 즉시 정정 / GLOBAL_KEYS 표 active_tab 행 부재) M4.1-tidy 백로그.
+11.3.2. 단계 7 QA: [07_qa.md](docs/pipeline/M4-menu-redesign/07_qa.md). 자비스 정적 정합 통과 (Node ESM 시뮬 11 suite/58 test ALL PASS) + 사용자 라이브 검수 의무 17건 (M4 단독 10 + M3 series 누적 4 + 마이그레이션 3).
+11.3.3. 단계 8 improve: [08_improve.md](docs/pipeline/M4-menu-redesign/08_improve.md). 8단계 메이저 종료. M4.1-tidy 백로그 5 카테고리 누적.
+
+## 11.4. M4.1-tidy 정리 라운드 백로그 (누적)
+
+11.4.1. M4 폐기 자산: dead alias 4 파일 git rm (lobby.js / lobby-preview.js / history-tab.js / dc-tab.js) + storage_v5.test.js / lobby_flow.test.js git rm.
+11.4.2. P1 박제 보강: 02_data.md GLOBAL_KEYS 표 kuji_active_tab 행 추가.
+11.4.3. M3 series 누적: M3.1 P2-3 LAST_ONE_TIER_NAME / M3.3 P2-1 tier-grid.js dead / M3.3 P2-2 "전체" 라벨 + CSS 인라인 px / M3.5 P2-1 spec 5.13.E.3 표현.
+11.4.4. M3 series 라이브 검수 결과 보정 (사용자 검수 결과 의존).
+
+## 11.5. M4 학습
+
+11.5.1. **메이저 사이클 round 폭증 패턴**: 큰 폭 변경은 단계 3 + 단계 6 모두 round 폭증. 자율 재시도 1회 한도 유지. 본 사이클은 단계 3/6 모두 round 2로 안정 종료.
+
+11.5.2. **자비스 권한 부재 시 dead alias 박제**: Bash rm 명시 거부 시 dead alias re-export로 잔존 + 정리 라운드 백로그 일괄 처리. M4 4 파일 + M3 series 1 파일 누적.
+
+11.5.3. **호출처 grep 의무 (M3.5 학습 답습)**: 모듈 개명 시 모든 호출처 grep 의무. 단계 6 round 1 P0-2가 동일 학습 답습.
+
+11.5.4. **마이그레이션 chain 멱등 정합**: v3→v4→v5→v6 chain. 각 마이그레이션 함수가 단독 멱등 + chain 멱등 모두 통과 의무.
+
+11.5.5. **자율 진행 신호 답습 (M3.5 → M4)**: "권고 진행" / "한번에 끝까지" 신호로 단계 1/4/7 자율 통과. 차기 메이저 사이클 답습 패턴.

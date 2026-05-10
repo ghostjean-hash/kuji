@@ -1,6 +1,5 @@
 // localStorage 입출력 + 메모리 fallback. core/는 본 모듈을 import 하지 않는다 (03_architecture 2.4).
-// M3: 다중 라인업 격리 (라인업별 prefix 키 + 전역 키 분리). 02_data 3.1 / 3.2.5.
-// M3.1: 라인업 로비 (kuji_lobby_acked 신설). 02_data 3.1.2 / 3.2.6.
+// M3: 다중 라인업 격리. M3.1: 라인업 로비 (kuji_lobby_acked). M4: 메뉴 재설계 (kuji_lobby_acked → kuji_home_acked 개명).
 
 import { STORAGE_KEY_PREFIX, SCHEMA_VERSION, BOX_ROUND_INITIAL, BUY_SKIP_PICK_DEFAULT, LINEUP_DEFAULT_ID } from "./numbers.js";
 
@@ -10,8 +9,13 @@ const GLOBAL_KEYS = {
   meta: `${STORAGE_KEY_PREFIX}meta`,
   settingsSkipPick: `${STORAGE_KEY_PREFIX}settings_skip_pick`,  // M2.1
   currentLineupId: `${STORAGE_KEY_PREFIX}current_lineup_id`,  // M3
-  lobbyAcked: `${STORAGE_KEY_PREFIX}lobby_acked`,  // M3.1
+  homeAcked: `${STORAGE_KEY_PREFIX}home_acked`,  // M4: M3.1 lobby_acked → home_acked 개명
   schemaVersion: `${STORAGE_KEY_PREFIX}schema_version`,  // M3
+};
+
+// M3.1까지 lobby_acked 키 (M4 마이그레이션에서만 사용)
+const LEGACY_GLOBAL_KEYS_M3_1 = {
+  lobbyAcked: `${STORAGE_KEY_PREFIX}lobby_acked`,
 };
 
 // 라인업별 격리 키 (lineup_id suffix 부여)
@@ -217,16 +221,16 @@ export function migrateV3ToV4() {
 
 // M3.1: v4 → v5 마이그레이션 (02_data 3.2.6).
 // 멱등 게이트: schemaVersion ≥ 5 || kuji_lobby_acked !== null → return.
-// existingLineupId !== null → 기존 사용자 (lobbyAcked=true, 로비 재노출 안 함).
-// else → 첫 방문자 (lobbyAcked=false, 로비 노출).
+// existingLineupId !== null → 기존 사용자 (lobbyAcked=true).
+// else → 첫 방문자 (lobbyAcked=false).
 // 외부 노출 (단위 테스트 storage_v5.test.js).
+// **M4 갱신 (2026-05-10)**: kuji_lobby_acked는 v5에서만 존재. v6 마이그레이션이 즉시 home_acked로 이전. v5 단계는 lobby_acked 잔존이 멱등 정합.
 export function migrateV4ToV5() {
   const versionRaw = getRaw(GLOBAL_KEYS.schemaVersion);
   if (versionRaw !== null && Number(versionRaw) >= 5) {
     return { migrated: false, reason: "already_v5" };
   }
-  if (getRaw(GLOBAL_KEYS.lobbyAcked) !== null) {
-    // 이미 lobby_acked 키가 존재 = 본 마이그레이션 적용 후 또는 v5 사용자. schemaVersion만 갱신.
+  if (getRaw(LEGACY_GLOBAL_KEYS_M3_1.lobbyAcked) !== null) {
     if (versionRaw === null || Number(versionRaw) < 5) {
       setRaw(GLOBAL_KEYS.schemaVersion, "5");
     }
@@ -234,9 +238,40 @@ export function migrateV4ToV5() {
   }
   const existingLineupId = getRaw(GLOBAL_KEYS.currentLineupId);
   const lobbyAcked = existingLineupId !== null ? "true" : "false";
-  setRaw(GLOBAL_KEYS.lobbyAcked, lobbyAcked);
+  setRaw(LEGACY_GLOBAL_KEYS_M3_1.lobbyAcked, lobbyAcked);
   setRaw(GLOBAL_KEYS.schemaVersion, "5");
   return { migrated: true, reason: "v4_to_v5", lobbyAcked };
+}
+
+// M4: v5 → v6 마이그레이션 (02_data 3.2.7).
+// 멱등 게이트: schemaVersion ≥ 6 || kuji_home_acked !== null → return.
+// (a) lobby_acked → home_acked 키 개명 (값 그대로 이전).
+// (b) active_tab 영속은 단계 4 결정 = 메모리 잔존 → 본 단계 skip (활성 탭 매핑 미적용).
+// (c) schemaVersion 6 갱신.
+// 외부 노출 (단위 테스트 storage_v6.test.js).
+export function migrateV5ToV6() {
+  const versionRaw = getRaw(GLOBAL_KEYS.schemaVersion);
+  if (versionRaw !== null && Number(versionRaw) >= 6) {
+    return { migrated: false, reason: "already_v6" };
+  }
+  if (getRaw(GLOBAL_KEYS.homeAcked) !== null) {
+    if (versionRaw === null || Number(versionRaw) < 6) {
+      setRaw(GLOBAL_KEYS.schemaVersion, "6");
+    }
+    return { migrated: false, reason: "home_acked_already_set" };
+  }
+  // (a) lobby_acked → home_acked 키 개명
+  const oldAcked = getRaw(LEGACY_GLOBAL_KEYS_M3_1.lobbyAcked);
+  if (oldAcked !== null) {
+    setRaw(GLOBAL_KEYS.homeAcked, oldAcked);
+    removeRaw(LEGACY_GLOBAL_KEYS_M3_1.lobbyAcked);
+  } else {
+    setRaw(GLOBAL_KEYS.homeAcked, "false");
+  }
+  // (b) active_tab 영속은 단계 4 결정 = 메모리 잔존 → skip (필요 시 후속 사이클에서 추가).
+  // (c) schemaVersion 6 갱신
+  setRaw(GLOBAL_KEYS.schemaVersion, "6");
+  return { migrated: true, reason: "v5_to_v6", homeAcked: oldAcked || "false" };
 }
 
 // =====================================================================
@@ -290,11 +325,11 @@ export function loadGlobalSettings() {
   if (settingsSkipPick === null) settingsSkipPick = BUY_SKIP_PICK_DEFAULT;
   const currentLineupIdRaw = getRaw(GLOBAL_KEYS.currentLineupId);
   const currentLineupId = currentLineupIdRaw ?? LINEUP_DEFAULT_ID;
-  // M3.1: lobbyAcked 역직렬화 (string "true" / "false" / null → boolean)
-  const lobbyAckedRaw = getRaw(GLOBAL_KEYS.lobbyAcked);
-  const lobbyAcked = lobbyAckedRaw === "true";
+  // M3.1 lobbyAcked → M4 homeAcked 역직렬화 (string "true" / "false" / null → boolean)
+  const homeAckedRaw = getRaw(GLOBAL_KEYS.homeAcked);
+  const homeAcked = homeAckedRaw === "true";
 
-  return { seed, meta, settingsSkipPick, currentLineupId, lobbyAcked };
+  return { seed, meta, settingsSkipPick, currentLineupId, homeAcked };
 }
 
 export function saveGlobalSettings(partial) {
@@ -308,9 +343,13 @@ export function saveGlobalSettings(partial) {
   if ("currentLineupId" in partial && partial.currentLineupId) {
     setRaw(GLOBAL_KEYS.currentLineupId, partial.currentLineupId);
   }
-  // M3.1: lobbyAcked 직렬화 (boolean → "true" / "false")
+  // M3.1 lobbyAcked → M4 homeAcked 직렬화 (boolean → "true" / "false")
+  if ("homeAcked" in partial && partial.homeAcked !== undefined) {
+    setRaw(GLOBAL_KEYS.homeAcked, String(Boolean(partial.homeAcked)));
+  }
+  // M3.1까지 호환 alias (lobbyAcked → homeAcked redirect, M4.1-tidy에서 폐기)
   if ("lobbyAcked" in partial && partial.lobbyAcked !== undefined) {
-    setRaw(GLOBAL_KEYS.lobbyAcked, String(Boolean(partial.lobbyAcked)));
+    setRaw(GLOBAL_KEYS.homeAcked, String(Boolean(partial.lobbyAcked)));
   }
 }
 
@@ -357,6 +396,9 @@ export function loadState() {
   // 2-M3.1) v4 → v5 마이그레이션 (lobbyAcked 추론 + 신설)
   migrateV4ToV5();
 
+  // 2-M4) v5 → v6 마이그레이션 (lobby_acked → home_acked 키 개명)
+  migrateV5ToV6();
+
   // 3) global + 활성 라인업 state 로드
   const globalSettings = loadGlobalSettings();
   // currentLineupId 미존재 시 LINEUP_DEFAULT_ID 부여 + 영속
@@ -372,7 +414,7 @@ export function loadState() {
     meta: globalSettings.meta,
     settingsSkipPick: globalSettings.settingsSkipPick,
     currentLineupId: globalSettings.currentLineupId,
-    lobbyAcked: globalSettings.lobbyAcked,  // M3.1
+    homeAcked: globalSettings.homeAcked,  // M3.1 lobbyAcked → M4 homeAcked
     ...lineupState,
   };
 

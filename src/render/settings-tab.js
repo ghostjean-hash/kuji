@@ -1,52 +1,32 @@
-// 설정 탭. M3: Lineup dropdown 신설 (사용자 결정 8.3 (A) settings-tab dropdown).
-// M3.1: "라인업 선택 화면으로" 버튼 추가 (5.13.A.4.5 / 5.13.B.5.1).
+// 설정 탭. M3 dropdown / M3.1 "라인업 선택 화면으로" → M4 dropdown 폐기 + "홈으로" 버튼.
 
-import { LINEUPS, getLineupById, DISPATCH_TYPE_OPEN_LOBBY } from "../data/numbers.js";
+import { getLineupById, DISPATCH_TYPE_OPEN_HOME } from "../data/numbers.js";
 
 export function renderSettingsTab(state, dispatch) {
   const lineup = getLineupById(state.currentLineupId);
   const el = document.createElement("div");
   el.className = "settings-tab";
 
-  // M3 신설: Lineup dropdown
+  // M4 갱신 (5.13.A.4 폐기 + 5.13.B.5.1): dropdown quick-switch 폐기. "홈으로" 버튼만 잔존.
   const lineupSection = document.createElement("section");
   lineupSection.className = "settings-section settings-lineup";
   lineupSection.innerHTML = "<h2>라인업</h2>";
-  const lineupRow = document.createElement("div");
-  lineupRow.className = "lineup-row";
-  const lineupSelect = document.createElement("select");
-  lineupSelect.className = "lineup-select";
-  for (const l of LINEUPS) {
-    const opt = document.createElement("option");
-    opt.value = l.id;
-    opt.textContent = `${l.ip} - ${l.titleKo}`;
-    if (l.id === lineup.id) opt.selected = true;
-    lineupSelect.appendChild(opt);
-  }
-  lineupSelect.addEventListener("change", () => {
-    const newId = lineupSelect.value;
-    if (newId !== lineup.id) {
-      dispatch({ type: "set_current_lineup", lineupId: newId });
-      // 사용자 취소 시 dropdown 원복
-      lineupSelect.value = lineup.id;
-    }
+  const currentLine = document.createElement("p");
+  currentLine.className = "settings-current-lineup";
+  currentLine.innerHTML = `현재: <strong>${lineup.ip}</strong> - ${lineup.titleKo}`;
+  lineupSection.appendChild(currentLine);
+  const homeBtn = document.createElement("button");
+  homeBtn.type = "button";
+  homeBtn.className = "settings-home-button";
+  homeBtn.textContent = "홈으로";
+  homeBtn.addEventListener("click", () => {
+    dispatch({ type: DISPATCH_TYPE_OPEN_HOME });
   });
-  lineupRow.appendChild(lineupSelect);
-  lineupSection.appendChild(lineupRow);
+  lineupSection.appendChild(homeBtn);
   const lineupHelp = document.createElement("p");
   lineupHelp.className = "settings-help";
-  lineupHelp.textContent = "라인업 전환 시 현재 라인업의 박스 / 인벤토리 / 이력 / DC는 보존되며, 다음 전환 시 복원됩니다.";
+  lineupHelp.textContent = "다른 라인업으로 전환하려면 홈에서 선택하세요. 현재 라인업의 박스 / 인벤토리 / 이력 / DC는 보존됩니다.";
   lineupSection.appendChild(lineupHelp);
-
-  // M3.1 신설 (5.13.A.4.5): "라인업 선택 화면으로" 버튼
-  const lobbyBtn = document.createElement("button");
-  lobbyBtn.type = "button";
-  lobbyBtn.className = "settings-lobby-button";
-  lobbyBtn.textContent = "라인업 선택 화면으로";
-  lobbyBtn.addEventListener("click", () => {
-    dispatch({ type: DISPATCH_TYPE_OPEN_LOBBY });
-  });
-  lineupSection.appendChild(lobbyBtn);
   el.appendChild(lineupSection);
 
   // 시드 (라인업 공유 - 사용자 결정 8.2 (A))

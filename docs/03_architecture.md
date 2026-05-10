@@ -296,14 +296,14 @@ export function migrateV4ToV5(): void
 
 ## 3.11. render/main.js
 
-진입점. 4탭 라우팅 + 모듈 wire-up. state 객체 보유.
+진입점. **3탭 라우팅 (M4 갱신)** + 모듈 wire-up. state 객체 보유.
 
 ```js
 state = {
-  view,               // **M3.1 신설**: STATE_VIEW_LOBBY | STATE_VIEW_MAIN. 'lobby' = 라인업 선택 화면, 'main' = 4탭 모델.
-  currentTab,         // 'draw' | 'history' | 'dc' | 'settings' (view === 'main' 시에만 유효)
+  view,               // **M3.1 신설 / M4 갱신**: STATE_VIEW_HOME | STATE_VIEW_MAIN. 'home' = 쿠지 홈 (라인업 선택), 'main' = 3탭 모델. 코드 식별자 STATE_VIEW_LOBBY → STATE_VIEW_HOME 개명은 단계 4 결정.
+  activeTab,          // **M4 갱신** (M3.5까지 currentTab): 'draw' | 'products_history' | 'settings' (view === 'main' 시에만 유효). M3.5까지 4탭 ('draw' / 'history' / 'dc' / 'settings') 폐기.
   currentLineupId,    // M3 신설. 활성 라인업 ID.
-  lobbyAcked,         // **M3.1 신설**: boolean. false = 첫 방문 (로비 노출). true = 마지막 라인업 자동 진입. 영속.
+  homeAcked,          // **M3.1 신설 / M4 갱신**: boolean. false = 첫 방문 (홈 노출). true = 마지막 라인업 자동 진입. 영속. 코드 식별자 lobbyAcked → homeAcked 개명은 단계 4 결정.
   seed,
   boxRound,
   boxState,           // core/box BoxState
@@ -325,10 +325,10 @@ state = {
 state 변경 시 영속(`data/storage.saveState`) + 본문 재렌더.
 
 **B-α 메모리 vs 영속**:
-- 메모리 전용: `view` (M3.1 신설), `selectedGridIndices`, `pendingPeelResult`, `currentTab`, `expandedTier`, `galleryExpanded`, `lastBuyCount`, `lastDrawnTier`.
-- 영속: `seed` / `boxRound` / `boxState` / `history` / `dcTickets` / `dcResults` / `meta` / `unopenedTickets` (lockedResult 포함) / `settingsSkipPick` / `currentLineupId` (M3) / `lobbyAcked` (M3.1).
+- 메모리 전용: `view` (M3.1 신설), `selectedGridIndices`, `pendingPeelResult`, `activeTab` (M4 갱신, M3.5까지 currentTab), `expandedTier`, `galleryExpanded`, `lastBuyCount`, `lastDrawnTier`.
+- 영속: `seed` / `boxRound` / `boxState` / `history` / `dcTickets` / `dcResults` / `meta` / `unopenedTickets` (lockedResult 포함) / `settingsSkipPick` / `currentLineupId` (M3) / `homeAcked` (M3.1 lobbyAcked → M4 homeAcked, 단계 4 개명).
 
-**M3.1 view 라우팅**: render/main.js의 본문 렌더 함수가 `state.view === STATE_VIEW_LOBBY`이면 `render/lobby.renderLobby(state, dispatch)` 호출, `STATE_VIEW_MAIN`이면 기존 4탭 라우팅. 헤더 / 하단 탭 바 / 4탭 컨텐츠는 main view에서만 렌더.
+**M3.1 view 라우팅 / M4 갱신**: render/main.js의 본문 렌더 함수가 `state.view === STATE_VIEW_HOME`이면 `render/home.renderHome(state, dispatch)` 호출 (M3.1 render/lobby.renderLobby 개명), `STATE_VIEW_MAIN`이면 **3탭 라우팅 (draw / products_history / settings)**. 헤더 / 하단 탭 바 / 3탭 컨텐츠는 main view에서만 렌더. home view 시 헤더 IP 라벨 미렌더 (현재 라인업 미선택 의미).
 
 **B-α 새로고침 복원**: `findUnrevealed` / `revealHistory` (M2.1 1차) 폐기. `unopenedTickets[i].lockedResult !== null` 인 항목이 존재하면 b2 분기 (페이지플립 카드 표시). 없고 raw가 있으면 b1 분기 (격자). 없으면 a (구매).
 
@@ -416,108 +416,93 @@ export function buildConsumedGridSet(state, lineup): Set<number>
 ## 3.17. render/settings-tab.js (**M3 Lineup 섹션 + M3.1 로비 진입 버튼**)
 
 ```js
-// 사용자 결정 8.3 (A) - 헤더 라벨만 정보성. settings-tab dropdown으로 전환. (M3)
-// 'Lineup' 섹션 신설. 02_data 1.4.LINEUPS 배열 → dropdown 옵션 N개.
-// 사용자 선택 → confirmModal → dispatch.set_current_lineup.
-
-// **M3.1 추가** (사용자 결정 9.5):
-// 'Lineup' 섹션 dropdown 아래에 "라인업 선택 화면으로" 버튼.
-// 클릭 → dispatch({ type: DISPATCH_TYPE_OPEN_LOBBY }).
-// 5.13.A.4.5 / 5.13.B.5.1 정합.
+// 사용자 결정 8.3 (A) - 헤더 라벨 정보성 (M3) → M4 갱신.
+// **M4 폐기 (5.13.A.4)**: 'Lineup' 섹션 dropdown quick-switch 폐기. 라인업 전환은 홈에서만.
+// settings-tab은 라인업 표시 + "홈으로" 버튼만 잔존. 클릭 → dispatch({ type: DISPATCH_TYPE_OPEN_HOME }).
 ```
 
-## 3.18. dispatch.set_current_lineup (**M3 신설**) - quick-switch 보조 경로 (M3.1)
+## 3.18. ~~dispatch.set_current_lineup~~ (**M4 폐기** - enter_lineup 통합, 5.13.A.4.3)
 
 ```js
-// main.js dispatch 분기. M3.1: 설정 탭 dropdown용 quick-switch 전용. 로비 진입은 enter_lineup.
-// payload: { type: 'set_current_lineup', lineupId: string }
-// 동작:
-//   1. confirmModal 표시 (메모리 only state 폐기 안내).
-//   2. 사용자 확인 시:
-//      a. persistAll (현재 라인업 state 영속).
-//      b. state.currentLineupId = lineupId.
-//      c. saveGlobalSettings({ currentLineupId: lineupId }).
-//      d. state = bootstrapState(loadStateForLineup(lineupId)) (새 라인업 공간 로드).
-//      e. state.pendingPeelResult = null / state.selectedGridIndices = [] (메모리 only 폐기).
-//      f. **M3.1**: state.lobbyAcked는 변경 안 함 (true 유지). state.view도 'main' 유지.
-//      g. rerender.
+// M3 신설 (quick-switch 전용) → M4 폐기.
+// 사유: 사용자 결정 10.3 = settings 탭 dropdown 폐기 → set_current_lineup의 호출처(dropdown)도 폐기.
+// 라인업 전환은 dispatch.enter_lineup 분기 B로 단일화 (3.20 정합).
+// 호출처 grep 0건 의무 (단계 6 게이트).
 ```
 
-## 3.19. dispatch.open_lobby (**M3.1 신설**)
+## 3.19. dispatch.open_home (**M3.1 open_lobby → M4 개명**)
 
 ```js
 // main.js dispatch 분기. spec 5.13.B.6.1 정합.
-// payload: { type: DISPATCH_TYPE_OPEN_LOBBY }
+// payload: { type: DISPATCH_TYPE_OPEN_HOME }
 // 동작:
-//   1. state.view === STATE_VIEW_LOBBY 이면 no-op (lobby에서 호출 시 무시).
-//   2. state.view = STATE_VIEW_LOBBY.
+//   1. state.view === STATE_VIEW_HOME 이면 no-op (home에서 호출 시 무시).
+//   2. state.view = STATE_VIEW_HOME.
 //   3. **메모리 only state 보존** (pendingPeelResult / selectedGridIndices 그대로).
 //      → 사용자가 같은 라인업 카드 클릭 (enter_lineup, 동일 lineupId)으로 복귀하면 reveal 진행 그대로.
 //   4. 영속 변경 0건 (view는 메모리 전용).
-//   5. rerender (4탭 미렌더, 로비 카드 그리드 렌더).
+//   5. rerender (3탭 미렌더, 홈 카드 그리드 렌더).
 ```
 
-## 3.20. dispatch.enter_lineup (**M3.1 신설**)
+## 3.20. dispatch.enter_lineup (**M3.1 신설 / M4 갱신 - homeAcked**)
 
 ```js
-// main.js dispatch 분기. spec 5.13.B.6.2 정합.
+// main.js dispatch 분기. spec 5.13.B.6.2 정합. M4: lobbyAcked → homeAcked 개명.
 // payload: { type: DISPATCH_TYPE_ENTER_LINEUP, lineupId: string }
 // 동작:
 //   분기 A: lineupId === state.currentLineupId (= 동일 라인업, view 전환만)
 //     1. state.view = STATE_VIEW_MAIN.
-//     2. state.lobbyAcked가 false였으면 true로 갱신 + saveState({ lobbyAcked: true }).
+//     2. state.homeAcked가 false였으면 true로 갱신 + saveState({ homeAcked: true }).
 //     3. **메모리 only state 보존**.
 //     4. rerender.
 //
-//   분기 B: lineupId !== state.currentLineupId (= 라인업 전환 + view 전환)
+//   분기 B: lineupId !== state.currentLineupId (= 라인업 전환 + view 전환). M4: set_current_lineup 통합.
 //     1. persistAll (현재 라인업 state 영속).
-//     2. saveGlobalSettings({ currentLineupId: lineupId, lobbyAcked: true }).
+//     2. saveGlobalSettings({ currentLineupId: lineupId, homeAcked: true }).
 //     3. lineup = getLineupById(lineupId).
 //     4. state = bootstrapState(loadStateForLineup(lineupId), globalSettings, lineup).
-//     5. state.lobbyAcked = true / state.view = STATE_VIEW_MAIN.
+//     5. state.homeAcked = true / state.view = STATE_VIEW_MAIN.
 //     6. state.pendingPeelResult = null / state.selectedGridIndices = []
 //        (메모리 only 폐기 = 라인업 전환 정합).
 //     7. rerender.
-//
-//   설계 의도 (M3.1 design_review P1-1 흡수):
-//     - 동일 라인업 enter_lineup은 단순 view 전환 → 메모리 보존 = reveal 손실 회피.
-//     - 다른 라인업 enter_lineup은 라인업 전환 → 메모리 폐기 = 정합 단순화.
-//     - set_current_lineup은 quick-switch 전용으로 의도 분리 유지 (M3 시점 행동 그대로).
 ```
 
-## 3.21. render/lobby.js (**M3.1 신설**)
+## 3.21. render/home.js (**M3.1 lobby 신설 / M4 home 격상**)
 
 ```js
-// 라인업 선택 화면. spec 5.13.B 정합.
-// state.view === STATE_VIEW_LOBBY 인 경우 render/main.js가 호출.
-// DOM 의존성 OK (render 모듈). core/ 룰 미적용.
+// 쿠지 홈 (라인업 선택 화면). spec 5.13.B 정합.
+// state.view === STATE_VIEW_HOME 인 경우 render/main.js가 호출.
+// DOM 의존성 OK (render 모듈).
 
-export function renderLobby(state, dispatch): HTMLElement
-//   레이아웃: 헤더 (시뮬레이터 타이틀) + 라인업 카드 그리드 + 푸터 (schemaVersion).
-//   카드 그리드: CSS Grid. cols = LOBBY_GRID_COLS_MOBILE (1) ~ LOBBY_GRID_COLS_TABLET (2)
-//                @media (min-width: LOBBY_TABLET_BREAKPOINT_PX) 에서 cols 2.
-//   각 카드: renderLobbyCard(lineup, isCurrent, dispatch).
+export function renderHome(state, dispatch): HTMLElement
+//   레이아웃: 헤더 (시뮬레이터 타이틀, IP 라벨 미렌더) + 라인업 카드 그리드 + 푸터.
+//   카드 그리드: CSS Grid. cols = HOME_GRID_COLS_MOBILE (1) ~ HOME_GRID_COLS_TABLET (2)
+//                @media (min-width: HOME_TABLET_BREAKPOINT_PX) 에서 cols 2.
+//   각 카드: renderHomeCard(lineup, isCurrent, dispatch).
 //
-export function renderLobbyCard(lineup, isCurrent, dispatch): HTMLElement
+export function renderHomeCard(lineup, isCurrent, dispatch): HTMLElement
 //   props:
 //     - lineup: 라인업 객체 (1.4.0 구조).
-//     - isCurrent: boolean. lineup.id === state.currentLineupId && state.lobbyAcked === true.
-//                  (lobbyAcked === false 첫 방문자는 모든 카드 isCurrent: false → "현재" 배지 미노출.
-//                   spec 5.13.B.4.4 + design_review P2-6 결정).
+//     - isCurrent: boolean. lineup.id === state.currentLineupId && state.homeAcked === true.
+//                  (homeAcked === false 첫 방문자는 모든 카드 isCurrent: false → "현재" 배지 미노출).
 //
-//   카드 구성 (spec 5.13.B.4.2 표):
-//     1. lobby hero 이미지: lineup.lobbyHeroAssetPath. assetsAvailable=false면 placeholder gray + lineup.ip 라벨.
-//     2. 한국어 제목: lineup.titleKo.
-//     3. IP 라벨: lineup.ip.
-//     4. 메타 한 줄: releaseDateStore + priceJpy + boxSize + (boxSizeEstimated 시 추정 배지).
-//     5. 메인 상품 미리보기: core/lobby-preview.heroPreview(lineup) 호출.
-//        반환: { tier, nameKo, sizeLabel, tierColor, assetId? }. assetsAvailable=false면 SVG fallback (1.7.3).
-//     6. CTA 버튼: "이 라인업으로 진입". CTA 색은 02_data 토큰 (단계 5에서 IP 액센트 vs 브랜드 빨강 결정).
+//   카드 구성 (spec 5.13.B.4.2 표, M4 풍부화):
+//     1. home hero 이미지: lineup.homeHeroAssetPath.
+//     2. 한국어 제목.
+//     3. IP 라벨.
+//     4. 메타 (M4): 발매일 + 끝일 + 가격 + 박스 매수 + 추정 배지 + 매장 (3개 이상이면 "N곳").
+//     5. 메인 상품 미리보기: core/home-preview.heroPreview(lineup) 호출.
+//     6. **진행 상태 (M4 신설, spec 5.13.B.4.3 산출식)**:
+//        boxRound = loadStateForLineup(lineup.id).boxRound (영속).
+//        drawCount = .history.length (영속).
+//        dcCount = .dcTickets.length (영속).
+//        untouched = boxRound <= 1 && drawCount === 0 && dcCount === 0 → "아직 시작 안 함".
+//     7. CTA 버튼: "이 라인업으로 진입".
 //
 //   클릭 핸들러: card 또는 CTA 버튼 → dispatch({ type: DISPATCH_TYPE_ENTER_LINEUP, lineupId: lineup.id }).
 ```
 
-## 3.22. core/lobby-preview.js (**M3.1 신설**)
+## 3.22. core/home-preview.js (**M3.1 lobby-preview 신설 / M4 home-preview 개명**)
 
 ```js
 // 라인업 메인 상품 미리보기 도메인 로직. CLAUDE.md 4.1 정합 (게임 로직 / 렌더 분리).
@@ -765,10 +750,10 @@ mount(rootEl):
 - dispatch.enter_lineup 분기 A (동일 라인업) vs 분기 B (다른 라인업) 의도 정합.
 - localStorage `kuji_lobby_acked` 영속 형식 string ("true"/"false"). 역직렬화 정합.
 
-5.14. **M3.1 tier_class 검증식 grep (단계 6 신설)**:
+5.14. **M3.1 tier_class 검증식 grep (단계 6 신설 / M3.5 갱신)**:
 - 모든 라인업의 모든 tier에 tierClass 존재 (`lineup.tiers.every(t => t.tierClass)`).
 - TIER_CLASS_VALUES 외 값 0건.
-- 라인업당 hero/main/goods 각 ≥ 1 정합 (1.4.A.3).
+- **M3.5 갱신**: 라인업당 hero ≥ 1 + goods ≥ 1만 의무 (main = 0 허용). 1.4.A.3 룰 완화 정합.
 - DC.tierClass === TIER_CLASS_HERO 정합.
 - core/lobby-preview.heroPreview 반환 형식 정합 (Last One 제외).
 
@@ -797,6 +782,36 @@ mount(rootEl):
 - 갤러리 접힘 상태(`galleryExpanded === false`)는 그룹화 미적용 (회귀 위험 0).
 - 단위 테스트 (tests/suites/tier_class_counts.test.js) 통과: 빈 history / 드래곤볼 / 원피스 / 미존재 tier 가드 / 결정론.
 
+5.18. **M3.5 tier_class 라인업별 자율 분류 검증 (단계 6 신설 / round 2 정정)**:
+- 02_data 1.4-OP.2 등급표 ↔ numbers.js TIERS_ONEPIECE 1:1 정합 (B/C/D/E/F tierClass = "hero" + A/LastOne = "hero" + G/H/I = "goods" + main 0건).
+- numbers.js `_validateLineupTierClass` 함수에서 main ≥ 1 throw 코드 제거 정합.
+- 02_data 1.4.A.3 룰 표현 ↔ numbers.js 검증 코드 1:1 정합 (hero ≥ 1 + goods ≥ 1만 의무).
+- 원피스 라인업 부팅 시 throw 0 (validateLineup 통과).
+- 드래곤볼 라인업 부팅 시 throw 0 (변경 0).
+- hero=0 가상 라인업 → throw 정합 (룰 잔존).
+- goods=0 가상 라인업 → throw 정합 (룰 잔존).
+- **render/hero-carousel.js filter 분기 식 = `t.tierClass !== TIER_CLASS_GOODS && t.tier !== "Last One"`** (round 3 정정 - 기존 `count === 1` 폐기. round 2의 `tierClass === HERO`는 드래곤볼 회귀(6→1) 야기로 폐기). 드래곤볼: A/B/C/D/E/F (6) / 원피스: A/B/C/D/E/F (6). 양쪽 등동 노출.
+- **render/minor-row.js filter 분기 식 = `t.tierClass === TIER_CLASS_GOODS && t.tier !== "Last One"`** (round 1 P0-1 정정 - 기존 `count >= 2` 폐기). 드래곤볼: G/H/I/J / 원피스: G/H/I.
+- 단위 테스트 (tests/suites/tier_class_lookup.test.js): 원피스 B/C/D/E/F lookup → "hero" 갱신.
+- 단위 테스트 (tests/suites/tier_class_counts.test.js): 원피스 history 시나리오 hero 카운트에 B~F 합산 갱신.
+- 단위 테스트 (tests/suites/lineup_validation.test.js 신설 또는 기존 suite 확장): 완화된 검증식 + main=0 통과 + hero=0/goods=0 throw 케이스 커버.
+
+5.19. **M4 메뉴 재설계 검증 (단계 6 신설)**:
+- spec 4장 view 모델 (HOME / MAIN) ↔ 02_data 1.4.B view 상수 ↔ src/data/numbers.js export 1:1.
+- spec 4장 탭 모델 (3탭) ↔ 02_data 1.4.B 탭 상수 ↔ src/data/numbers.js export 1:1.
+- M3.5까지 4탭 ("history" / "dc") 코드 잔존 0건 grep.
+- M3.1 set_current_lineup dispatch 호출처 0건 grep (enter_lineup 통합).
+- M3.1 dispatch.open_lobby 호출처 0건 (open_home 개명, 단계 4 결정 시 alias 잔존 가능).
+- render/header.js: 헤더 IP 라벨 클릭 = open_home dispatch 정합. home view 시 IP 라벨 미렌더 정합.
+- render/home.js (구 render/lobby.js): 라인업 카드 그리드 + 메타 풍부도 (출시일 + 끝일 + 가격 + 매장 + 진행 상태) 정합.
+- render/products-history-tab.js (M4 신설): sub-section 3개 (대시보드 + 갤러리 + 리스트) 정합.
+- render/history-tab.js / render/dc-tab.js 폐기 또는 sub-section 자산 이전 정합 (단계 4 결정).
+- render/settings-tab.js: dropdown quick-switch 폐기 정합 + "홈으로" 버튼 라벨 갱신 정합.
+- render/tab-bar.js: 4 → 3 탭 + 아이콘 + 라벨 정합.
+- storage v5 → v6 마이그레이션 (lobby_acked → home_acked 키 개명 + activeTab 4탭 → 3탭 매핑) 멱등성 정합.
+- 단위 테스트 (home_flow / products_history_layout / state_view) 통과.
+- M3 series 라이브 결함 누적 흡수 정합 (단계 7 QA).
+
 # 6. 변경 이력
 
 6.1. 2026-05-02: M1 단계 4 impl_plan 작성. placeholder 교체. 모듈 분해 / 의존성 그래프 / 인터페이스 시그니처 / 데이터 흐름 정의.
@@ -804,6 +819,10 @@ mount(rootEl):
 6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설. **(이후 6.5에서 findUnrevealed/revealHistory 폐기 + pendingPickResult → ticket.lockedResult 통합. 6.6에서 pick-hint-toast 폐기)**.
 
 6.7. 2026-05-08: **M3 단계 4 impl_plan 사전 정합 (단계 3 통과 후)**. (1) 3.7.M3 신설 - history.tierCounts(history, lineup) 시그니처 + box.id lineup_id 포함. (2) 3.10.M3 신설 - storage v4 다중 라인업 격리 (migrateV3ToV4 / loadStateForLineup / saveGlobalSettings). (3) 3.15.M3 신설 - core/pick-grid.js (M2.1 정리 3.5.1 흡수, render→core 이전). (4) 3.17 settings-tab Lineup 섹션 + 3.18 dispatch.set_current_lineup. (5) 4.M3 흐름 신설 (부팅 / 전환 / 영속 매핑 / 마이그레이션 알고리즘). (6) 5.10/5.11/5.12 단계 6 게이트 grep 신설 (라인업 격리 / 등급 수 가변성 / currentLineupId 매트릭스).
+6.12. 2026-05-10: **M4 단계 2 design + 단계 4 impl_plan 사전 정합 (round 2 정정 흡수)**. (1) **5.19 게이트 신설** - 메뉴 재설계 검증. (2) 단계 4 본 plan에서 흡수: state.view 개명 (lobby → home) / state.activeTab 4탭 → 3탭 / dispatch open_home 개명 + set_current_lineup 폐기 + set_active_tab 신설 / render/lobby → home + 카드 메타 풍부화 / render/products-history-tab 신설 (M3.3 자산 흡수 + M2 history 리스트 흡수 + DC sub-section 4 통합) / render/history-tab + dc-tab 폐기 / settings-tab dropdown 폐기 + "홈으로" 버튼 / tab-bar 4 → 3 / storage v5 → v6 마이그레이션 / 단위 테스트 home_flow + products_history_layout + state_view + storage_v6 신설. M3 series 라이브 결함 누적 흡수 정합 (단계 7 QA). 1장 트리: render/home.js (개명) + render/products-history-tab.js (신설). 폐기: render/history-tab.js + render/dc-tab.js. **round 1 P0 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 (3.11 + spec 4.3) / P0-2 3.11 state 객체 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION v6 bump + 02_data 3.2.7 마이그레이션 절 신설. P1 4건 (sub-section 번호 / 결정 게이트 6건 / 산출식 / 본체 박제) 흡수.
+
+6.11. 2026-05-10: **M3.5 단계 2 design + 단계 4 impl_plan 사전 정합 (round 3 정정 흡수)**. (1) 5.14 M3.1 검증식 grep 갱신 - main ≥ 1 룰 폐기 (M3.5 완화). (2) **5.18 게이트 신설** - tier_class 라인업별 자율 분류 검증 (1.4-OP.2 ↔ numbers.js 1:1 / validateLineup main 코드 제거 / 원피스 throw 0 / hero=0 goods=0 throw 잔존 / **hero-carousel + minor-row 분기 식 tierClass 기반 grep** / 단위 테스트 3종). (3) 단계 4 본 plan에서 흡수: numbers.js TIERS_ONEPIECE B/C/D/E/F tierClass main → hero / `_validateLineupTierClass` 함수 main 룰 제거 / **render/hero-carousel.js filter `count===1` → `tierClass !== TIER_CLASS_GOODS`** / **render/minor-row.js filter `count>=2` → `tierClass===TIER_CLASS_GOODS`** / lineup_validation.test.js 신설 또는 확장 / tier_class_lookup.test.js + tier_class_counts.test.js 갱신. state / dispatch / storage / core/draw / 결정론 영향 0 (데이터 분류 + 검증식 + render 분기 식 미세 변경). 1장 트리 신규 모듈 0. **round 1 P0 정정 + round 2 P0 재정정**: round 1은 분기 식이 count 기반이라 tierClass 변경만으로 시각 자동 정합 미성립 - 분기 식 변경 채택. round 2는 `tierClass===HERO` 채택이 드래곤볼 hero-carousel 6→1 회귀 야기 - `tierClass !== GOODS`로 재변경 (양쪽 라인업 6 등급 동등 노출, 비목표 4.1 정합). plan 4.8 비목표 "hero-carousel UI 자체 재설계"는 토큰/scroll/카드 크기 정책 재설계만 의미하며 filter 식 미세 변경은 본 사이클 흡수 가능으로 명문화.
+
 6.10. 2026-05-09: **M3.3 단계 4 impl_plan 사전 정합 (단계 3 round 1 통과 후, P0 0건)**. (1) 5.17 게이트 신설 - tier_class 갤러리 / history 확장 grep (tierClassCounts 시그니처 / 미존재 tier 가드 / 대시보드 반응형 / 그룹화 정렬 / 한국어 라벨 호출). (2) core/history.js 확장 (tierClassCounts 신설, M3.1 history.tierCounts와 의도 분리). (3) render/history-tab.js 상단 대시보드 + render/tier-grid (또는 product-gallery) 그룹화. (4) 단위 테스트 tier_class_counts.test.js 신설. state / dispatch / storage / core/draw / 결정론 영향 0.
 
 6.9. 2026-05-09: **M3.2 단계 4 impl_plan 사전 정합 (단계 3 round 2 통과 후)**. (1) 5.16 게이트 신설 - tier_class 시각 적용 grep (data-tier-class 부착 / CSS 변수 8종 + 모션 3종 매핑 / styles/main.css 인라인 0 / hero 분기 식 정합 / getTierClassForTier 헬퍼 호출처 4종). (2) 단계 4 본 plan에서 흡수: PEEL 글로우 + hero 정적 글로우 동시 노출 정책 / minor-row 보더 정책 / 5.13.C.4.4 cross-link / 모듈 docstring 갱신 (hero-carousel / minor-row / peel-card / dc-result-modal에 tierClass 분기 추가). state / dispatch / storage / core 영향 0 (시각 영역 단독). 1장 트리 신규 모듈 0.

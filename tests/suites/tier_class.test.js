@@ -10,8 +10,9 @@ import {
   TIER_CLASS_MAIN,
   TIER_CLASS_GOODS,
   TIER_CLASS_VALUES,
+  REQUIRED_TIER_CLASSES,
 } from "../../src/data/numbers.js";
-import { heroPreview } from "../../src/core/lobby-preview.js";
+import { heroPreview } from "../../src/core/home-preview.js";  // M4: lobby-preview → home-preview 개명
 
 suite("tier_class (M3.1)", () => {
   test("TIER_CLASS_VALUES = [hero, main, goods] 3종", () => {
@@ -35,9 +36,10 @@ suite("tier_class (M3.1)", () => {
     }
   });
 
-  test("라인업당 hero / main / goods 각 ≥ 1 정합 (1.4.A.3)", () => {
+  test("라인업당 hero ≥ 1 + goods ≥ 1 정합 (1.4.A.3 M3.5 룰 완화)", () => {
+    // M3.5: main ≥ 1 룰 폐기. REQUIRED_TIER_CLASSES = [HERO, GOODS]만 의무.
     for (const lineup of LINEUPS) {
-      for (const required of TIER_CLASS_VALUES) {
+      for (const required of REQUIRED_TIER_CLASSES) {
         const hasOne = lineup.tiers.some((t) => t.tierClass === required);
         assert(hasOne, `lineup ${lineup.id} tierClass ${required} 부재`);
       }
@@ -57,23 +59,23 @@ suite("tier_class (M3.1)", () => {
     }
   });
 
-  test("원피스 분류: A,LastOne=hero / B-F=main / G-I=goods", () => {
+  test("원피스 분류 (M3.5 갱신): A/B/C/D/E/F/LastOne=hero / G-I=goods (main=0)", () => {
     const tiers = LINEUP_ONEPIECE.tiers;
     const find = (t) => tiers.find((x) => x.tier === t);
     assertEq(find("A").tierClass, TIER_CLASS_HERO);
     assertEq(find("Last One").tierClass, TIER_CLASS_HERO);
     for (const t of ["B", "C", "D", "E", "F"]) {
-      assertEq(find(t).tierClass, TIER_CLASS_MAIN, `OP ${t}`);
+      assertEq(find(t).tierClass, TIER_CLASS_HERO, `OP ${t}`);
     }
     for (const t of ["G", "H", "I"]) {
       assertEq(find(t).tierClass, TIER_CLASS_GOODS, `OP ${t}`);
     }
   });
 
-  test("lobbyHeroAssetPath 정의됨 (모든 라인업)", () => {
+  test("homeHeroAssetPath 정의됨 (모든 라인업, M3.1 lobby → M4 home 개명)", () => {
     for (const lineup of LINEUPS) {
-      assert(typeof lineup.lobbyHeroAssetPath === "string" && lineup.lobbyHeroAssetPath.length > 0,
-        `lineup ${lineup.id} lobbyHeroAssetPath 부재`);
+      assert(typeof lineup.homeHeroAssetPath === "string" && lineup.homeHeroAssetPath.length > 0,
+        `lineup ${lineup.id} homeHeroAssetPath 부재`);
     }
   });
 });
