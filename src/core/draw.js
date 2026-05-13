@@ -40,6 +40,19 @@ export function drawOne(boxState, drawRng, lineup, pickIndex) {
   const typeIndex = tierMeta.typeCount > 1 ? nextInt(drawRng, tierMeta.typeCount) : 0;
 
   if (wasLast) {
+    // M5 갱신: lineup.lastOneEnabled === false 시 Last One 자동 지급 미적용 (spec 5.4.6 정합).
+    if (lineup.lastOneEnabled === false) {
+      boxState.drawnCount += 1;
+      return {
+        tier: label,
+        typeIndex,
+        nameJa: tierMeta.nameJa,
+        nameKo: tierMeta.nameKo,
+        sizeLabel: tierMeta.sizeLabel,
+        isLastOne: false,
+        pickIndex: idx,
+      };
+    }
     boxState.drawnCount += 2;  // deck pop 1 + Last One 자동 지급 1
     return {
       tier: label,

@@ -129,6 +129,10 @@ export const LINEUP_DRAGONBALL = {
   assetsBasePath: LINEUP_DRAGONBALL_ASSETS_BASE_PATH,
   assetsAvailable: LINEUP_DRAGONBALL_ASSETS_AVAILABLE,
   homeHeroAssetPath: LINEUP_DRAGONBALL_HOME_HERO_ASSET_PATH,  // M3.1 lobby → M4 home 개명
+  // M5 메커닉 플래그 (02_data 1.4.0 정합)
+  lastOneEnabled: true,  // 一番くじ 표준 = Last One 활성
+  dcEnabled: true,       // 一番くじ 표준 = DC 활성
+  ceilingEnabled: false, // 一番くじ 표준 = 천장 룰 부재
 };
 
 // =====================================================================
@@ -208,13 +212,89 @@ export const LINEUP_ONEPIECE = {
   assetsBasePath: LINEUP_ONEPIECE_ASSETS_BASE_PATH,
   assetsAvailable: LINEUP_ONEPIECE_ASSETS_AVAILABLE,
   homeHeroAssetPath: LINEUP_ONEPIECE_HOME_HERO_ASSET_PATH,  // M3.1 lobby → M4 home 개명
+  // M5 메커닉 플래그 (02_data 1.4.0 정합)
+  lastOneEnabled: true,
+  dcEnabled: true,
+  ceilingEnabled: false,
+};
+
+// =====================================================================
+// 02_data 1.4-XG. 라인업: コトブキヤくじ アイドルマスター XENOGLOSSIA (M5 신설)
+// =====================================================================
+
+// 02_data 1.4-XG.1 메타
+export const LINEUP_XENOGLOSSIA_ID = "kotobukiya_xenoglossia_2026_04";
+export const LINEUP_XENOGLOSSIA_TITLE_JA = "コトブキヤくじ アイドルマスター XENOGLOSSIA";
+export const LINEUP_XENOGLOSSIA_TITLE_KO = "코토부키야 쿠지 - 아이돌마스터 XENOGLOSSIA";
+export const LINEUP_XENOGLOSSIA_IP = "アイドルマスター XENOGLOSSIA";
+export const LINEUP_XENOGLOSSIA_OPERATOR = "KOTOBUKIYA";
+export const LINEUP_XENOGLOSSIA_RELEASE_DATE_STORE = "2026-04-17";
+export const LINEUP_XENOGLOSSIA_END_DATE = "2026-05-17";
+export const LINEUP_XENOGLOSSIA_OUTLETS = ["Kotobukiya_Online"];
+export const LINEUP_XENOGLOSSIA_PRICE_JPY = 850;
+export const LINEUP_XENOGLOSSIA_BOX_SIZE = 100;
+export const LINEUP_XENOGLOSSIA_BOX_SIZE_ESTIMATED = false;  // research/lineups.json 100매 명시
+export const LINEUP_XENOGLOSSIA_ASSETS_BASE_PATH = "xenoglossia_placeholder";
+export const LINEUP_XENOGLOSSIA_ASSETS_AVAILABLE = false;
+export const LINEUP_XENOGLOSSIA_HOME_HERO_ASSET_PATH = "xenoglossia_placeholder/lobby_hero.webp";
+
+// 02_data 1.4-XG.2 등급별 정의 (countPerBox 합 = 100)
+export const TIERS_XENOGLOSSIA = [
+  { tier: "S", count: 2, typeCount: 2, tierClass: TIER_CLASS_HERO, nameJa: "描き下ろし BIGアクリルスタンド", nameKo: "신규 작화 BIG 아크릴 스탠드", sizeLabel: "25cm" },
+  { tier: "A", count: 6, typeCount: 2, tierClass: TIER_CLASS_HERO, nameJa: "A3クリアポスター", nameKo: "A3 클리어 포스터", sizeLabel: "297×420mm" },
+  { tier: "B", count: 18, typeCount: 11, tierClass: TIER_CLASS_MAIN, nameJa: "アクリルスタンド", nameKo: "아크릴 스탠드", sizeLabel: "12cm" },
+  { tier: "C", count: 24, typeCount: 8, tierClass: TIER_CLASS_MAIN, nameJa: "思い出場面写アクリルチャーム", nameKo: "추억 장면 아크릴 참", sizeLabel: "80×60mm" },
+  { tier: "D", count: 50, typeCount: 15, tierClass: TIER_CLASS_GOODS, nameJa: "缶バッジ", nameKo: "캔 배지", sizeLabel: "Φ57mm" },
+];
+export const TIERS_XENOGLOSSIA_COUNT_ESTIMATED = false;
+
+// 02_data 1.4-XG.3 Double Chance 부재 (dcEnabled=false 정합)
+// 02_data 1.4-XG.4 천장 룰 메타
+export const LINEUP_XENOGLOSSIA_CEILING_PURCHASE_SIZE = 30;
+export const LINEUP_XENOGLOSSIA_CEILING_TIER = "S";
+
+// 02_data 1.4-XG.5 출처
+export const LINEUP_XENOGLOSSIA_SOURCES = [
+  { name: "Kotobukiya 공식 LP", url: "https://kuji.kotobukiya.co.jp/lp/xenoglossia/" },
+  { name: "4Gamer", url: "https://www.4gamer.net/games/492/G049203/20260415019/" },
+  { name: "Famitsu", url: "https://www.famitsu.com/article/202604/71972" },
+  { name: "電撃 hobby", url: "https://hobby.dengeki.com/news/2977120/" },
+  { name: "Sunrise 공식", url: "https://www.sunrise-inc.co.jp/work/news.php?id=23517" },
+];
+
+// 02_data 1.4-XG.6 LINEUP_XENOGLOSSIA 객체
+export const LINEUP_XENOGLOSSIA = {
+  id: LINEUP_XENOGLOSSIA_ID,
+  titleJa: LINEUP_XENOGLOSSIA_TITLE_JA,
+  titleKo: LINEUP_XENOGLOSSIA_TITLE_KO,
+  ip: LINEUP_XENOGLOSSIA_IP,
+  operator: LINEUP_XENOGLOSSIA_OPERATOR,
+  releaseDateStore: LINEUP_XENOGLOSSIA_RELEASE_DATE_STORE,
+  endDate: LINEUP_XENOGLOSSIA_END_DATE,
+  outlets: LINEUP_XENOGLOSSIA_OUTLETS,
+  priceJpy: LINEUP_XENOGLOSSIA_PRICE_JPY,
+  boxSize: LINEUP_XENOGLOSSIA_BOX_SIZE,
+  boxSizeEstimated: LINEUP_XENOGLOSSIA_BOX_SIZE_ESTIMATED,
+  tiers: TIERS_XENOGLOSSIA,
+  tiersCountEstimated: TIERS_XENOGLOSSIA_COUNT_ESTIMATED,
+  // dc 필드 부재 (dcEnabled=false 정합, 검증식 7)
+  sources: LINEUP_XENOGLOSSIA_SOURCES,
+  assetsBasePath: LINEUP_XENOGLOSSIA_ASSETS_BASE_PATH,
+  assetsAvailable: LINEUP_XENOGLOSSIA_ASSETS_AVAILABLE,
+  homeHeroAssetPath: LINEUP_XENOGLOSSIA_HOME_HERO_ASSET_PATH,
+  // M5 메커닉 플래그
+  lastOneEnabled: false,
+  dcEnabled: false,
+  ceilingEnabled: true,
+  ceilingPurchaseSize: LINEUP_XENOGLOSSIA_CEILING_PURCHASE_SIZE,
+  ceilingTier: LINEUP_XENOGLOSSIA_CEILING_TIER,
 };
 
 // =====================================================================
 // 02_data 1.4.LINEUPS. 라인업 배열 + currentLineupId
 // =====================================================================
 
-export const LINEUPS = [LINEUP_DRAGONBALL, LINEUP_ONEPIECE];
+export const LINEUPS = [LINEUP_DRAGONBALL, LINEUP_ONEPIECE, LINEUP_XENOGLOSSIA];
 export const LINEUP_DEFAULT_ID = LINEUP_DRAGONBALL_ID;
 
 // 라인업 ID로 lookup. 미발견 시 LINEUP_DEFAULT 반환 + console.warn (spec 7.16.1).
@@ -260,7 +340,7 @@ export const HISTORY_DASHBOARD_COLS_TABLET = 4;
 export const HISTORY_DASHBOARD_TABLET_BREAKPOINT_PX = 768;
 
 // 02_data 1.6 구매 옵션 (M2 + M2.1)
-export const BUY_QUICK_OPTIONS = [1, 3, 5, 10];
+export const BUY_QUICK_OPTIONS = [1, 3, 5, 10, 30];  // M5 신설 30: 천장 룰(ceilingEnabled) 라인업 30연 = S賞 확정. render/buy-panel 박스 매수 ≥ 30 시만 30 활성
 export const BUY_FREE_INPUT_MIN = 1;
 export const BUY_SKIP_PICK_DEFAULT = false;  // M2.1: 통 선택 단계 skip 기본값 (false = 통 선택 ON)
 
@@ -332,8 +412,9 @@ function _validateLineupTierSum(lineup) {
 }
 LINEUPS.forEach(_validateLineupTierSum);
 
-// 02_data 1.4.A.3 tierClass 검증식 (M3.1 신설 / M3.5 룰 완화). hero ≥ 1 + goods ≥ 1만 의무 + 모든 tierClass ∈ TIER_CLASS_VALUES + DC.tierClass ∈ TIER_CLASS_VALUES.
-// M3.5: main = 0 허용 (라인업별 자율 분류). 본 함수는 단위 테스트용 export 의무 (T6 lineup_validation.test.js).
+// 02_data 1.4.A.3 tierClass 검증식 (M3.1 신설 / M3.5 룰 완화 / M5 갱신 - 메커닉 enabled 분기).
+// M3.5: main = 0 허용. M5: dcEnabled=false 라인업의 dc 필드 부재 허용 + lastOneEnabled 분기 + ceilingEnabled 검증.
+// 본 함수는 단위 테스트용 export 의무.
 export const REQUIRED_TIER_CLASSES = [TIER_CLASS_HERO, TIER_CLASS_GOODS];
 export function validateLineupTierClass(lineup) {
   // 1) 모든 tier에 tierClass 존재 + TIER_CLASS_VALUES 안에 있음
@@ -344,11 +425,13 @@ export function validateLineupTierClass(lineup) {
       );
     }
   }
-  // 2) DC.tierClass 정합
-  if (!TIER_CLASS_VALUES.includes(lineup.dc.tierClass)) {
-    throw new Error(
-      `[numbers.js] 라인업 "${lineup.id}" dc.tierClass "${lineup.dc.tierClass}" ∉ TIER_CLASS_VALUES. 02_data 1.4.A.3 위반.`
-    );
+  // 2) M5: dcEnabled=true 시만 DC.tierClass 정합 검증 (검증식 2/7)
+  if (lineup.dcEnabled === true) {
+    if (!lineup.dc || !TIER_CLASS_VALUES.includes(lineup.dc.tierClass)) {
+      throw new Error(
+        `[numbers.js] 라인업 "${lineup.id}" dcEnabled=true이나 dc.tierClass 미정의 또는 ∉ TIER_CLASS_VALUES. 02_data 1.4.A.3 위반.`
+      );
+    }
   }
   // 3) M3.5: hero / goods 각 ≥ 1만 의무 (main 룰 폐기, 라인업별 자율)
   for (const required of REQUIRED_TIER_CLASSES) {
@@ -357,6 +440,40 @@ export function validateLineupTierClass(lineup) {
       throw new Error(
         `[numbers.js] 라인업 "${lineup.id}" tierClass "${required}" 등급 부재. 02_data 1.4.A.3 위반 (hero ≥ 1 + goods ≥ 1 의무).`
       );
+    }
+  }
+  // 4) M5: 메커닉 플래그 boolean 정합 (검증식 5~9 선조건)
+  if (typeof lineup.lastOneEnabled !== "boolean") {
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled 필드 boolean 의무 (M5).`);
+  }
+  if (typeof lineup.dcEnabled !== "boolean") {
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" dcEnabled 필드 boolean 의무 (M5).`);
+  }
+  if (typeof lineup.ceilingEnabled !== "boolean") {
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingEnabled 필드 boolean 의무 (M5).`);
+  }
+  // 5) M5: lastOneEnabled=true → tiers에 "Last One" 항목 존재 / false → 부재 (검증식 5/6)
+  const hasLastOne = lineup.tiers.some((t) => t.tier === "Last One");
+  if (lineup.lastOneEnabled === true && !hasLastOne) {
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=true이나 tiers에 "Last One" 항목 부재. 02_data 1.4.A.3 검증식 5 위반.`);
+  }
+  if (lineup.lastOneEnabled === false && hasLastOne) {
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=false이나 tiers에 "Last One" 항목 존재. 02_data 1.4.A.3 검증식 6 위반.`);
+  }
+  // 6) M5: ceilingEnabled=true → ceilingPurchaseSize / ceilingTier 정합 (검증식 8)
+  if (lineup.ceilingEnabled === true) {
+    if (typeof lineup.ceilingPurchaseSize !== "number" || lineup.ceilingPurchaseSize <= 0) {
+      throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingEnabled=true이나 ceilingPurchaseSize 정수 > 0 미정의. 검증식 8 위반.`);
+    }
+    if (typeof lineup.ceilingTier !== "string") {
+      throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingEnabled=true이나 ceilingTier 문자열 미정의. 검증식 8 위반.`);
+    }
+    const hasCeilingTier = lineup.tiers.some((t) => t.tier === lineup.ceilingTier);
+    if (!hasCeilingTier) {
+      throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingTier "${lineup.ceilingTier}" 항목 부재 in tiers. 검증식 8 위반.`);
+    }
+    if (lineup.ceilingPurchaseSize > lineup.boxSize) {
+      throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingPurchaseSize(${lineup.ceilingPurchaseSize}) > boxSize(${lineup.boxSize}). 검증식 8 위반.`);
     }
   }
 }

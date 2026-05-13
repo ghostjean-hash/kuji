@@ -747,3 +747,72 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 13.5.3. **fs rm vs dead alias 박제**: M4 = dead alias 박제 (자비스 권한 부재 시), M4.2 = fs rm (정리 라운드 의미 정합 + 자비스 권한 행사 + 사용자 명시 결정 영역). 차기 dead 폐기 시 사이클 의미별 결정.
 
 13.5.4. **단계 2 design에서 spec 정정 흡수의 부피 감소 효과**: T6/T7/T8/T9가 단계 2에서 흡수되어 단계 5 T 부피 11건 분기 식 + 8 파일 fs rm + 1 신설 상수 + 1 CSS 셀렉터 폐기 = 깔끔. M4.1 학습 답습.
+
+# 14. M5 ceiling-rule + XENOGLOSSIA (2026-05-13) - 첫 메커닉 분기 + 라인업 추가
+
+## 14.1. 사이클 메타
+
+14.1.1. 스프린트 ID = M5-ceiling-rule. 8단계 파이프라인 정식 메이저 사이클.
+14.1.2. **확장 로드맵 슬롯 답습**: 코토부키야쿠지 XENOGLOSSIA = 30연 S賞 확정 (CLAUDE.md 1.2).
+14.1.3. 스코프 = (1) 라인업별 메커닉 enabled 플래그 5종 신설 (lastOneEnabled / dcEnabled / ceilingEnabled / ceilingPurchaseSize / ceilingTier) + (2) 1.4.A.3 검증식 5~9 신설 + (3) XENOGLOSSIA 라인업 추가 (boxSize=100 / 5등급 / lastOne=false / dc=false / ceiling=true) + (4) core/ceiling.js 신설 (drawWithCeiling + isCeilingApplicable) + (5) BUY_QUICK_OPTIONS [1,3,5,10,30] + (6) 메커닉 분기 흐름 (core/last_one + core/draw + render/main.js dispatch.buy + render/buy-panel + render/last-one-row + last-one-indicator + products-history-tab DC sub-section).
+14.1.4. 사용자 결정 = 3.1 (b) S賞 1매 보장 추출 + 29매 통상 / 3.2 라인업 객체 enabled 플래그 / 3.3 (a) 30연 = 통 선택 skip 강제.
+14.1.5. **자율 진행 신호 답습**: "다음 작업 진행" (2026-05-13). 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존.
+
+## 14.2. 단계별 산출물
+
+14.2.1. 단계 1 plan: [01_plan.md](docs/pipeline/M5-ceiling-rule/01_plan.md). 자율 승인.
+14.2.2. 단계 2 design: spec 5.4.6 / 5.5.7 / 5.13.G 신설 + 5.13.A.6.6 / 5.9.2 갱신 + 8.20 변경이력 / 02_data 1.4.0 enabled 5종 + 1.4.A.3 검증식 5~9 + 1.4-XG 절 신설 + 1.4.LINEUPS 3건 + 1.6 BUY_QUICK_OPTIONS + 4.19 / arch 3.5 / 3.6 / 3.6.M5 / 4.2 / 4.5 / 4.M5 절 신설 + 5.21 게이트 + 6.14.
+14.2.3. 단계 3 design_review: [03_design_review.md](docs/pipeline/M5-ceiling-rule/03_design_review.md). round 1 P0=4 (drawNormal 미정의 / BUY_QUICK_OPTIONS stale / LINEUPS 표 stale / 사용자 결정 미수렴) / P1=3 / P2=3 → round 2 통과 (신규 P0=0 + P1=0 + P2=1 즉시 정정). 자동 재시도 1회 사용.
+14.2.4. 단계 4 impl_plan: [04_impl_plan.md](docs/pipeline/M5-ceiling-rule/04_impl_plan.md). T1~T16 분할. 자율 승인.
+14.2.5. **단계 5 implement (2026-05-13)**:
+- T1 numbers.js: LINEUP_XENOGLOSSIA_* 18 상수 + TIERS_XENOGLOSSIA 5등급 + LINEUP_XENOGLOSSIA 객체 + LINEUPS 3건 + DRAGONBALL/ONEPIECE에 enabled 3종 + BUY_QUICK_OPTIONS [1,3,5,10,30].
+- T2 numbers.js: validateLineupTierClass M5 검증식 5~9 신설 (boolean 정합 + lastOne ↔ tiers + ceiling 정합).
+- T3 assets.js: 비목표 박제 (XENOGLOSSIA = placeholder + SVG fallback, M5.1 별도).
+- T4 core/ceiling.js 신설: drawWithCeiling + isCeilingApplicable (사용자 결정 3.1 (b)).
+- T5 core/last_one.js: lineup.lastOneEnabled === false 시 throw (호출처 분기 의무).
+- T6 core/double_chance.js: 호출처 가드로 처리 (T8 흡수).
+- T7 core/draw.js: 마지막 매 추첨 lastOneEnabled 분기 (false 시 isLastOne=false 반환).
+- T8 render/main.js: dispatch.buy 천장 분기 (count===ceilingPurchaseSize && ceilingEnabled → drawWithCeiling + skip 강제 + ticket 일괄 lockedResult) + dispatch.draw_dc dcEnabled 가드 + peel case 2건 addTicket dcEnabled 분기.
+- T9 render/buy-panel.js: 천장 활성 라인업 + ceilingPurchaseSize 옵션에 "S賞 확정" 라벨 부착 (is-ceiling class).
+- T10 render/last-one-row.js + last-one-indicator.js: lineup.lastOneEnabled === false 시 미렌더.
+- T11 render/products-history-tab.js: lineup.dcEnabled === false 시 DC sub-section 미렌더.
+- T12 tests/suites/ceiling.test.js 신설 (8 케이스: 활성/비활성/fallback/결정론).
+- T13 tests/suites/lineup_xenoglossia.test.js 신설 (15 케이스).
+- T14 tests/suites/mechanic_disable.test.js 신설 (10+ 케이스: lastOneEnabled / 검증식 5~9 / 기존 라인업 회귀).
+- T15 tests/runner.js: ceiling / lineup_xenoglossia / mechanic_disable 등재.
+- T16 PROGRESS 14절 신설 (본 절).
+- 추가 정정 (단계 5 발견): core/box.js initBox에 lastOneEnabled 분기 (deck 크기 = boxSize 또는 boxSize-1).
+
+## 14.3. 단계 5 정합 검증 (Node ESM 시뮬)
+
+| 검증 | 결과 |
+|---|---|
+| LINEUPS = 3건 + XENOGLOSSIA 포함 | ✅ |
+| BUY_QUICK_OPTIONS = [1,3,5,10,30] | ✅ |
+| XENOGLOSSIA initBox deck = 100 (lastOneEnabled=false) | ✅ |
+| drawWithCeiling 30연 → results[0].tier === "S" + deck 잔여 70 | ✅ |
+| lastOnePrize(XENOGLOSSIA) → throw | ✅ |
+| XENOGLOSSIA 100연 마지막 isLastOne === false | ✅ |
+| 드래곤볼 79연 마지막 isLastOne === true (회귀 0) | ✅ |
+| validateLineupTierClass 3 라인업 모두 throw 0 | ✅ |
+
+## 14.4. 차기 사이클 후보 (M5 라이브 검수 결함 0 보고 후)
+
+14.4.1. **M5.1 = selectable 종류 선택 UI** (XENOGLOSSIA S/A 등급) + lobbyHeroAssetPath → homeHeroAssetPath 키 개명 + assets.js 라인업 분기 자산 매핑.
+14.4.2. **M6 = 코토부키야 일반 라인업** (메가미데바이스 / 사사이쇼조테이엔).
+14.4.3. **M5+ = "Last One" 데이터 정의 / 자산 키 / 표시 라벨 단일화** (M4.2 백로그 답습).
+14.4.4. **M3 series + M4 + M4.1 + M4.2 + M5 라이브 검수 결과 보정** (사용자 액션 의존).
+
+## 14.5. M5 학습
+
+14.5.1. **첫 메커닉 분기 사이클의 enabled 플래그 패턴**: 라인업 객체에 boolean 플래그 + core 모듈 throw 가드 + render 미렌더 + 검증식 정합 + dispatch 호출처 가드 = 일관 패턴. 차기 메커닉 분기 사이클(예: M5.x 세가 럭키쿠지 잔여 카운터) 답습.
+
+14.5.2. **메이저 부피 round 폭증 회피 (M4.1 학습 답습)**: round 1 P0=4 + P1=3 누적 후 round 2 통과 = 자동 재시도 1회 한도 내 정합.
+
+14.5.3. **plan 단계 결정 영역 enumerable화 의무 (round 1 P0-4 학습)**: plan 11.2 결정 영역 누락이 단계 2 design "단계 2 결정" 박제로 흘러간 결과. 차기 메이저 사이클 plan 11에 "사용자 결정 영역 / 자비스 자율 영역 / 단계 후보 영역" 3축 분리 권고.
+
+14.5.4. **흐름 SSOT 갱신 의무 (round 1 P1-1 / P1-2 학습)**: 모듈 시그니처와 흐름 SSOT(arch 4장)의 일관성 의무. 첫 메커닉 분기 사이클이라 답습 없었으나 차기 메커닉 분기에서 의무 박제.
+
+14.5.5. **단계 5 implement 발견 정정 (core/box.js initBox)**: design / impl_plan에 명시되지 않은 box.js의 deck size 검증식이 lastOneEnabled 분기 의무 발견. 즉시 정정 + plan 6.1 영향 매트릭스에 core/box.js 추가 박제 의무 (단계 8 학습 흡수).
+
+14.5.6. **자율 진행 신호 답습 (M3.5 → M4 → M4.1 → M4.2 → M5)**: "다음 작업 진행" / "정석대로" 신호로 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존. 차기 사이클 답습 패턴.

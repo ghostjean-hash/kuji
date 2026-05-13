@@ -23,6 +23,7 @@ import {
 import { initBox } from "../core/box.js";
 import { drawOne } from "../core/draw.js";
 import { addTicket, drawDc } from "../core/double_chance.js";
+import { drawWithCeiling } from "../core/ceiling.js";  // M5 신설 (spec 5.13.G + arch 4.M5 정합)
 import { appendHistory } from "../core/history.js";
 import { createRng } from "../core/random.js";
 import { fnv1a } from "../core/hash.js";
@@ -193,6 +194,42 @@ function dispatch(action) {
     case "buy": {
       const count = action.count;
       const now = Date.now();
+      const lineup = activeLineup();
+      // M5: 천장 룰 분기 (arch 4.M5 / spec 5.13.G.6 사용자 결정 (a) = 통 선택 skip 강제).
+      if (lineup.ceilingEnabled === true && count === lineup.ceilingPurchaseSize) {
+        // 1. 통 선택 skip 강제 (state.settingsSkipPick 값 무관)
+        state.selectedGridIndices = [];
+        // 2. drawWithCeiling 호출 → S 1매 + 일반 (count-1)매
+        const drawIndexBase = state.boxState.drawnCount;
+        const drawRng = createRng(fnv1a(`${state.seed}|${state.boxRound}|${drawIndexBase}|ceiling`));
+        const results = drawWithCeiling(state.boxState, drawRng, lineup, count);
+        // 3. unopenedTickets에 count매 ticket + lockedResult 일괄 부여
+        const newTickets = [];
+        for (let i = 0; i < results.length; i++) {
+          newTickets.push({
+            id: `ceiling_${state.boxRound}_${drawIndexBase + i}_${now + i}`,
+            purchasedAt: now,
+            lockedResult: { ...results[i], gridIndex: null, drawIndex: drawIndexBase + i },
+          });
+        }
+        state.unopenedTickets = [...state.unopenedTickets, ...newTickets];
+        state.lastBuyCount = count;
+        // 4. dc 메커닉 = lineup.dcEnabled 분기 (XENOGLOSSIA = false라 본 분기 무관, 그러나 호환)
+        if (lineup.dcEnabled === true) {
+          for (let i = 0; i < results.length; i++) {
+            state.dcTickets = addTicket(state.dcTickets, {
+              boxId: state.boxState.id,
+              drawIndex: drawIndexBase + i,
+              time: now + i,
+            });
+          }
+        }
+        // 5. history는 reveal 시점에만 append (B-α 정합). 본 흐름에서 append 0.
+        persist();
+        rerender();
+        break;
+      }
+      // 일반 buy (M2 답습)
       state.unopenedTickets = addUnopenedTickets(state.unopenedTickets, count, now);
       state.lastBuyCount = count;
       persist();
@@ -299,11 +336,14 @@ function dispatch(action) {
         // requiresReceive: UI 플래그 (peel-card "확인" + hero-carousel "받기" 게이트). history append 게이트가 아님.
         requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
         state.history = appendHistory(state.history, entry);
-        state.dcTickets = addTicket(state.dcTickets, {
-          boxId: state.boxState.id,
-          drawIndex,
-          time,
-        });
+        // M5: lineup.dcEnabled === true 시만 addTicket 호출 (arch 4.2 정합)
+        if (lineup.dcEnabled === true) {
+          state.dcTickets = addTicket(state.dcTickets, {
+            boxId: state.boxState.id,
+            drawIndex,
+            time,
+          });
+        }
         state.unopenedTickets = state.unopenedTickets.slice(1);
       } else {
         // (b) skip ON: drawOne 즉시 호출
@@ -328,11 +368,14 @@ function dispatch(action) {
         const tierMeta = lineup.tiers.find((t) => t.tier === result.tier);
         requiresReceive = !result.isLastOne && tierMeta && tierMeta.count === 1;
         state.history = appendHistory(state.history, entry);
-        state.dcTickets = addTicket(state.dcTickets, {
-          boxId: state.boxState.id,
-          drawIndex,
-          time,
-        });
+        // M5: lineup.dcEnabled === true 시만 addTicket 호출 (arch 4.2 정합)
+        if (lineup.dcEnabled === true) {
+          state.dcTickets = addTicket(state.dcTickets, {
+            boxId: state.boxState.id,
+            drawIndex,
+            time,
+          });
+        }
         state.unopenedTickets = removeTicket(state.unopenedTickets, action.ticketId);
       }
       persist();
@@ -503,8 +546,10 @@ function dispatch(action) {
       break;
     }
     case "draw_dc": {
-      if (state.dcTickets.length === 0) return;
+      // M5: lineup.dcEnabled === false 시 본 흐름 비활성 (spec 5.5.7 / arch 4.5 정합).
       const lineup = activeLineup();
+      if (lineup.dcEnabled === false) return;
+      if (state.dcTickets.length === 0) return;
       const dcRng = createRng(fnv1a(`dc|${state.seed}|${Date.now()}|${state.dcResults.length}`));
       const result = drawDc(state.dcTickets, dcRng, lineup.dc);
       state.dcResults = [...state.dcResults, { ...result, time: Date.now() }];

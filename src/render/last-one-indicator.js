@@ -6,6 +6,8 @@ export function renderLastOneIndicator(state) {
   if (state.boxState.deck.length !== 1) return null;
 
   const lineup = getLineupById(state.currentLineupId);
+  // M5: lineup.lastOneEnabled === false 시 미렌더 (spec 5.4.6 정합).
+  if (lineup.lastOneEnabled === false) return null;
   const lastOne = lineup.tiers.find((t) => t.tier === LAST_ONE_TIER_NAME);
   if (!lastOne) return null;
 

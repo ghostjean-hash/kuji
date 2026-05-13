@@ -6,6 +6,8 @@ import { showProductDetailModal } from "./product-detail-modal.js";
 
 export function renderLastOneRow(state, dispatch) {
   const lineup = getLineupById(state.currentLineupId);
+  // M5: lineup.lastOneEnabled === false 시 미렌더 (spec 5.4.6 정합).
+  if (lineup.lastOneEnabled === false) return document.createDocumentFragment();
   const lastOne = lineup.tiers.find((t) => t.tier === LAST_ONE_TIER_NAME);
   if (!lastOne) return document.createDocumentFragment();
   const drawnInBox = state.history.filter((e) => e.boxId === state.boxState.id);

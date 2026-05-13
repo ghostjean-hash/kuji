@@ -27,6 +27,9 @@ import "./suites/storage_v6.test.js";  // M4 (chain 보존)
 import "./suites/products_history_layout.test.js";  // M4
 import "./suites/storage_v7.test.js";  // M4.1 신설
 import "./suites/tab_routing.test.js";  // M4.1 신설 (구 state_view 자산 흡수)
+import "./suites/ceiling.test.js";  // M5 신설 (drawWithCeiling + isCeilingApplicable)
+import "./suites/lineup_xenoglossia.test.js";  // M5 신설 (XENOGLOSSIA 라인업 정합)
+import "./suites/mechanic_disable.test.js";  // M5 신설 (lastOneEnabled / dcEnabled / ceilingEnabled 분기)
 
 const rootEl = document.getElementById("root");
 runAll(rootEl).then(({ passCount, failCount }) => {

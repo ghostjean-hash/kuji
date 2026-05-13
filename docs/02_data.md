@@ -54,7 +54,12 @@ M3부터 라인업 N개 지원. 본 절은 **라인업 객체 공통 구조**를
 | `sources` | SourceDef[] | 출처 배열 (`name` / `url`) |
 | `assetsBasePath` | string | **M3 신설** - 자산 폴더 base path (예: `"the_chronicle_of_goku_placeholder"`) |
 | `assetsAvailable` | boolean | **M3 신설** - 자산 배치 완료 여부. false면 SVG fallback (1.7.3) |
-| `lobbyHeroAssetPath` | string | **M3.1 신설** - 라인업 로비 카드 메인 이미지 경로 (assetsAvailable=false면 placeholder gray fallback) |
+| `lobbyHeroAssetPath` | string | **M3.1 신설** - 라인업 로비 카드 메인 이미지 경로 (assetsAvailable=false면 placeholder gray fallback). M4.2 백로그 = M5.1+ 사이클에서 `homeHeroAssetPath` 키 개명 예정 |
+| `lastOneEnabled` | boolean | **M5 신설** - Last One 메커닉 활성. false 시 lineup.tiers에 "Last One" 항목 부재 허용 + core/last_one + render/last-one-* 모듈 no-op |
+| `dcEnabled` | boolean | **M5 신설** - Double Chance 메커닉 활성. false 시 lineup.dc 객체 부재 허용 + core/double_chance + render DC sub-section no-op |
+| `ceilingEnabled` | boolean | **M5 신설** - 천장 룰(N연 구매 시 특정 등급 보장) 활성. false 시 천장 알고리즘 미적용 |
+| `ceilingPurchaseSize` | number? | **M5 신설** - 천장 룰 적용 구매 단위 (예: 30). ceilingEnabled=true 시 의무 |
+| `ceilingTier` | string? | **M5 신설** - 천장 룰 보장 등급 (예: `"S"`). ceilingEnabled=true 시 의무. lineup.tiers의 한 등급과 일치 |
 
 ### 1.4.A. 등급 클래스 (TIER_CLASS_VALUES) - **M3.1 신설**
 
@@ -85,12 +90,25 @@ TIER_CLASS_VALUES = [TIER_CLASS_HERO, TIER_CLASS_MAIN, TIER_CLASS_GOODS]
 
 ```
 1) 모든 t in LINEUP.tiers: t.tierClass ∈ TIER_CLASS_VALUES
-2) LINEUP.dc.tierClass ∈ TIER_CLASS_VALUES
+2) LINEUP.dcEnabled === true 시: LINEUP.dc.tierClass ∈ TIER_CLASS_VALUES   (M5 갱신)
 3) ∃ t1 in LINEUP.tiers: t1.tierClass === "hero"
 4) ∃ t3 in LINEUP.tiers: t3.tierClass === "goods"
+
+M5 신설 검증:
+5) LINEUP.lastOneEnabled === true 시: ∃ t in LINEUP.tiers: t.tier === LAST_ONE_TIER_NAME
+6) LINEUP.lastOneEnabled === false 시: 모든 t in LINEUP.tiers: t.tier !== LAST_ONE_TIER_NAME
+7) LINEUP.dcEnabled === false 시: LINEUP.dc 부재 또는 무시 (검증 0)
+8) LINEUP.ceilingEnabled === true 시:
+     - typeof LINEUP.ceilingPurchaseSize === "number" && LINEUP.ceilingPurchaseSize > 0
+     - typeof LINEUP.ceilingTier === "string"
+     - ∃ t in LINEUP.tiers: t.tier === LINEUP.ceilingTier
+     - LINEUP.ceilingPurchaseSize <= LINEUP.boxSize  (천장 = 박스 매수 초과 시 비합리)
+9) LINEUP.ceilingEnabled === false 시: ceilingPurchaseSize / ceilingTier 부재 허용
 ```
 
-**M3.5 (2026-05-10) 룰 완화**: 기존 룰 `∃ t2: t2.tierClass === "main"` 제거. 즉 **main 등급 부재 라인업 허용**. 라인업별 도메인 분류 자율성 확보 (1.4.A.4 정합). hero / goods 룰은 잔존.
+**M3.5 (2026-05-10) 룰 완화**: 기존 룰 `∃ t2: t2.tierClass === "main"` 제거. **main 등급 부재 라인업 허용**.
+
+**M5 (2026-05-10) 갱신**: 라인업별 메커닉 활성 분기 검증 (5~9 신설). 드래곤볼/원피스 = lastOneEnabled / dcEnabled = true 보존. XENOGLOSSIA = lastOneEnabled / dcEnabled = false + ceilingEnabled = true.
 
 부팅 시(numbers.js import 시점) 본 검증 미성립 → 시뮬레이터 부팅 실패 (throw + console.error). 1.4.B.2의 등급 매수 합 검증과 동일 게이트.
 
@@ -368,21 +386,144 @@ export const LAST_ONE_TIER_NAME = "Last One";
 
 | 키 | 값 | 의미 |
 |---|---|---|
-| `LINEUPS` | `[LINEUP_DRAGONBALL, LINEUP_ONEPIECE]` | 활성 라인업 N개 (M3 = 2) |
+| `LINEUPS` | `[LINEUP_DRAGONBALL, LINEUP_ONEPIECE, LINEUP_XENOGLOSSIA]` | 활성 라인업 N개 (**M5 = 3**, 1.4-XG 추가) |
 | `LINEUP_DEFAULT_ID` | `LINEUP_DRAGONBALL_ID` | 신규 사용자 / v3 마이그레이션 시 default |
 | `getLineupById(id)` | derive | `LINEUPS.find(l => l.id === id)`. 미발견 시 LINEUP_DEFAULT 반환 + console.warn (안전 fallback) |
 
 **`currentLineupId`**: state 영속 키 (`kuji_current_lineup_id`, 3.1 storage 명세 정합).
 
-**라인업 추가 절차** (M4+ 새 라인업 시):
-1. 1.4-XX 절 신설 (메타 + 등급 + DC + 출처 + LINEUP 객체).
+**라인업 추가 절차** (M4+ / **M5 갱신** - 메커닉 enabled 플래그 도입):
+1. 1.4-XX 절 신설 (메타 + 등급 + DC(옵셔널) + 출처 + LINEUP 객체).
 2. `LINEUPS` 배열에 추가.
 3. 매수 합계 검증식 추가 (1.4-XX.2.1).
-4. **M3.1 추가**: 등급별 `tierClass` 부여 (1.4.A.4 분류 정책 정합) + DC `tierClass` 부여.
-5. **M3.1 추가**: `lobbyHeroAssetPath` 정의 (assets.js 매핑 + 1.7 자산 정책 정합).
+4. 등급별 `tierClass` 부여 (1.4.A.4 분류 정책 정합) + dcEnabled=true 시 DC `tierClass` 부여.
+5. `lobbyHeroAssetPath` 정의 (assets.js 매핑 + 1.7 자산 정책 정합).
 6. assets.js에 `LINEUP_XX_ASSETS_BASE_PATH` 추가.
-7. 1.4.A.3 검증식 통과 (hero ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES). **M3.5 갱신**: main ≥ 1 룰 폐기. main 등급 부재 라인업 허용.
-8. 단계 6 게이트 검증 룰 통과.
+7. **M5 신설**: 메커닉 활성 플래그 정의:
+   - `lastOneEnabled: boolean` (Last One 메커닉 라인업 적용 여부)
+   - `dcEnabled: boolean` (Double Chance 라인업 적용 여부)
+   - `ceilingEnabled: boolean` (천장 룰 라인업 적용 여부)
+   - ceilingEnabled=true 시: ceilingPurchaseSize / ceilingTier 의무 정의
+8. 1.4.A.3 검증식 통과 (hero ≥ 1 + goods ≥ 1 + 모든 tierClass ∈ TIER_CLASS_VALUES + M5 검증 5~9).
+9. 단계 6 게이트 검증 룰 통과.
+
+### 1.4-XG. 라인업: コトブキヤくじ アイドルマスター XENOGLOSSIA (**M5 신설**)
+
+#### 1.4-XG.1. 메타
+
+| 필드 | 값 |
+|---|---|
+| `id` (LINEUP_XENOGLOSSIA_ID) | `"kotobukiya_xenoglossia_2026_04"` |
+| `titleJa` | `"コトブキヤくじ アイドルマスター XENOGLOSSIA"` |
+| `titleKo` | `"코토부키야 쿠지 - 아이돌마스터 XENOGLOSSIA"` |
+| `ip` | `"アイドルマスター XENOGLOSSIA"` |
+| `operator` | `"KOTOBUKIYA"` |
+| `releaseDateStore` | `"2026-04-17"` (online 발매일 - YYYY-MM-DD 표기) |
+| `endDate` | `"2026-05-17"` (캠페인 종료일) |
+| `outlets` | `["Kotobukiya_Online"]` (online 단독) |
+| `priceJpy` | 850 |
+| `boxSize` | 100 |
+| `boxSizeEstimated` | false (research/lineups.json 100매 명시) |
+| `assetsBasePath` | `"xenoglossia_placeholder"` |
+| `assetsAvailable` | false (placeholder 미배치) |
+| `lobbyHeroAssetPath` | `"xenoglossia_placeholder/lobby_hero.webp"` |
+| `lastOneEnabled` | **false** (코토부키야쿠지 = Last One 미적용) |
+| `dcEnabled` | **false** (코토부키야쿠지 = Double Chance 미적용) |
+| `ceilingEnabled` | **true** (30연 천장 룰) |
+| `ceilingPurchaseSize` | 30 |
+| `ceilingTier` | `"S"` |
+
+**도메인 비고**: 코토부키야쿠지는 "online 한정 + 30연 S賞 확정 + Last One/DC 부재"가 시스템 메커닉 (research/01_systems.md kotobukiya 정합).
+
+#### 1.4-XG.2. 등급별 정의
+
+| tier | nameJa | nameKo | typeCount | countPerBox | tierClass | sizeLabel |
+|---|---|---|---|---|---|---|
+| S | `描き下ろし BIGアクリルスタンド` | `신규 작화 BIG 아크릴 스탠드` | 2 | 2 | hero | `25cm` |
+| A | `A3クリアポスター` | `A3 클리어 포스터` | 2 | 6 | hero | `297×420mm` |
+| B | `アクリルスタンド` | `아크릴 스탠드` | 11 | 18 | main | `12cm` |
+| C | `思い出場面写アクリルチャーム` | `추억 장면 아크릴 참` | 8 | 24 | main | `80×60mm` |
+| D | `缶バッジ` | `캔 배지` | 15 | 50 | goods | `Φ57mm` |
+
+**검증**: countPerBox 합 = 2+6+18+24+50 = **100** = boxSize. 정합.
+
+**tier_class 분류 (M5 자비스 추천)**:
+- S = hero (천장 보장 등급).
+- A = hero (대형 클리어 포스터, 라인업 대표급).
+- B = main (아크릴 스탠드 = 표준 메인 굿즈).
+- C = main (아크릴 참 = 표준 굿즈).
+- D = goods (캔 배지 = 일반 굿즈).
+
+검증식 1.4.A.3 통과 (hero ≥ 1 ✅ S/A / goods ≥ 1 ✅ D / main ≥ 1 ✅ B/C - main 부재 룰 완화 정합).
+
+**Last One 항목**: lineup.tiers에 부재 (lastOneEnabled=false 정합. 검증식 6 통과).
+
+#### 1.4-XG.3. Double Chance
+
+dcEnabled=false. lineup.dc 객체 부재 (검증식 7 정합).
+
+#### 1.4-XG.4. 천장 룰 메타 (M5 신설)
+
+```js
+ceilingEnabled: true,
+ceilingPurchaseSize: 30,  // 30연 구매 시
+ceilingTier: "S",         // S賞 1매 보장
+```
+
+**천장 룰 알고리즘 (b)** (사용자 결정 3.1):
+1. 30연 buy 시 boxState.deck에서 `ceilingTier === "S"` 라벨의 첫 등장 인덱스 sIndex 탐색.
+2. drawOne(boxState, drawRng, lineup, sIndex) 호출 → S 1매 보장 추출.
+3. 잔여 29매는 drawOne(boxState, drawRng, lineup) (skip ON 흐름 = splice(0)).
+4. 박스 deck 비복원 모델 잔존. 결정론 안전.
+
+**박스 매수 미만 분기**: deck 잔여 < 30 또는 S 미존재 시 = 천장 룰 적용 불가. 단계 2 design에서 결정 = (a) 부분 천장 (S 존재 시 보장) vs (b) 일반 추첨 fallback. **자비스 추천 = (b)** (deck 잔여 < 30 시 일반 추첨 fallback). 단계 2 결정.
+
+#### 1.4-XG.5. 출처 (research/lineups.json kotobukiya_xenoglossia_2026_04)
+
+| name | url |
+|---|---|
+| Kotobukiya 공식 LP | `https://kuji.kotobukiya.co.jp/lp/xenoglossia/` |
+| 4Gamer | `https://www.4gamer.net/games/492/G049203/20260415019/` |
+| Famitsu | `https://www.famitsu.com/article/202604/71972` |
+| 전격하비웹 | `https://hobby.dengeki.com/news/2977120/` |
+| Sunrise 공식 | `https://www.sunrise-inc.co.jp/work/news.php?id=23517` |
+
+**신뢰도**: research/lineups.json data_status=verified. 박스 매수 + 등급 분포 + 천장 룰 모두 공식 LP 정합. estimated 필드 = false.
+
+#### 1.4-XG.6. LINEUP_XENOGLOSSIA 객체 (numbers.js)
+
+```js
+export const LINEUP_XENOGLOSSIA = {
+  id: LINEUP_XENOGLOSSIA_ID,
+  titleJa: LINEUP_XENOGLOSSIA_TITLE_JA,
+  titleKo: LINEUP_XENOGLOSSIA_TITLE_KO,
+  ip: LINEUP_XENOGLOSSIA_IP,
+  operator: LINEUP_XENOGLOSSIA_OPERATOR,
+  releaseDateStore: LINEUP_XENOGLOSSIA_RELEASE_DATE_STORE,
+  endDate: LINEUP_XENOGLOSSIA_END_DATE,
+  outlets: LINEUP_XENOGLOSSIA_OUTLETS,
+  priceJpy: LINEUP_XENOGLOSSIA_PRICE_JPY,
+  boxSize: LINEUP_XENOGLOSSIA_BOX_SIZE,
+  boxSizeEstimated: false,
+  assetsBasePath: LINEUP_XENOGLOSSIA_ASSETS_BASE_PATH,
+  assetsAvailable: false,
+  lobbyHeroAssetPath: LINEUP_XENOGLOSSIA_LOBBY_HERO_ASSET_PATH,
+  tiers: TIERS_XENOGLOSSIA,
+  // M5 메커닉 플래그
+  lastOneEnabled: false,
+  dcEnabled: false,
+  ceilingEnabled: true,
+  ceilingPurchaseSize: 30,
+  ceilingTier: "S",
+  // dc 필드 부재 (dcEnabled=false 정합)
+  sources: LINEUP_XENOGLOSSIA_SOURCES,
+};
+```
+
+LINEUPS 배열에 추가:
+```js
+export const LINEUPS = [LINEUP_DRAGONBALL, LINEUP_ONEPIECE, LINEUP_XENOGLOSSIA];
+```
 
 ## 1.4.B. 탭 상수 (M3.1 view 신설 / M4 view 갱신 / **M4.1 view 폐기 + 4탭 환원**)
 
@@ -446,7 +587,7 @@ M4까지 잔존하던 `state.view` 모델(`STATE_VIEW_HOME` / `STATE_VIEW_MAIN`)
 
 | 키 | 값 | 의미 |
 |---|---|---|
-| `BUY_QUICK_OPTIONS` | `[1, 3, 5, 10]` | Quick 구매 매수 (1매 / 3매 / 5매 / 10매) |
+| `BUY_QUICK_OPTIONS` | `[1, 3, 5, 10, 30]` | Quick 구매 매수 (1/3/5/10/30매). **M5 신설 30**: 천장 룰(ceilingEnabled=true) 라인업 30연 시 ceilingTier 1매 보장. render/buy-panel은 박스 매수 ≥ 30 시만 30 옵션 활성 |
 | `BUY_FREE_INPUT_MIN` | 1 | 자유 입력 최소 매수 |
 | `BUY_SKIP_PICK_DEFAULT` | false | **M2.1 신설** - 통 선택 단계 skip 기본값 (false = 통 선택 ON, 첫 진입 시 격자 표시) |
 
@@ -961,5 +1102,7 @@ localStorage.setItem("kuji_schema_version", "7")
 4.16. 2026-05-10: **M3.5 단계 2 design - tier_class 라인업별 자율 분류 (원피스 B~F hero)**. (1) 1.4.A.3 검증식 룰 완화: `∃ t2: t2.tierClass === "main"` 룰 제거. main 등급 부재 라인업 허용 ("hero ≥ 1 + goods ≥ 1만 의무"). (2) 1.4.A.4 분류 정책 갱신: 기본 휴리스틱 권고 + 라인업별 자율 분류 명문화 + 원피스/드래곤볼 분류 차이 박제. (3) 1.4-OP.2 등급표 B/C/D/E/F tierClass main → hero 변경 (5건). M3.5 분류 근거 박제 + M3.1 구 분류 근거 폐기 표시. (4) 라인업 추가 절차 7번 항목 갱신 (main ≥ 1 룰 제거). 사용자 결정 5건 정합 (변경 의미 / 포함 범위 / DB 정합 / 검증식 / 라이브 검수 시점). 9등급 → hero 7 (A+B+C+D+E+F+LastOne) + main 0 + goods 3 (G+H+I) 분포. **round 1 P0 정정 (2026-05-10 round 2)**: hero-carousel/minor-row 분기 식이 count 기반이라 시각 자동 정합 미성립 - (b) 분기 식 변경 채택 (round 1 답 = HERO/GOODS). spec 5.13.E.3 영향 매트릭스 + arch 5.18 게이트 + plan 4.8/8.3 정합 갱신. **round 2 P0 재정정 (2026-05-10 round 3)**: round 2 채택 `tierClass===HERO` 분기가 드래곤볼 hero-carousel 6→1 회귀 야기 (비목표 4.1 위반) → `tierClass !== TIER_CLASS_GOODS` 재채택. 드래곤볼/원피스 양쪽 6 등급 동등 노출. spec 5.13.E.3 라인업별 컬럼 명시.
 
 4.17. 2026-05-10: **M4 단계 2 design - 메뉴 재설계 (홈 격상 + 4탭 → 3탭)**. (1) 1.4.B view/탭/dispatch 상수 갱신 + STATE_TAB_VALUES 신설. (2) 1.1 SCHEMA_VERSION 5 → 6. (3) 3.1.2 전역 키 갱신: kuji_lobby_acked → kuji_home_acked 개명 + kuji_active_tab 키 (영속 결정 단계 4) 신설. (4) **3.2.7 v5 → v6 마이그레이션 절 신설** (lobby_acked 키 이전 + 4탭 → 3탭 매핑 + schemaVersion bump). 멱등 게이트 + 의존성 v3→v4→v5→v6 chain + 테스트 의무 (storage_v6.test.js). 사용자 결정 5건 + 단계 1 채택 2건 (10.3/10.4) + **round 2 채택 6건** (10.1/10.2/10.5/10.7 + DC sub-section 4 + history 무한 스크롤 + "홈으로" 라벨). **round 1 P0 3건 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 / P0-2 arch 3.11 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION + 3.2.7 마이그레이션 절 신설.
+
+4.19. 2026-05-10: **M5 단계 2 design - ceiling-rule + XENOGLOSSIA 라인업 추가 (첫 메커닉 분기)**. (1) 1.4.0 라인업 구조에 lastOneEnabled / dcEnabled / ceilingEnabled / ceilingPurchaseSize / ceilingTier 5종 신설. (2) 1.4.A.3 검증식 5~9 신설 (라인업별 메커닉 활성 정합). (3) **1.4-XG 절 신설** = XENOGLOSSIA 라인업 (boxSize=100 / S=2 hero / A=6 hero / B=18 main / C=24 main / D=50 goods / lastOneEnabled=false / dcEnabled=false / ceilingEnabled=true / ceilingPurchaseSize=30 / ceilingTier=S). (4) 라인업 추가 절차 7번 항목에 메커닉 플래그 정의 의무 추가. (5) 1.6 BUY_QUICK_OPTIONS = [1,3,5,10,30] 갱신 (30 신설). (6) 천장 룰 알고리즘 (b) 박제 = boxState.deck S 첫 등장 인덱스 보장 추출 + 29매 통상. 사용자 결정 3.1 (b) / 3.2 (라인업 객체 enabled 플래그) 채택.
 
 4.18. 2026-05-10: **M4.1 단계 2 design - 진입 정책 보정 (홈 = 1급 entry + 4탭 환원)**. **트리거** = M4 종료 직후 사용자 발화: "기본적으로 진입하면 쿠지 홈이 있어야 하고, 내가 원하는 쿠지를 선택해서 게임을 진행하는 방식이어야 해. 근데 쿠지 종류를 선택하는게 너무 어려워." (1) **1.4.B 전면 재구성**: STATE_VIEW_* 4종 폐기 (HOME/MAIN/VALUES/DEFAULT) + STATE_TAB_HOME 신설 + STATE_TAB_VALUES 4탭 환원 + STATE_TAB_DEFAULT = HOME 변경. dispatch.open_home / enter_lineup 의미 갱신 (activeTab 라우팅). (2) 1.1 SCHEMA_VERSION 6 → 7. (3) 3.1.2 home_acked 의미 변경 (진입 흐름 분리 → 면책 동의 표시 전용) + kuji_active_tab 영속 채택 박제. (4) **3.2.8 v6 → v7 마이그레이션 절 신설** (kuji_view 키 안전 제거 + home_acked 키/값 보존 + activeTab 4탭 환원 valid 보존 + schemaVersion bump). 멱등 게이트 + 의존성 v3→v4→v5→v6→v7 chain + 테스트 의무 (storage_v7.test.js). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택 (헤더 IP 라벨 클릭 affordance 폐기 / 면책 1회만 / STATE_VIEW 폐기). 사용자 결정 3.1/3.2/3.3 (Q1=A안 / Q2=M4.1 / 진입 정책 = 항상 홈). M4.1-tidy 백로그 → M4.2-tidy 개명.

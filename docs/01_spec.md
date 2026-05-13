@@ -136,6 +136,7 @@
 5.4.3. 결과 모달은 마지막 카드의 등급 + Last One 보너스를 동시 표시.
 5.4.4. 시뮬레이터 내부 구현: 79매 셔플 + 마지막 1매 추첨 시 Last One 자동 지급. 박스 매수는 79 + Last One 1 = 80.
 5.4.5. **M2: Last One 시각 강조** (5.11.3 갤러리 강조 + 5.12 디자인 언어).
+5.4.6. **M5 갱신 - 라인업별 메커닉 분기**: `lineup.lastOneEnabled === false` 시 본 절 전체 미적용. core/last_one + render/last-one-row + render/last-one-indicator no-op. 박스 매수 = `lineup.boxSize` 그대로 (79+1 정합 부재). 코토부키야쿠지 (XENOGLOSSIA 등) 정합. 1.4.A.3 검증식 5/6 정합 (lastOneEnabled=false 시 lineup.tiers에 "Last One" 항목 부재 의무).
 
 ## 5.5. Double Chance
 
@@ -145,6 +146,7 @@
 5.5.4. 추첨 풀 = 누적 응모권. 일본 캠페인 당첨자 수는 `lineup.dc.winnersTotal` (02_data 1.4-DB.3 / 1.4-OP.3). **M3 갱신**: 라인업별 차이 (드래곤볼 50 / 원피스 100).
 5.5.5. 시뮬레이터에서는 사용자 1인이므로 베르누이 단순화.
 5.5.6. 당첨 확률 = `lineup.dc.winnersTotal` / `DC_POOL_SIZE_DEFAULT` (02_data 1.3). 응모권 N매에 대해 1 - (1 - p)^N. UI에 단순화 가정 명시.
+5.5.7. **M5 갱신 - 라인업별 메커닉 분기**: `lineup.dcEnabled === false` 시 본 절 전체 미적용. core/double_chance + render DC sub-section (M4 통합 탭 sub-section 4) no-op. 응모권 누적 / DC 추첨 / DC 결과 모달 모두 미렌더. 코토부키야쿠지 (XENOGLOSSIA 등) 정합. 1.4.A.3 검증식 7 정합 (dcEnabled=false 시 lineup.dc 부재 허용).
 
 ## 5.6. 추첨 이력
 
@@ -170,7 +172,7 @@
 
 5.9.1. 박스 deck 잔여 ≥ 1 시 구매 가능.
 5.9.2. 구매 매수 옵션:
-- Quick 버튼: 02_data 1.6 `BUY_QUICK_OPTIONS` (= [1, 3, 5, 10]).
+- Quick 버튼: 02_data 1.6 `BUY_QUICK_OPTIONS` (= [1, 3, 5, 10, 30]). **M5 갱신**: 30 신설. 박스 매수 ≥ 30 시만 30 옵션 활성 (render/buy-panel). 천장 활성 라인업(`lineup.ceilingEnabled === true`) + 30매 동시 구매 시 5.13.G 천장 룰 자동 적용 (사용자 결정 = 통 선택 skip 강제, 5.13.G.6.4).
 - 자유 입력: `BUY_FREE_INPUT_MIN` (= 1) ~ (박스 deck 잔여 - 누적 인벤토리) 매수 사이 정수.
 5.9.3. **(누적 인벤토리 + 신규 구매 매수) ≤ 박스 deck 잔여** invariant. 부족 시 buy 비활성 + 안내. 통 선택 격자 잔여 슬롯 ≥ 인벤토리 보장의 근거 (5.14, 7.12).
 5.9.4. 가격 = `구매매수 × lineup.priceJpy` 화면 표시. **M3**: 라인업별 priceJpy 동적 lookup.
@@ -290,6 +292,7 @@
 5.13.A.6.3. 단계 6 게이트 검증 (라인업 격리 + 등급 수 가변성 + box.id 충돌 0).
 5.13.A.6.4. **M3.1 추가**: 등급별 `tierClass` 부여 (02_data 1.4.A.4) + DC `tierClass` + `lobbyHeroAssetPath` (M4 의도 = `homeHeroAssetPath` 키 개명 검토 - 단계 4) 정의 + 1.4.A.3 검증식 통과 (M3.5 룰 완화 = hero ≥ 1 + goods ≥ 1).
 5.13.A.6.5. **M4 추가**: 홈 카드 메타 풍부도 정합 (5.13.B.4) - 출시일 / 끝일 / 가격 / 매장 / 진행 상태. 산출식 = 5.13.B.4.3.
+5.13.A.6.6. **M5 추가**: 메커닉 활성 플래그 5종 정의 의무 (`lastOneEnabled` / `dcEnabled` / `ceilingEnabled` / `ceilingPurchaseSize` / `ceilingTier`). 02_data 1.4.0 / 1.4.LINEUPS 라인업 추가 절차 7번 정합. 검증식 = 1.4.A.3 검증식 5~9 통과 의무 (5.13.G.2.1 lastOneEnabled / 5.5.7 dcEnabled / 5.13.G ceilingEnabled). ceilingEnabled=true 시 ceilingPurchaseSize / ceilingTier 의무. ceilingTier는 lineup.tiers의 한 등급과 일치 + ceilingPurchaseSize ≤ boxSize.
 
 ## 5.13.B. 쿠지 홈 (M3.1 lobby 신설 / M4 home 격상 / **M4.1 = 1급 entry 탭 + 매번 노출**)
 
@@ -566,6 +569,83 @@ M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정) 구조에서 사용자 �
 5.13.F.4.3. 갤러리 카드 디테일 시트 - product-detail-modal 잔존 (5.13.B.8 패턴).
 5.13.F.4.4. M5 천장 룰 - 별도 사이클.
 
+## 5.13.G. 천장 룰 (Ceiling Rule) - **M5 신설**
+
+### 5.13.G.1. 목적
+
+확장 로드맵 첫 메커닉 분기. 코토부키야쿠지 시스템 = 30연 구매 시 S賞 1매 확정 (research/01_systems.md kotobukiya 정합). 라인업 객체 `ceilingEnabled` 플래그로 시스템별 활성 분기.
+
+### 5.13.G.2. 메커닉 명세
+
+5.13.G.2.1. **활성 조건**: `lineup.ceilingEnabled === true`.
+5.13.G.2.2. **트리거**: 사용자가 `lineup.ceilingPurchaseSize`매 (예: 30) 동시 구매.
+5.13.G.2.3. **보장**: `lineup.ceilingTier` (예: "S") 등급 1매 추첨 결과에 포함.
+5.13.G.2.4. **나머지 추첨**: ceilingPurchaseSize - 1 매 (예: 29) = 박스 deck에서 일반 비복원 추첨.
+5.13.G.2.5. **deck 비복원 모델 잔존**: 박스 셔플 + S 1매 + 일반 N-1매 추첨 = 박스 deck 30매 소비. 박스 매수 100 → deck 잔여 70.
+
+### 5.13.G.3. 알고리즘 (b) - 사용자 결정 3.1 채택
+
+```
+function drawWithCeiling(boxState, drawRng, lineup, count) {
+  // 활성 검증
+  if (!lineup.ceilingEnabled || count !== lineup.ceilingPurchaseSize) {
+    // 비활성 fallback = 일반 drawOne 반복 (arch 3.6.M5 정합)
+    const results = [];
+    for (let i = 0; i < count; i++) results.push(drawOne(boxState, drawRng, lineup));
+    return results;
+  }
+
+  // 박스 deck에서 ceilingTier 첫 등장 인덱스 탐색
+  const sIndex = boxState.deck.findIndex(t => t === lineup.ceilingTier);
+  if (sIndex < 0) {
+    // S 미존재 fallback (deck 잔여에 S 부재) = 일반 drawOne 반복
+    const results = [];
+    for (let i = 0; i < count; i++) results.push(drawOne(boxState, drawRng, lineup));
+    return results;
+  }
+
+  // S 보장 추출
+  const sResult = drawOne(boxState, drawRng, lineup, sIndex);
+
+  // 잔여 count-1 매 일반 추첨
+  const others = [];
+  for (let i = 0; i < count - 1; i++) {
+    others.push(drawOne(boxState, drawRng, lineup));
+  }
+
+  return [sResult, ...others];
+}
+```
+
+**M5 round 2 P0-1 정정 박제**: `drawNormal` 미정의 함수 호출 제거. fallback = `drawOne(boxState, drawRng, lineup)` 반복(arch 3.6.M5 정합). spec / arch SSOT 단일화.
+
+### 5.13.G.4. fallback 정책
+
+5.13.G.4.1. **deck 잔여 < ceilingPurchaseSize**: 천장 룰 적용 불가. 일반 추첨 fallback (1.4-XG.4 답습).
+5.13.G.4.2. **deck에 ceilingTier 부재**: 동일 (이미 모두 추첨됨).
+5.13.G.4.3. **UI 표시 정책 (M5 단계 2 결정 - 자비스 추천 채택)**: 구매 패널에 별도 "천장 미적용" 안내 문구 박제 **금지** (메모리 룰 `feedback_lottery_red_text` 정합 = 복권 영역 안내·힌트·경고 문구 금지). 사용자 가시 결과 = (1) 박스 매수 < 30 또는 deck 잔여 < 30 시 30 옵션 비활성 (이미 1.6 BUY_QUICK_OPTIONS 분기 정합) (2) 30 옵션 활성 but S 잔여 0인 엣지 케이스 = 자비스 추천 본문 비박제 (사용자 시각 = "S 잔여 0" 표시 자체로 자명).
+
+### 5.13.G.5. 시각 표현 (M5 단계 2 결정 - 자비스 추천 채택)
+
+5.13.G.5.1. **구매 패널 30 옵션 시각 강조 (본 사이클 흡수)**: 천장 활성 라인업(`lineup.ceilingEnabled === true`) 30매 옵션 라벨에 "S賞 확정" 부착. 단계 4 impl_plan에서 정확한 마크업 결정(예: `<button class="buy-quick-option is-ceiling">30매 (S賞 확정)</button>`). 비활성 라인업(드래곤볼/원피스) 30 옵션은 라벨 부착 0.
+5.13.G.5.2. **추첨 결과 reveal 시 S賞 강조**: peel-card hero 모션 = M3.2 정합 (S = hero 분류). 별도 천장 모션 신설 0.
+5.13.G.5.3. **갤러리 / history**: 일반 추첨과 동일 (S 라벨 / hero 그룹). 천장 보장 메타 박제 0.
+
+### 5.13.G.6. M2.1 통 선택과의 인터랙션 (M5 사용자 결정 3.3 - 2026-05-13)
+
+5.13.G.6.1. **사용자 결정 (a) 통 선택 skip 강제 채택**: 30연 구매 시 (ceilingEnabled + count=30) `state.settingsSkipPick` 값 무관 통 선택 skip 강제. 30연 = 대량 자동 추첨 도메인 정합. 격자 미렌더 + drawWithCeiling 즉시 호출 + ticket.lockedResult 30매 일괄 부여 + reveal 진입.
+5.13.G.6.2. **dispatch.buy 분기 (M5 신설)**:
+- `count === lineup.ceilingPurchaseSize && lineup.ceilingEnabled === true` → drawWithCeiling 호출 + 통 선택 skip 강제 + ticket 30매 lockedResult 일괄 부여.
+- 그 외 → M2.1 기존 흐름 답습 (skip OFF/ON 정책 + 격자 진입 또는 즉시 reveal).
+5.13.G.6.3. **메모리 only state 보존**: 30연 흐름 진입 직전 `state.selectedGridIndices`가 있었다면 폐기 (skip 강제 정합). `state.pendingPeelResult`는 보존 (현재 reveal 진행 중인 경우 = 30연 buy 자체가 b1/b2 분기에서 비활성이므로 자연 보존).
+
+### 5.13.G.7. 비목표
+
+5.13.G.7.1. selectable (S/A 종류 선택 UI) - M5.1 별도.
+5.13.G.7.2. 30_set 가격 산정 (30×850+660) - 시뮬레이터 비목표.
+5.13.G.7.3. 일본 코토부키야 일반 라인업 (메가미데바이스 등) - M6 별도.
+5.13.G.7.4. 천장 룰 자비스 자동 알림 / 토스트 = 메모리 룰 `feedback_lottery_red_text` 정합 박제 0.
+
 ## 5.14. 통 선택 (Pick from Bin) - M2.1 신설 + B-α 재정정 (단계 5 T19 결함 정정)
 
 매장 추첨함(クジ箱)에서 직접 N매를 모두 골라 손에 든 다음 한 장씩 뜯는 체험. 사용자 선택 = 셔플 배열 인덱스 매핑. 5.7 시드 결정론은 그대로 유지.
@@ -710,5 +790,7 @@ M3.5까지 4탭 (추첨 / 전적(기록) / DC / 설정) 구조에서 사용자 �
 8.18. 2026-05-10: **M4 단계 2 design - 메뉴 재설계 (홈 격상 + 4탭 → 3탭)**. (1) 4장 view 모델 갱신: lobby → home 의미 격상. 4탭 → 3탭 (추첨 / 갤러리+기록 / 설정). state 키 명 currentTab → activeTab 갱신 (단계 4 코드 식별자 개명). (2) 5.13.A.4 설정 탭 dropdown quick-switch 폐기. (3) 5.13.A.3 헤더 IP 라벨 클릭 = 홈 복귀. (4) 5.13.B 라인업 로비 → 쿠지 홈 격상. 카드 메타 풍부화 (출시일 + 끝일 + 가격 + 매장 + 진행 상태) + 5.13.B.4.3 산출식 박제. (5) 5.13.B.6 dispatch 갱신 (open_home + set_active_tab 신설 / set_current_lineup 폐기). (6) 5.13.D.4 비목표 갱신. (7) **5.13.F 통합 탭 절 신설** (대시보드 + 갤러리 + history 리스트 무한 스크롤 + DC sub-section 4). 사용자 결정 5건 + 단계 1 채택 2건 (10.3/10.4) + **round 2 채택 6건** (10.1/10.2 권고 / 10.5 별도 M4.1-tidy / 10.7 IP 라벨 클릭만 / DC = sub-section 4 / history = 무한 스크롤 / "홈으로" 라벨). **round 1 P0 3건 정정 (round 2 박제)**: P0-1 currentTab vs activeTab 통일 / P0-2 arch 3.11 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION v5 → v6 + 02_data 3.2.7 마이그레이션 절 + 3.1.2 home_acked 키 + active_tab 키 박제.
 
 8.17. 2026-05-10: **M3.5 단계 2 design - tier_class 라인업별 자율 분류 (원피스 B~F hero)**. (1) 5.13.E 절 신설 (5.13.E.1 목적 / 5.13.E.2 검증식 룰 완화 / 5.13.E.3 영향 매트릭스 / 5.13.E.4 비목표). (2) 02_data 1.4.A.3 검증식 룰 main ≥ 1 제거. 1.4.A.4 분류 정책 라인업별 자율 명문화. 1.4-OP.2 등급표 B/C/D/E/F tierClass main → hero 변경. 사용자 결정 5건 정합 (변경 의미 / 포함 범위 / DB 정합 / 검증식 / 라이브 검수 시점). **round 1 P0 정정 (2026-05-10 round 2)**: hero-carousel/minor-row 분기 식이 count 기반(`count === 1` / `count >= 2`)이라 tierClass 변경만으로 시각 자동 정합 미성립. (b) 분기 식을 tierClass 기반으로 변경 채택 (round 1 답 = `tierClass === HERO` / `tierClass === GOODS`). spec 5.13.E.3 + 5.13.E.4 + arch 5.18 + plan 4.8/8.3 정합 갱신. dc-result-modal 행 추가. **round 2 P0 재정정 (2026-05-10 round 3)**: round 2 채택 `tierClass === HERO` 분기 식이 드래곤볼 hero-carousel 6→1 등급 회귀 야기 (비목표 4.1 위반). round 3 = `t.tierClass !== TIER_CLASS_GOODS && t.tier !== "Last One"` 재채택. 드래곤볼: A/B/C/D/E/F (hero+main 6) / 원피스: A/B/C/D/E/F (hero 6) 양쪽 동등. minor-row는 round 1 답 그대로 (`tierClass === GOODS`) 유지. spec 5.13.E.3을 라인업별 컬럼(드래곤볼/원피스)으로 갱신.
+
+8.20. 2026-05-10: **M5 단계 2 design - ceiling-rule + XENOGLOSSIA 라인업 추가 (첫 메커닉 분기)**. (1) 5.4.6 신설 = lineup.lastOneEnabled === false 시 본 절 미적용 (코토부키야 정합). (2) 5.5.7 신설 = lineup.dcEnabled === false 시 본 절 미적용. (3) **5.13.G 천장 룰 절 신설** (G.1 목적 / G.2 메커닉 명세 / G.3 알고리즘 (b) 사용자 결정 3.1 채택 / G.4 fallback 정책 / G.5 시각 표현 / G.6 비목표). 사용자 결정 3.1 (b) S賞 1매 보장 추출 + 29매 통상 / 3.2 라인업 객체 enabled 플래그 채택. 자비스 추천 채택 (selectable / lobbyHero 키 개명 / 배송비 / 코토부키야 일반 라인업 모두 비목표).
 
 8.19. 2026-05-10: **M4.1 단계 2 design - 진입 정책 보정 (홈 = 1급 entry 탭 + 4탭 환원 + view 모델 폐기)**. **트리거** = M4 종료 직후 사용자 발화: "기본적으로 진입하면 쿠지 홈이 있어야 하고, 내가 원하는 쿠지를 선택해서 게임을 진행하는 방식이어야 해. 근데 쿠지 종류를 선택하는게 너무 어려워." (1) 4장 라우팅 모델 전면 갱신: state.view 모델 폐기 + activeTab 단일 라우팅 + 4탭 환원 (홈 / 추첨 / 갤러리+기록 / 설정). 첫 진입 / 재방문 모두 홈 탭 자동 활성. 4.4 view 전환 dispatch 의미 갱신 (activeTab 라우팅). (2) 5.13.A.1.3 활성 라인업 전환 = 홈 탭에서만 (의미 답습). (3) 5.13.A.3 헤더 IP 라벨 클릭 affordance 폐기 (자비스 단계 1 결정 4.1.A 채택). 모든 탭에서 헤더 라벨 노출. (4) 5.13.A.4.5 설정 탭 "홈으로" 버튼 의미 갱신 (open_home → activeTab = home). (5) 5.13.B 전면 갱신: B.1 목적 재기술 / B.2 라우팅 모델 (view 폐기) / B.3 진입 흐름 (재방문도 홈 자동) / B.4.6 isCurrent 분기 (homeAcked 분리) / B.5 진입 경로 (하단 탭 1차 + 설정 보조 + 헤더 폐기) / B.6 dispatch (open_home / enter_lineup / set_active_tab 의미 갱신) / B.8.6 비목표 추가 (헤더 외 진입점 / 빈 화면 view / 매 진입 면책 / M5 분리). (6) 5.13.F 탭 위치 갱신 (탭 2 → 탭 3, 통합 자산 보존). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택 (헤더 클릭 폐기 / 면책 1회만 / STATE_VIEW 폐기). 사용자 결정 3.1/3.2/3.3 (재방문 시도 홈 / Q1=A안 / Q2=M4.1).

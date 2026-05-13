@@ -39,8 +39,17 @@ export function renderBuyPanel(state, dispatch) {
     const isReplaced = n === replacedOption;
     const value = isReplaced ? deckRemaining : n;
     const disabled = !isReplaced && n > deckRemaining;
-    btn.className = "buy-quick-button" + (selectedCount === value ? " is-selected" : "");
-    btn.textContent = `${value}매`;
+    // M5: 천장 활성 라인업 + ceilingPurchaseSize 옵션 = "S賞 확정" 라벨 부착 (spec 5.13.G.5.1).
+    const isCeiling = lineup.ceilingEnabled === true
+      && !isReplaced
+      && n === lineup.ceilingPurchaseSize
+      && !disabled;
+    btn.className = "buy-quick-button"
+      + (selectedCount === value ? " is-selected" : "")
+      + (isCeiling ? " is-ceiling" : "");
+    btn.textContent = isCeiling
+      ? `${value}매 (${lineup.ceilingTier}賞 확정)`
+      : `${value}매`;
     if (disabled) btn.disabled = true;
     btn.addEventListener("click", () => {
       selectedCount = value;

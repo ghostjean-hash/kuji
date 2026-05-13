@@ -5,8 +5,9 @@ import { createRng, nextInt } from "./random.js";
 import { boxId, fnv1a } from "./hash.js";
 import { LAST_ONE_TIER_NAME } from "../data/numbers.js";  // M4.2 일괄 단일화 (M3.1 P2-3 흡수)
 
-// initBox: lineup.boxSize - 1 매(Last One 제외)의 등급 라벨 배열 시드 기반 셔플.
-// Last One은 deck에 포함하지 않음. 마지막 1매 추첨 시 자동 지급 (01_spec 5.4.4).
+// initBox: 등급 라벨 배열 시드 기반 셔플.
+// M5 갱신: lineup.lastOneEnabled === true 시 Last One은 deck에 포함하지 않음 (마지막 1매 추첨 시 자동 지급, 01_spec 5.4.4).
+// lineup.lastOneEnabled === false 시 deck = boxSize 그대로 (Last One 항목 부재 정합, spec 5.4.6).
 export function initBox(seed, boxRound, lineup) {
   if (!lineup || !Array.isArray(lineup.tiers) || typeof lineup.boxSize !== "number") {
     throw new Error("[box] invalid lineup. expected {tiers, boxSize}.");
@@ -19,9 +20,11 @@ export function initBox(seed, boxRound, lineup) {
     for (let i = 0; i < t.count; i++) labels.push(t.tier);
   }
 
-  if (labels.length !== lineup.boxSize - 1) {
+  // M5: lastOneEnabled 분기로 expected deck size 결정.
+  const expectedDeckSize = lineup.lastOneEnabled === false ? lineup.boxSize : lineup.boxSize - 1;
+  if (labels.length !== expectedDeckSize) {
     throw new Error(
-      `[box] deck size ${labels.length} != boxSize - 1 (${lineup.boxSize - 1})`
+      `[box] deck size ${labels.length} != expected ${expectedDeckSize} (lastOneEnabled=${lineup.lastOneEnabled}, boxSize=${lineup.boxSize})`
     );
   }
 

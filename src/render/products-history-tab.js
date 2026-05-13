@@ -31,7 +31,10 @@ export function renderProductsHistoryTab(state, dispatch) {
   root.appendChild(renderHistoryList(state, lineup));
 
   // sub-section 4: DC 응모 (M1 dc-tab 자산 통합)
-  root.appendChild(renderDcSection(state, lineup, dispatch));
+  // M5: lineup.dcEnabled === false 시 미렌더 (spec 5.5.7 / arch 4.5 정합).
+  if (lineup.dcEnabled !== false) {
+    root.appendChild(renderDcSection(state, lineup, dispatch));
+  }
 
   return root;
 }

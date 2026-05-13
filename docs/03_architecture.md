@@ -163,23 +163,54 @@ export function drawOne(boxState, rng, lineup, pickIndex): DrawResult
 // - 호출처: render/main.js dispatch.draw / dispatch.pick. core/ 외부에서만 호출.
 ```
 
-## 3.5. core/last_one.js
+## 3.5. core/last_one.js (**M5 갱신 - 라인업별 enabled 분기**)
 
 ```js
 // Last One 트리거 판정 + 보너스 상품 정보
-export function lastOnePrize(lineup): { tier: 'Last One', name, sizeLabel }
+// M5: lineup.lastOneEnabled === false 시 호출 자체가 무의미. main.js dispatch 분기에서 호출 방어.
+export function lastOnePrize(lineup): { tier: LAST_ONE_TIER_NAME, name, sizeLabel }
+//   lineup.lastOneEnabled === false 시 throw 또는 호출 부재 (main.js 책임).
+//   lineup.tiers에 LAST_ONE_TIER_NAME 항목 부재 시 throw (검증식 6 정합).
 ```
 
-## 3.6. core/double_chance.js
+## 3.6. core/double_chance.js (**M5 갱신 - 라인업별 enabled 분기**)
 
 ```js
 // DC 응모권 + 베르누이 추첨
+// M5: lineup.dcEnabled === false 시 호출 자체가 무의미. main.js dispatch 분기에서 방어.
 export function addTicket(tickets, ticket): Ticket[]
 //   ticket = { boxId, drawIndex, time }
 
 export function drawDc(tickets, rng, winnersTotal, poolSize): DcResult
 //   DcResult = { isWin: bool, prize?: { name } }
 //   p = winnersTotal / poolSize. 사용자 N매에 대해 1 - (1 - p)^N 시행.
+```
+
+## 3.6.M5. core/ceiling.js (**M5 신설 - 천장 룰**)
+
+```js
+// 라인업 천장 룰 (예: 코토부키야쿠지 30연 S賞 확정).
+// CLAUDE.md 4.1 정합 (게임 로직 / 렌더 분리). DOM 의존성 0건.
+// spec 5.13.G + 02_data 1.4-XG.4 정합.
+
+import { drawOne } from "./draw.js";
+
+// 천장 룰 적용 N연 추첨. 사용자 결정 3.1 (b) 알고리즘.
+// 활성 조건: lineup.ceilingEnabled === true && count === lineup.ceilingPurchaseSize.
+// 비활성 시 일반 N매 추첨으로 fallback (호출처 안전성).
+export function drawWithCeiling(boxState, drawRng, lineup, count): DrawResult[]
+//   lineup.ceilingEnabled === false → 일반 drawOne x count fallback.
+//   count !== ceilingPurchaseSize → 일반 fallback.
+//   boxState.deck.findIndex(t => t === ceilingTier) < 0 → S 부재 fallback (deck 잔여 모두 비-ceiling).
+//   else: drawOne(boxState, drawRng, lineup, sIndex) + drawOne x (count-1).
+//   결과 = [sResult, ...others].
+
+// 천장 룰 활성 검증 (사용자 가시 안내용).
+export function isCeilingApplicable(boxState, lineup, count): boolean
+//   lineup.ceilingEnabled === true && count === lineup.ceilingPurchaseSize
+//     && boxState.deck.length >= count
+//     && boxState.deck.includes(lineup.ceilingTier).
+//   render/buy-panel에서 30 옵션 라벨에 "S賞 확정" 표시할지 결정.
 ```
 
 ## 3.7. core/history.js (M2.1 B-α 갱신 / **M3 lineup 인자 추가 - CB-1**)
@@ -571,11 +602,11 @@ export function heroPreview(lineup):
 4.2. **추첨 1회**:
 - 사용자 추첨 버튼 → `dispatch({type: 'draw'})`.
 - main.js: `core/draw.drawOne(state.boxState, rng, lineup)` → DrawResult.
-- main.js: `core/double_chance.addTicket(state.dcTickets, ticket)`.
+- main.js: **`lineup.dcEnabled === true` 시만** `core/double_chance.addTicket(state.dcTickets, ticket)` 호출 (M5 신설, spec 5.5.7 정합).
 - main.js: `core/history.appendHistory(state.history, entry)`.
-- DrawResult.isLastOne === true → `core/last_one.lastOnePrize(lineup)` 합산.
+- DrawResult.isLastOne === true **AND `lineup.lastOneEnabled === true` 시만** `core/last_one.lastOnePrize(lineup)` 합산 (M5 신설, spec 5.4.6 정합).
 - `data/storage.saveState({...})` 영속.
-- result-modal 또는 last-one-modal 표시.
+- result-modal 또는 last-one-modal 표시 (`lineup.lastOneEnabled === false` 시 last-one-modal 미표시).
 - 본문 재렌더.
 
 4.3. **박스 리셋**:
@@ -590,8 +621,9 @@ export function heroPreview(lineup):
 - main.js: `state.seed = seed`, `state.boxRound = BOX_ROUND_INITIAL` (`01_spec` 5.7.4).
 - `core/box.initBox(...)` + 영속 + 재렌더.
 
-4.5. **DC 추첨**:
-- 사용자 DC 탭 → `dispatch({type: 'draw_dc'})`.
+4.5. **DC 추첨** (M5 갱신 - 라인업별 enabled 분기):
+- **`lineup.dcEnabled === false` 시 본 흐름 전체 비활성** (spec 5.5.7 정합). dispatch.draw_dc 호출 자체 비활성 (render/products-history-tab DC sub-section 미렌더로 호출처 부재).
+- 사용자 DC sub-section → `dispatch({type: 'draw_dc'})`.
 - main.js: `core/double_chance.drawDc(state.dcTickets, rng, DC_WINNERS_TOTAL, DC_POOL_SIZE_DEFAULT)`.
 - 결과 영속 + dc-result-modal.
 
@@ -738,6 +770,37 @@ mount(rootEl):
 | `enter_lineup` (분기 B 전환) | lobby → main + 라인업 전환 | state.activeTab = STATE_TAB_DRAW + 라인업 전환 (view 키 폐기) |
 | ~~`set_current_lineup`~~ | settings dropdown | M4 폐기 |
 
+### 4.M5. 천장 룰 30연 흐름 (M5 신설, ceilingEnabled=true 라인업)
+
+spec 5.13.G + 1.4-XG.4 + 5.13.G.6 (사용자 결정 통 선택 skip 강제) 정합.
+
+```
+사용자 buy-panel 30매 옵션 클릭 (lineup.ceilingEnabled=true)
+  → dispatch({type:'buy', count:30})
+  → main.js dispatch.buy:
+    1. count === lineup.ceilingPurchaseSize && lineup.ceilingEnabled === true → 천장 분기.
+    2. **통 선택 skip 강제** (5.13.G.6.1 = 사용자 결정 (a)):
+       - state.settingsSkipPick 값 무관.
+       - state.selectedGridIndices = [] (메모리 only 폐기).
+    3. results = core/ceiling.drawWithCeiling(state.boxState, drawRng, lineup, 30)
+       = [sResult, ...others29]. boxState.deck 30매 소비.
+    4. unopenedTickets에 30개 ticket 추가 + 각 ticket.lockedResult 부여:
+       - ticket[i].lockedResult = { ...results[i], gridIndex: null, drawIndex: ... }.
+       - gridIndex = null (통 선택 skip 정합).
+    5. core/history는 reveal 시점에만 append (B-α 정합) - 본 흐름에서 append 0.
+    6. state.boxState 갱신 (deck 30매 소비 후).
+    7. saveState({ unopenedTickets, boxState }).
+    8. rerender → b2 분기 (페이지플립 카드 표시) 진입. 사용자 1매씩 reveal.
+
+else (count !== 30 || ceilingEnabled=false):
+  → M2.1 기존 흐름 답습 (5.14 통 선택 + skip 정책).
+```
+
+**의무**:
+- core/ceiling.drawWithCeiling 호출은 dispatch.buy에서 단 1곳. 다른 호출처 0건 (5.6 grep 정합).
+- lineup.dcEnabled === true 시도 30연 흐름에서 dcTicket 30매 일괄 누적 (M5 신설 정합 - 단계 4 결정. **자비스 추천 = 천장 룰 + DC 메커닉이 동시 활성인 라인업은 본 사이클 부재이므로 분기 0건 검증식만 박제**).
+- lineup.lastOneEnabled === true && 30연 흐름에서 마지막 매 isLastOne 처리 = drawWithCeiling 내부 drawOne에서 자연 흡수.
+
 # 5. 정적 검사 / 단계 6 게이트 검증식
 
 5.1. **매직 넘버 0개**: `src/` 전수 grep으로 숫자 리터럴 추출. `data/numbers.js` 정의 / 단순 인덱스(0, 1) / 산술 항등(매수 비교) 외 매직 값 0개.
@@ -854,6 +917,22 @@ mount(rootEl):
 - 단위 테스트 (storage_v7 / home_flow / tab_routing) 통과. **M4.2 정정 (M4.1 P1-2 흡수)**: home_flow_m41 → home_flow (M4 자산 흡수, 이름 보존) 정정.
 - M3 series + M4 라이브 결함 누적 흡수 정합 (단계 7 QA).
 
+5.21. **M5 ceiling-rule + XENOGLOSSIA 검증 (단계 6 신설)**:
+- 02_data 1.4.0 라인업 구조 enabled 5종 필드 (lastOneEnabled / dcEnabled / ceilingEnabled / ceilingPurchaseSize / ceilingTier) ↔ src/data/numbers.js LINEUP 객체 1:1.
+- 1.4.A.3 검증식 5~9 통과 (드래곤볼/원피스 lastOneEnabled=true / XENOGLOSSIA lastOneEnabled=false 정합).
+- 02_data 1.4-XG ↔ TIERS_XENOGLOSSIA / LINEUP_XENOGLOSSIA 객체 1:1.
+- TIERS_XENOGLOSSIA countPerBox 합 = 100 = boxSize.
+- LINEUPS 배열 = [DRAGONBALL, ONEPIECE, XENOGLOSSIA] 3건.
+- core/last_one.js + render/last-one-row.js + render/last-one-indicator.js: lineup.lastOneEnabled === false 시 호출 / 렌더 분기 정합.
+- core/double_chance.js + render/products-history-tab.js DC sub-section: lineup.dcEnabled === false 시 호출 / 렌더 분기 정합.
+- **core/ceiling.js (신설)** drawWithCeiling: 활성 조건 (ceilingEnabled / count = ceilingPurchaseSize / deck S 존재) 정합 + fallback 분기 정합.
+- render/buy-panel.js: BUY_QUICK_OPTIONS [1,3,5,10,30] + 박스 매수 ≥ 30 시 30 옵션 활성 + 천장 활성 라인업 30 라벨 강조.
+- render/main.js dispatch.buy: count === ceilingPurchaseSize && lineup.ceilingEnabled 시 drawWithCeiling 호출 분기.
+- 단위 테스트 (ceiling.test.js / lineup_xenoglossia.test.js / mechanic_disable.test.js) 통과.
+- 기존 테스트 (drawanball/원피스 기준) 영향 0 (enabled=true 잔존).
+- storage v7 보존 (메커닉 플래그는 lineup 정의로 영속 영향 0).
+- M3 series + M4 + M4.1 + M4.2 라이브 결함 누적 흡수 (단계 7 QA).
+
 # 6. 변경 이력
 
 6.1. 2026-05-02: M1 단계 4 impl_plan 작성. placeholder 교체. 모듈 분해 / 의존성 그래프 / 인터페이스 시그니처 / 데이터 흐름 정의.
@@ -861,6 +940,8 @@ mount(rootEl):
 6.3. 2026-05-03: **M2.1 단계 4 impl_plan 작성**. render/pick-panel.js + render/pick-slot.js + render/pick-hint-toast.js 신설 / tests/suites/draw_pick.test.js + storage_v3.test.js 신설 / 3.4 drawOne 시그니처 갱신 (pickIndex 옵셔널) / 3.7 history.js findUnrevealed / revealHistory 신설 / 3.10 storage.js migrateV2ToV3 신설 + state 객체에 pendingPickResult / settingsSkipPick / meta.pickHintSeen 추가 / 4.6~4.9 통 선택 흐름 / 새로고침 복원 / skip 토글 / 첫 진입 안내 흐름 추가 / 5.6 drawOne pickIndex grep 보강 / 5.7~5.9 마이그레이션 / state 매트릭스 / prop drilling 정합 검사 신설. **(이후 6.5에서 findUnrevealed/revealHistory 폐기 + pendingPickResult → ticket.lockedResult 통합. 6.6에서 pick-hint-toast 폐기)**.
 
 6.7. 2026-05-08: **M3 단계 4 impl_plan 사전 정합 (단계 3 통과 후)**. (1) 3.7.M3 신설 - history.tierCounts(history, lineup) 시그니처 + box.id lineup_id 포함. (2) 3.10.M3 신설 - storage v4 다중 라인업 격리 (migrateV3ToV4 / loadStateForLineup / saveGlobalSettings). (3) 3.15.M3 신설 - core/pick-grid.js (M2.1 정리 3.5.1 흡수, render→core 이전). (4) 3.17 settings-tab Lineup 섹션 + 3.18 dispatch.set_current_lineup. (5) 4.M3 흐름 신설 (부팅 / 전환 / 영속 매핑 / 마이그레이션 알고리즘). (6) 5.10/5.11/5.12 단계 6 게이트 grep 신설 (라인업 격리 / 등급 수 가변성 / currentLineupId 매트릭스).
+6.14. 2026-05-10: **M5 단계 2 design + 단계 4 impl_plan 사전 정합 (첫 메커닉 분기)**. (1) **5.21 게이트 신설** - ceiling-rule + XENOGLOSSIA 검증 (라인업 enabled 5종 / 검증식 5~9 / 1.4-XG / core/ceiling.js / 렌더 분기 / BUY_QUICK_OPTIONS 30). (2) 3.5 last_one + 3.6 dc enabled 분기 박제. (3) **3.6.M5 core/ceiling.js 절 신설** = drawWithCeiling + isCeilingApplicable 시그니처 (사용자 결정 3.1 (b) 알고리즘). (4) 단계 4 본 plan 흡수 예정: numbers.js LINEUP_XENOGLOSSIA + TIERS_XENOGLOSSIA + LINEUPS 배열 추가 / lineup 객체 enabled 5종 / BUY_QUICK_OPTIONS [1,3,5,10,30] / core/last_one + double_chance + ceiling 신설 / render/main.js dispatch.buy 천장 분기 / render/buy-panel BUY_OPTIONS 30 활성 + 천장 라벨 / render/last-one-row + last-one-indicator + products-history-tab DC enabled 분기 / 단위 테스트 ceiling + lineup_xenoglossia + mechanic_disable 신설. storage v7 보존 (메커닉 플래그 = lineup 정의이므로 영속 영향 0). 1장 트리: src/core/ceiling.js (신설). 사용자 결정 3.1 (b) / 3.2 (라인업 객체 enabled 플래그) 채택.
+
 6.13. 2026-05-10: **M4.1 단계 2 design + 단계 4 impl_plan 사전 정합 (단계 3 design_review 진입 전 박제)**. (1) **5.20 게이트 신설** - 진입 정책 보정 검증 (state.view 키 잔존 0 / 4탭 환원 / dispatch 의미 갱신 / 헤더 클릭 폐기 / storage v7 마이그레이션). (2) 3.11 state 객체 view 키 폐기 + activeTab 4탭 enum + homeAcked 의미 변경 (면책 동의 표시). (3) 3.11 라우팅 단일화 (activeTab 단일). (4) 3.17 settings-tab 의미 갱신 ("홈으로" 버튼 = activeTab 라우팅). (5) 3.19 dispatch.open_home 의미 갱신 (activeTab = HOME, view 폐기). (6) 3.20 dispatch.enter_lineup 의미 갱신 (activeTab = DRAW). (7) 3.20.M4.1 dispatch.set_active_tab 4탭 정합. (8) 3.21 render/home.js = 탭 1 콘텐츠 (activeTab 분기). (9) 단계 4 본 plan 흡수 예정: numbers.js STATE_VIEW 폐기 + STATE_TAB_HOME 신설 + STATE_TAB_DEFAULT = HOME / main.js 라우팅 단일화 / bottom-tabs 4탭 환원 / home.js / header 클릭 폐기 / settings 의미 갱신 / storage migrateV6ToV7 신설 + chain / 단위 테스트 storage_v7 + home_flow_m41 + tab_routing 신설. M3 series + M4 라이브 결함 누적 흡수 정합 (단계 7 QA). 1장 트리 신규 모듈 0 (구조 변경, 모듈 수 동일). 자비스 단계 1 결정 4.1.A/4.2.A/4.3.A 채택. 사용자 결정 3.1/3.2/3.3.
 
 6.12. 2026-05-10: **M4 단계 2 design + 단계 4 impl_plan 사전 정합 (round 2 정정 흡수)**. (1) **5.19 게이트 신설** - 메뉴 재설계 검증. (2) 단계 4 본 plan에서 흡수: state.view 개명 (lobby → home) / state.activeTab 4탭 → 3탭 / dispatch open_home 개명 + set_current_lineup 폐기 + set_active_tab 신설 / render/lobby → home + 카드 메타 풍부화 / render/products-history-tab 신설 (M3.3 자산 흡수 + M2 history 리스트 흡수 + DC sub-section 4 통합) / render/history-tab + dc-tab 폐기 / settings-tab dropdown 폐기 + "홈으로" 버튼 / tab-bar 4 → 3 / storage v5 → v6 마이그레이션 / 단위 테스트 home_flow + products_history_layout + state_view + storage_v6 신설. M3 series 라이브 결함 누적 흡수 정합 (단계 7 QA). 1장 트리: render/home.js (개명) + render/products-history-tab.js (신설). 폐기: render/history-tab.js + render/dc-tab.js. **round 1 P0 정정 (round 2 박제)**: P0-1 currentTab → activeTab 통일 (3.11 + spec 4.3) / P0-2 3.11 state 객체 view/탭 4탭 enum → 3탭 home 갱신 / P0-3 SCHEMA_VERSION v6 bump + 02_data 3.2.7 마이그레이션 절 신설. P1 4건 (sub-section 번호 / 결정 게이트 6건 / 산출식 / 본체 박제) 흡수.
