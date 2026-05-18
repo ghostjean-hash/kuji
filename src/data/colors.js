@@ -1,6 +1,8 @@
 // 02_data 2장 SSOT 변환. M2 Light 테마 + 종이 / 카드 톤.
 
-// 02_data 2.1 등급 색 (M2: Last One 一番くじ 브랜드 빨강 통일)
+import { LAST_ONE_TIER_NAME } from "./numbers.js";
+
+// 02_data 2.1 등급 색 (M2: Last One 一番くじ 브랜드 빨강 통일 / M5+ LAST_ONE_TIER_NAME 단일화)
 export const TIER_COLORS = {
   "A": "#D4AF37",
   "B": "#C0C0C0",
@@ -12,7 +14,7 @@ export const TIER_COLORS = {
   "H": "#FDE047",
   "I": "#F97316",
   "J": "#94A3B8",
-  "Last One": "#C8102E",
+  [LAST_ONE_TIER_NAME]: "#C8102E",
 };
 
 // 02_data 2.2 UI 색 (M2 Light 테마)

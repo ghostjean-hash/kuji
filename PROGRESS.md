@@ -826,8 +826,8 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 | 마일스톤 | 작업 | 상태 | commit |
 |---|---|---|---|
 | M1 정체성 정합 | project .claude/CLAUDE.md 신설 + 사양 §4.3 kuji sub-도메인 ref + §6.4.6 rubric 신설 + 헤더 v6.0.4→v6.0.6 정합 회복 + output style 제거 + ledger #71 적재 | ✓ 2026-05-19 | kuji `9dedf90` + 자비스 본체 `a3f57f5` |
-| M2 파이프라인 매핑 | root CLAUDE.md 슬림화(93→49줄) + docs/05_pipeline.md 어댑터(§0 신 5단계 매핑 + deprecation) + plan 7.2 보정 (7.2.2/7.2.3 M3 이연) | ✓ 2026-05-19 | (본 cycle) |
-| M3 시범 사이클 (M5+ Last One) | 신 5단계 풀 1회 운영 + handoff JSON 5종 instance 실 작성 + contract sign-off + Mistake Ledger kuji cluster 첫 적재 | 대기 | - |
+| M2 파이프라인 매핑 | root CLAUDE.md 슬림화(93→49줄) + docs/05_pipeline.md 어댑터(§0 신 5단계 매핑 + deprecation) + plan 7.2 보정 (7.2.2/7.2.3 M3 이연) | ✓ 2026-05-19 | kuji `086a31c` |
+| M3 시범 사이클 (M5+ Last One) | 신 5단계 풀 1회 운영 (Research→Plan→Execute→Review→Ship) + handoff JSON 5종 instance 실 작성 + contract sign-off + Evaluator 100/100 만점 + 격차 0 | ✓ 2026-05-19 | (본 cycle) |
 | M4 회고 + 점진 흡수 | 회고 보고서 + 구 산출물 archive 삭제 + M5.1 / M6 / 라이브 검수 보정 신 사이클 흡수 | 대기 | - |
 
 ## 15.2. M1 사용자 sign-off 이력
@@ -889,3 +889,52 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 15.7.3. **헤더 충돌 즉시 발견 패턴**: docs/05_pipeline.md 어댑터 박는 도중 § 1 헤더 중복 즉시 발견 + 정정 (안내문 형식으로 down-grade). 마크다운 § 헤더 갱신 시 cross-ref 영향 + 충돌 점검 의무 답습.
 
 15.7.4. **SSOT 분리 후 룰 중복 자가-청산 패턴**: root CLAUDE.md 슬림 시 §3 문서 인덱스 + §4 절대 규칙 + §5 기술 환경 = `.claude/CLAUDE.md`로 이관 완료된 룰. SSOT 분리 = 중복 박힘 자동 청산 효과. 차기 도메인 마이그레이션에서 SSOT 단일화 게이트 답습.
+
+## 15.8. M3 시범 사이클 사용자 sign-off 이력
+
+| 단계 | 결정 | 답변 |
+|---|---|---|
+| Research → Plan | R-1 ~ R-4 권고안 일괄 + Plan 진입 + 시범 cycle 메타 sign-off | "승인" |
+| Plan → Execute | feature_list F-1 ~ F-6 + acceptance_criteria ac-1 ~ ac-4 + Execute 진입 | "승인" |
+| Review → Ship | Evaluator 100/100 수용 + Ship 진입 동시 sign-off | "진입" (sign-off 동시) |
+
+## 15.9. M3 산출물 (M5+ Last One 단일화)
+
+**작업 디렉토리**: `docs/pipeline/M5-plus-last-one/`
+
+**handoff JSON 5종 (unversioned)**:
+- research-handoff.json (5축 스코프 식별 + R-1~R-4 결정 4건)
+- plan-handoff.json (feature_list 6건 + acceptance_criteria 4건 + P-1~P-6 결정 6건)
+- execute-handoff.json (Edit 10건 + auto_test_results 4/4 PASS + E-1 결정)
+- review-handoff.json (Evaluator 채점 100/100 + Rv-1 결정)
+- ship-handoff.json (ratchet_signals 2건 박힘)
+
+**Default-FAIL contract.json (unversioned)**:
+- acceptance_criteria 4건 모두 passes:true + evaluator_passed:true + evaluator_score:100
+- evaluator_summary.total_score:100
+- sign.received_at 박힘 + done:true
+
+**코드 변경 10 Edit**:
+- src/data/numbers.js (line 85 + 168 + 455-461) - 라인업 tiers + 검증식 5/6
+- src/data/colors.js (line 1 import + line 15 computed key)
+- src/data/assets.js (line 5 import + line 16 + 25 + 128 + 141)
+- src/render/last-one-modal.js (import + line 14 data-tier)
+- src/render/last-one-row.js (line 43 + 45)
+
+**.gitignore** 정책 추가:
+- `**/*-handoff.json` (사양 §3.5.7 unversioned)
+- `contract.json` + `**/contract.json` (사양 §3.5.7 + plan-template.md line 36)
+
+## 15.10. M3 학습
+
+15.10.1. **신 자비스 5단계 풀 패턴 첫 실 적용 = 만점 + 격차 0**: Research → Plan → Execute → Review → Ship handoff JSON 5종 인계 정합 100%. decisions 답습 (R-* → P-* → E-* → Rv-*) + Default-FAIL contract.json 게이트 작동 정상. 차기 cycle 답습 패턴 확립.
+
+15.10.2. **결정 답습 자동 작동 (R-4 정신 확장)**: Research R-4 (주석/예시 매직 문자열 보존) 결정이 Execute F-5 단계에서 UI 표시 텍스트 처리까지 자연 확장 → E-1 ratchet_signal 박힘. 자비스 자체 결정의 답습 흐름 = 신 패턴 가치.
+
+15.10.3. **단일화 경계 박힘 (data-* attribute + 함수 인자 vs UI 표시 텍스트)**: 단일화 대상의 경계를 명확히 그은 결정 (E-1). 차기 도메인 i18n 정책 cycle 답습 가능 = 시범 cycle의 메타 산출물. ratchet_signal로 ship-handoff에 박힘.
+
+15.10.4. **단일 SSOT 진입점 패턴**: `LAST_ONE_TIER_NAME` 정의 line 25만 매직 문자열 1건, 나머지 호출처 import 의무 = 단방향 흐름 강화. computed key 패턴 (`[LAST_ONE_TIER_NAME]:`)이 JavaScript syntactic 정합. 차기 도메인 분리 시 표준.
+
+15.10.5. **Evaluator sub-agent 첫 호출 = sonnet_4_6 100/100 + escalation 불요**: scoring-jarvis-artifacts sub-agent (사양 §6.2.3) 첫 실 호출. 13 tool_uses + 98s 소요. 보더라인 50-79 미해당 → opus_4_7_high 재채점 불요. read-only Evaluator 출력 받아 메인 process가 contract 갱신 흐름 정상.
+
+15.10.6. **Node ESM dynamic import 회귀 시뮬 답습**: PROGRESS §14.3 답습 패턴 (M5 ceiling cycle). Node `import()` dynamic 패턴으로 ES Modules 직접 실행 + validateLineupTierClass + computed key lookup 동치 검증. 브라우저 라이브 검수 없이 자비스 자체 회귀 가능.

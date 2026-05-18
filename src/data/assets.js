@@ -2,9 +2,9 @@
 // 메인: A~F + Last One은 the_chronicle_of_goku_img/*.webp 사진 자산. G~J는 SVG 임시 자산.
 // 탭: SVG 인라인 4종.
 
-import { TAB_ICON_IDS } from "./numbers.js";
+import { TAB_ICON_IDS, LAST_ONE_TIER_NAME } from "./numbers.js";
 
-// ===== 메인 사진 자산 경로 / 키 매핑 (M2.1 보강) =====
+// ===== 메인 사진 자산 경로 / 키 매핑 (M2.1 보강 / M5+ LAST_ONE_TIER_NAME 단일화) =====
 const PRODUCT_IMAGE_BASE_PATH = "the_chronicle_of_goku_img";
 const PRODUCT_IMAGE_FILE_KEYS = {
   "A": "A",
@@ -13,7 +13,7 @@ const PRODUCT_IMAGE_FILE_KEYS = {
   "D": "D",
   "E": "E",
   "F": "F",
-  "Last One": "Z",
+  [LAST_ONE_TIER_NAME]: "Z",
 };
 const PRODUCT_IMAGE_ALT = {
   "A": "손오공 MASTERLISE",
@@ -22,7 +22,7 @@ const PRODUCT_IMAGE_ALT = {
   "D": "초사이어인2 손오공 MASTERLISE",
   "E": "마인 베지타 MASTERLISE",
   "F": "손오공 자림무도 MASTERLISE",
-  "Last One": "거대 원숭이 손오공 SOFVICS",
+  [LAST_ONE_TIER_NAME]: "거대 원숭이 손오공 SOFVICS",
 };
 
 function buildProductPhoto(tier) {
@@ -125,7 +125,7 @@ const PRODUCT_J_MAIN = `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000
 </svg>`;
 
 // Last One: 大猿悟空 SOFVICS - webp 사진 자산 (the_chronicle_of_goku_img/Z.webp).
-const PRODUCT_LAST_ONE_MAIN = buildProductPhoto("Last One");
+const PRODUCT_LAST_ONE_MAIN = buildProductPhoto(LAST_ONE_TIER_NAME);
 
 const PRODUCTS_MAIN = {
   "A": PRODUCT_A_MAIN,
@@ -138,7 +138,7 @@ const PRODUCTS_MAIN = {
   "H": PRODUCT_H_MAIN,
   "I": PRODUCT_I_MAIN,
   "J": PRODUCT_J_MAIN,
-  "Last One": PRODUCT_LAST_ONE_MAIN,
+  [LAST_ONE_TIER_NAME]: PRODUCT_LAST_ONE_MAIN,
 };
 
 // 02_data 1.7 PRODUCT_ASSETS_MAIN_PLACEHOLDER: M2 1차에서 종별 자산은 메인 재사용.

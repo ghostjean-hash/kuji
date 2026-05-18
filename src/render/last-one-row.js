@@ -40,9 +40,9 @@ export function renderLastOneRow(state, dispatch) {
     + (isAhead ? " is-pulsing" : "")
     + (isJustDrawn ? " is-just-drawn" : "")
     + (isLastOneDrawn ? " is-drawn" : "");
-  el.dataset.tier = "Last One";
+  el.dataset.tier = LAST_ONE_TIER_NAME;
   el.innerHTML = `
-    <div class="last-one-image">${getProductMainAsset("Last One")}</div>
+    <div class="last-one-image">${getProductMainAsset(LAST_ONE_TIER_NAME)}</div>
     <div class="last-one-info">
       <span class="last-one-badge">LAST ONE 賞</span>
       <span class="last-one-name">${lastOne.nameKo}</span>

@@ -82,7 +82,7 @@ export const TIERS_DRAGONBALL = [
   { tier: "H", count: 8, typeCount: 8, tierClass: TIER_CLASS_GOODS, nameJa: "ラバーチャーム", nameKo: "러버 참", sizeLabel: "6.5cm" },
   { tier: "I", count: 24, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "クリアポスター (A3)", nameKo: "클리어 포스터 (A3)", sizeLabel: "A3" },
   { tier: "J", count: 33, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "ジャガードミニタオル", nameKo: "자카드 미니 타올", sizeLabel: "25cm" },
-  { tier: "Last One", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "大猿悟空 SOFVICS", nameKo: "거대 원숭이 손오공 SOFVICS", sizeLabel: "26cm" },
+  { tier: LAST_ONE_TIER_NAME, count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "大猿悟空 SOFVICS", nameKo: "거대 원숭이 손오공 SOFVICS", sizeLabel: "26cm" },
 ];
 export const TIERS_DRAGONBALL_COUNT_ESTIMATED = true;
 
@@ -165,7 +165,7 @@ export const TIERS_ONEPIECE = [
   { tier: "G", count: 12, typeCount: 8, tierClass: TIER_CLASS_GOODS, nameJa: "タオル", nameKo: "타올", sizeLabel: "" },
   { tier: "H", count: 16, typeCount: 14, tierClass: TIER_CLASS_GOODS, nameJa: "アクリルマグネット", nameKo: "아크릴 마그넷", sizeLabel: "" },
   { tier: "I", count: 33, typeCount: 10, tierClass: TIER_CLASS_GOODS, nameJa: "デスクアソート", nameKo: "데스크 아소트", sizeLabel: "" },
-  { tier: "Last One", count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "モンキー・D・ルフィ MASTERLISE PLUS", nameKo: "몽키 D 루피 MASTERLISE PLUS", sizeLabel: "" },
+  { tier: LAST_ONE_TIER_NAME, count: 1, typeCount: 1, tierClass: TIER_CLASS_HERO, nameJa: "モンキー・D・ルフィ MASTERLISE PLUS", nameKo: "몽키 D 루피 MASTERLISE PLUS", sizeLabel: "" },
 ];
 export const TIERS_ONEPIECE_COUNT_ESTIMATED = true;
 
@@ -452,13 +452,13 @@ export function validateLineupTierClass(lineup) {
   if (typeof lineup.ceilingEnabled !== "boolean") {
     throw new Error(`[numbers.js] 라인업 "${lineup.id}" ceilingEnabled 필드 boolean 의무 (M5).`);
   }
-  // 5) M5: lastOneEnabled=true → tiers에 "Last One" 항목 존재 / false → 부재 (검증식 5/6)
-  const hasLastOne = lineup.tiers.some((t) => t.tier === "Last One");
+  // 5) M5: lastOneEnabled=true → tiers에 LAST_ONE_TIER_NAME 항목 존재 / false → 부재 (검증식 5/6)
+  const hasLastOne = lineup.tiers.some((t) => t.tier === LAST_ONE_TIER_NAME);
   if (lineup.lastOneEnabled === true && !hasLastOne) {
-    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=true이나 tiers에 "Last One" 항목 부재. 02_data 1.4.A.3 검증식 5 위반.`);
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=true이나 tiers에 ${LAST_ONE_TIER_NAME} 항목 부재. 02_data 1.4.A.3 검증식 5 위반.`);
   }
   if (lineup.lastOneEnabled === false && hasLastOne) {
-    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=false이나 tiers에 "Last One" 항목 존재. 02_data 1.4.A.3 검증식 6 위반.`);
+    throw new Error(`[numbers.js] 라인업 "${lineup.id}" lastOneEnabled=false이나 tiers에 ${LAST_ONE_TIER_NAME} 항목 존재. 02_data 1.4.A.3 검증식 6 위반.`);
   }
   // 6) M5: ceilingEnabled=true → ceilingPurchaseSize / ceilingTier 정합 (검증식 8)
   if (lineup.ceilingEnabled === true) {
