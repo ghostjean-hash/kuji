@@ -816,3 +816,52 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 14.5.5. **단계 5 implement 발견 정정 (core/box.js initBox)**: design / impl_plan에 명시되지 않은 box.js의 deck size 검증식이 lastOneEnabled 분기 의무 발견. 즉시 정정 + plan 6.1 영향 매트릭스에 core/box.js 추가 박제 의무 (단계 8 학습 흡수).
 
 14.5.6. **자율 진행 신호 답습 (M3.5 → M4 → M4.1 → M4.2 → M5)**: "다음 작업 진행" / "정석대로" 신호로 단계 1/4/7 자율 통과 + 단계 3/6 subagent 격리 검증 의무 잔존. 차기 사이클 답습 패턴.
+
+# 15. M-jarvis-v6-migrate (신 자비스 v6 마이그레이션, 2026-05-19~)
+
+본 cycle은 **메타 작업**. kuji 도메인의 운영 구조를 구 자비스(8단계 파이프라인 + output style + project CLAUDE.md 90줄)에서 신 자비스 v6.0.6(5단계 사이클 + handoff JSON + Default-FAIL contract + Mistake Ledger)로 마이그레이션. 8단계 패턴의 **마지막 사용** (자기-종료적). plan: `docs/pipeline/M-jarvis-v6-migrate/01_plan.md`.
+
+## 15.1. 마일스톤 진척
+
+| 마일스톤 | 작업 | 상태 | commit |
+|---|---|---|---|
+| M1 정체성 정합 | project .claude/CLAUDE.md 신설 + 사양 §4.3 kuji sub-도메인 ref + §6.4.6 rubric 신설 + 헤더 v6.0.4→v6.0.6 정합 회복 + output style 제거 + ledger #71 적재 | ✓ 2026-05-19 | (pending) |
+| M2 파이프라인 매핑 | docs/05_pipeline.md 어댑터 + handoff JSON template kuji 어댑터 + /jarvis-contract dry-run + **root CLAUDE.md(93줄→80줄 이하) 슬림화 1순위** | 대기 | - |
+| M3 시범 사이클 (M5+ Last One) | 신 5단계 풀 1회 운영 + handoff JSON 5종 instance 실 작성 + contract sign-off + Mistake Ledger kuji cluster 첫 적재 | 대기 | - |
+| M4 회고 + 점진 흡수 | 회고 보고서 + 구 산출물 archive 삭제 + M5.1 / M6 / 라이브 검수 보정 신 사이클 흡수 | 대기 | - |
+
+## 15.2. M1 사용자 sign-off 이력
+
+| 결정 | 답변 | 영향 |
+|---|---|---|
+| 도메인 등재 위치 | §4.3 웹 게임 프로토타입 sub-도메인 | §4 신설 회피, kuji = verifiable correctness |
+| 운영 모드 | 5단계 풀 | 압축 모드는 마이크로 patch 한정 |
+| output style | 완전 제거 | rpg-designer.md 삭제 + settings.json outputStyle 키 제거 |
+| 구 산출물 처리 | archive 후 시범 사이클 회고 종료 시점 삭제 | M4 작업 |
+| 시범 사이클 대상 | M5+ Last One 단일화 | M4.2 백로그 답습 |
+| 마이그레이션 단위 | gradual | 자비스 사상 정합 (Phase 1→2→3 점진 진화 답습) |
+| 사양 변경 2건 | 승인 (v6.0.6 patch) | §4.3 갱신 + §6.4.6 신설 |
+
+## 15.3. M1 산출물
+
+| # | 위치 | 비고 |
+|---|---|---|
+| 1 | `docs/pipeline/M-jarvis-v6-migrate/01_plan.md` | plan SSOT (10장, 결정 영역 enumerable) |
+| 2 | `D:/claude_code/kuji/.claude/CLAUDE.md` (57줄) | 도메인 SSOT, 신 자비스 §7.1 80줄 룰 정합 |
+| 3 | `docs/pipeline/M-jarvis-v6-migrate/m1_rubric_draft.md` (74줄) | §6.4.6 글로벌 사양 적재용 초안 |
+| 4 | `~/.claude/jarvis-design.md §4.3` 갱신 | kuji sub-도메인 ref + §4.2 본질 구분 |
+| 5 | `~/.claude/jarvis-design.md §6.4.6` 신설 | kuji 시뮬레이터 도메인 5축 + pass_threshold 75 |
+| 6 | `~/.claude/jarvis-design.md §D.1 v6.0.6` 누적 항목 | patch 이력 |
+| 7 | `~/.claude/jarvis-design.md` 헤더 v6.0.4 → v6.0.6 | 누락 정합 회복 |
+| 8 | `~/.claude/output-styles/rpg-designer.md` 제거 + `settings.json` outputStyle 키 제거 | v5 잔재 청산 |
+| 9 | `~/.claude/ledger/notes/v6-candidates.jsonl` #71 (resolved) | 변경 이력 적재 |
+
+## 15.4. M1 학습
+
+15.4.1. **사양 §4.2 "쿠지"와 §4.3 kuji 본질 구분 의무 발견**: 사양 본문에 이미 "쿠지" 단어가 §4.2 스타비긴즈 컨텍스트에 박혀있음. 본 kuji 프로젝트와 동음이의 충돌 우려 → 본문 명시 구분 박힘 ("메커닉 시뮬레이터 vs 사용자 관계 시스템"). 차기 도메인 등재 시 동음이의 사전 검색 의무.
+
+15.4.2. **사양 헤더 버전 표기 누락 결손 (v6.0.5 → v6.0.4 표기 잔존)**: 본 v6.0.6 patch 진행 중 헤더가 v6.0.4 표기 (NEXT-SESSION은 v6.0.5 표기)였음을 발견 → v6.0.5 patch sealing 시점 헤더 갱신 누락. 본 patch에서 v6.0.4 → v6.0.6 한 번에 정합 회복. 자비스 본체 patch sealing 흐름에 "헤더 버전 표기 갱신 의무 체크리스트" 박힘 필요.
+
+15.4.3. **glob 자산 변경 사용자 명시 sign-off 통과 패턴 (Q1+Q2 AskUserQuestion)**: 글로벌 자산 변경 3건(§4.3 갱신 / §6.4.6 신설 / output style 제거)을 AskUserQuestion 2개 질문으로 일괄 sign-off 받음. 베테랑 친화 형식 답습 (옵션별 description으로 trade-off 명시).
+
+15.4.4. **8단계 패턴의 자기-종료 사이클**: 본 cycle 자체가 docs/pipeline/<sprint>/ 8단계 패턴의 마지막 사용 = 패턴의 사망을 패턴 자체로 박는 자기-종료. M2 sealing 후 docs/05_pipeline.md는 archive 또는 신 5단계 reference로 전환.
