@@ -825,8 +825,8 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 | 마일스톤 | 작업 | 상태 | commit |
 |---|---|---|---|
-| M1 정체성 정합 | project .claude/CLAUDE.md 신설 + 사양 §4.3 kuji sub-도메인 ref + §6.4.6 rubric 신설 + 헤더 v6.0.4→v6.0.6 정합 회복 + output style 제거 + ledger #71 적재 | ✓ 2026-05-19 | (pending) |
-| M2 파이프라인 매핑 | docs/05_pipeline.md 어댑터 + handoff JSON template kuji 어댑터 + /jarvis-contract dry-run + **root CLAUDE.md(93줄→80줄 이하) 슬림화 1순위** | 대기 | - |
+| M1 정체성 정합 | project .claude/CLAUDE.md 신설 + 사양 §4.3 kuji sub-도메인 ref + §6.4.6 rubric 신설 + 헤더 v6.0.4→v6.0.6 정합 회복 + output style 제거 + ledger #71 적재 | ✓ 2026-05-19 | kuji `9dedf90` + 자비스 본체 `a3f57f5` |
+| M2 파이프라인 매핑 | root CLAUDE.md 슬림화(93→49줄) + docs/05_pipeline.md 어댑터(§0 신 5단계 매핑 + deprecation) + plan 7.2 보정 (7.2.2/7.2.3 M3 이연) | ✓ 2026-05-19 | (본 cycle) |
 | M3 시범 사이클 (M5+ Last One) | 신 5단계 풀 1회 운영 + handoff JSON 5종 instance 실 작성 + contract sign-off + Mistake Ledger kuji cluster 첫 적재 | 대기 | - |
 | M4 회고 + 점진 흡수 | 회고 보고서 + 구 산출물 archive 삭제 + M5.1 / M6 / 라이브 검수 보정 신 사이클 흡수 | 대기 | - |
 
@@ -864,4 +864,28 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 
 15.4.3. **glob 자산 변경 사용자 명시 sign-off 통과 패턴 (Q1+Q2 AskUserQuestion)**: 글로벌 자산 변경 3건(§4.3 갱신 / §6.4.6 신설 / output style 제거)을 AskUserQuestion 2개 질문으로 일괄 sign-off 받음. 베테랑 친화 형식 답습 (옵션별 description으로 trade-off 명시).
 
-15.4.4. **8단계 패턴의 자기-종료 사이클**: 본 cycle 자체가 docs/pipeline/<sprint>/ 8단계 패턴의 마지막 사용 = 패턴의 사망을 패턴 자체로 박는 자기-종료. M2 sealing 후 docs/05_pipeline.md는 archive 또는 신 5단계 reference로 전환.
+15.4.4. **8단계 패턴의 자기-종료 사이클**: 본 cycle 자체가 docs/pipeline/<sprint>/ 8단계 패턴의 마지막 사용 = 패턴의 사망을 패턴 자체로 박는 자기-종료. M2 sealing 후 docs/05_pipeline.md는 archive 또는 신 5단계 reference로 전환 (M2 결과 = 어댑터 형식 절충, M4 회고 후 archive 이관).
+
+## 15.5. M2 사용자 sign-off 이력
+
+| 결정 | 답변 | 영향 |
+|---|---|---|
+| M2 스코프 보정 | 추천 보정안 승인 + sealing | 7.2.2/7.2.3 → M3 이연. 7.2.0 root 슬림 + 7.2.1 어댑터 2건만 본 M2 |
+
+## 15.6. M2 산출물
+
+| # | 위치 | 비고 |
+|---|---|---|
+| 1 | `D:/claude_code/kuji/CLAUDE.md` (root, 93→49줄, 47% 감소) | 슬림 - 프로젝트 소개 + 도메인 SSOT ref + 색상/실행/참고 보존 |
+| 2 | `docs/05_pipeline.md` (어댑터 헤더 + § 0 매핑 표 + § 1.x 본문 deprecation 경고) | 8→5 매핑 박힘, 구 8단계 본문 보존 (M4 archive 예정) |
+| 3 | `docs/pipeline/M-jarvis-v6-migrate/01_plan.md §7.2` 보정 | 작업 항목 4→2건, 7.2.2/7.2.3 M3 이연 사유 본문 명시 |
+
+## 15.7. M2 학습
+
+15.7.1. **자비스 자산 vs 도메인 자산 책임 분리 (사양 §6.5.3 답습)**: handoff JSON template은 자비스 운영자(사용자) 자산. 도메인 특화는 instance 작성 시점에. 본 M2에서 kuji 어댑터 template 작성 충동을 사양 §6.5.3 룰로 차단. 차기 도메인 마이그레이션 답습.
+
+15.7.2. **본 cycle = 8단계 마지막 사용 + 신 자비스 패턴 미적용 = 메타-과도기**: M-jarvis-v6-migrate 자체가 구 패턴으로 진행되므로 신 자비스 patterns(handoff instance / contract)을 본 cycle에 강제 적용은 시뮬레이션 성격. 자연 적용은 M3 시범 사이클 (M5+ Last One). 룰 = "마이그레이션 cycle 자체에 신 패턴 강제 금지, 시범 cycle에서 첫 실 적용".
+
+15.7.3. **헤더 충돌 즉시 발견 패턴**: docs/05_pipeline.md 어댑터 박는 도중 § 1 헤더 중복 즉시 발견 + 정정 (안내문 형식으로 down-grade). 마크다운 § 헤더 갱신 시 cross-ref 영향 + 충돌 점검 의무 답습.
+
+15.7.4. **SSOT 분리 후 룰 중복 자가-청산 패턴**: root CLAUDE.md 슬림 시 §3 문서 인덱스 + §4 절대 규칙 + §5 기술 환경 = `.claude/CLAUDE.md`로 이관 완료된 룰. SSOT 분리 = 중복 박힘 자동 청산 효과. 차기 도메인 마이그레이션에서 SSOT 단일화 게이트 답습.

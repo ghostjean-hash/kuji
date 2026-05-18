@@ -1,4 +1,29 @@
-# 05. 8단계 파이프라인
+# 05. 파이프라인 (구 8단계 + 신 5단계 매핑 어댑터)
+
+> **DEPRECATION 경고 (2026-05-19, M-jarvis-v6-migrate M2)**: 본 문서의 구 8단계 파이프라인은 신 자비스 v6.0.6 5단계 사이클로 점진 이관 중. 신 사이클 SSOT는 `~/.claude/jarvis-design.md §6.5` + `.claude/CLAUDE.md §2`. M3 시범 사이클(M5+ Last One) 종료 + M4 회고 후 본 문서 archive 예정.
+
+# 0. 8단계 → 5단계 매핑 (M2 어댑터)
+
+| 구 8단계 (kuji v5) | 신 5단계 매핑 (v6.0.6) | 비고 |
+|---|---|---|
+| 1 plan | Plan | handoff JSON instance 추가 |
+| 2 design | Plan 후반 (사양 산출물) | 본체 `docs/01_spec.md` + `docs/02_data.md` 갱신 보존 |
+| 3 design_review | Review sub-loop (Evaluator) | §6.5.5 fleet review 답습 |
+| 4 impl_plan | Plan (구현 분해) | 통합 |
+| 5 implement | Execute | 자동 검증 sub-loop (§6.2.2) |
+| 6 impl_review | Review (Evaluator-Optimizer §6.5.6) | rubric.pass_threshold 기준 |
+| 7 qa | Review 사용자 sign-off | `/jarvis-contract sign` |
+| 8 improve | Ship + Ratchet | Mistake Ledger 자동 적재 |
+
+0.1. **5단계 풀 사이클**: Research → Plan → Execute → Review → Ship. 운영 모드 기본 (M1 sign-off).
+0.2. **3단계 압축 모드**: Plan / Execute / Ship. 마이크로 patch 한정 (사양 §6.5.4 카파시 단계 압축).
+0.3. **handoff JSON 5종**: `~/.claude/workflows/<stage>-template.md` 템플릿. instance는 작업 디렉토리에 작성, unversioned (§3.5.7).
+0.4. **Default-FAIL contract**: `/jarvis-contract new` + `sign`. Review 단계 종료 게이트 (§6.3.1).
+0.5. **kuji 평가 rubric**: 사양 §6.4.6 (확률 메커닉 / SSOT / 모듈 / 톤 / 인계 5축 + pass_threshold 75).
+
+---
+
+> **구 8단계 파이프라인 본문** (이하). M-jarvis-v6-migrate 종료 전까지 보존, M4 회고 후 `docs/_archive/pipeline-v5/`로 이관 예정. 신 사이클 운영은 § 0 매핑 표 참조.
 
 본 문서는 모든 작업 사이클이 거치는 8단계 파이프라인의 SSOT다.
 

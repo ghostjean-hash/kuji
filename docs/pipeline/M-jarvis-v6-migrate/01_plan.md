@@ -98,12 +98,15 @@ kuji 환경의 구 자비스 운영을 신 자비스 v6.0.5 사양으로 마이�
 7.1.4. kuji rubric 초안 작성 (시뮬레이터 도메인).
 7.1.5. 통과 게이트: 사용자 sign-off.
 
-## 7.2. M2 파이프라인 매핑 (1 세션)
+## 7.2. M2 파이프라인 매핑 (1 세션, M1 sealing 1순위 추가)
 
-7.2.1. `docs/05_pipeline.md` 8→5 매핑 어댑터 본문 갱신 또는 archive + reference.
-7.2.2. handoff JSON template kuji 어댑터 작성 (필요 시).
-7.2.3. `/jarvis-contract new` 흐름 검증 (드라이런).
-7.2.4. 통과 게이트: 사용자 sign-off + drycontract sign-off 시뮬레이션 PASS.
+7.2.0. **(M1 sealing 1순위 추가)** root CLAUDE.md 슬림화 (93→80줄 이하). `.claude/CLAUDE.md` SSOT ref 박힘. 룰 중복 제거.
+7.2.1. `docs/05_pipeline.md` 8→5 매핑 어댑터 본문 갱신 (구 8단계 본문 보존 + § 0 신 5단계 매핑 표 + deprecation 경고). M4 회고 후 `docs/_archive/pipeline-v5/`로 이관.
+7.2.2. ~~handoff JSON template kuji 어댑터~~ → **M3 시범 사이클로 이연** (사양 §6.5.3 = template은 자비스 운영자 자산, kuji 특화는 instance 작성 시점 반영).
+7.2.3. ~~/jarvis-contract dry-run~~ → **M3 시범 사이클로 이연** (본 M-jarvis-v6-migrate는 8단계 마지막 cycle = contract.json 미적용, M3에서 실 sign-off).
+7.2.4. 통과 게이트: 사용자 sign-off.
+
+**M2 보정 사유 (2026-05-19)**: 사용자 명시 sign-off (M2 진행 중 AskUserQuestion 추천 보정안 승인). 핵심 인사이트 = 본 cycle 자체가 8단계 마지막 사용이라 신 자비스 패턴(handoff instance / contract) 실 적용은 M3 시범 사이클이 자연 위치. M2 = 매핑 + 슬림화 + reference 박기까지 한정.
 
 ## 7.3. M3 시범 사이클 - M5+ Last One (1 사이클)
 
