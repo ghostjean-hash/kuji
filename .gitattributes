@@ -1,0 +1,17 @@
+# 크로스플랫폼 line ending 표준 (Windows + macOS 사용자 환경 정합)
+# 모든 텍스트 파일을 LF로 저장. git checkout 시 OS 표준에 따라 자동 변환.
+# M-jarvis-v6-migrate M3+M4 부수 발견 (line ending 변환 2+회 ratchet 룰화 시그널) 흡수.
+* text=auto eol=lf
+
+# Binary 파일 명시 (line ending 변환 금지)
+*.webp binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.pdf binary
