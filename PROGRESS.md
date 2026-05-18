@@ -938,3 +938,5 @@ UI/UX/데이터 정합성 사용자 명시 정정 다수. 8단계 정식 검증 
 15.10.5. **Evaluator sub-agent 첫 호출 = sonnet_4_6 100/100 + escalation 불요**: scoring-jarvis-artifacts sub-agent (사양 §6.2.3) 첫 실 호출. 13 tool_uses + 98s 소요. 보더라인 50-79 미해당 → opus_4_7_high 재채점 불요. read-only Evaluator 출력 받아 메인 process가 contract 갱신 흐름 정상.
 
 15.10.6. **Node ESM dynamic import 회귀 시뮬 답습**: PROGRESS §14.3 답습 패턴 (M5 ceiling cycle). Node `import()` dynamic 패턴으로 ES Modules 직접 실행 + validateLineupTierClass + computed key lookup 동치 검증. 브라우저 라이브 검수 없이 자비스 자체 회귀 가능.
+
+15.10.7. **브라우저 라이브 검수 = 전체 PASS (사용자 회신 2026-05-19)**: tests/test.html 19+ suites 100% 통과. last_one + lineup_validation + lineup_xenoglossia + mechanic_disable + box + draw + storage* 모두 회귀 0건. Node ESM 시뮬 (15.10.6) + 브라우저 라이브 (15.10.7) 이중 검증 = ac-3 evidence 완결. R-3 권고(기존 회귀만, 신규 테스트 over-engineering 회피) 적중.
